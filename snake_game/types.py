@@ -19,3 +19,28 @@ class GameStatus(Enum):
     PAUSED = "paused"
     GAME_OVER = "game_over"
 
+
+class Difficulty(Enum):
+    EASY = "easy"
+    NORMAL = "normal"
+    HARD = "hard"
+
+    @property
+    def label(self) -> str:
+        return self.value.capitalize()
+
+
+class MapMode(Enum):
+    BOUNDED = "bounded"
+    WRAP = "wrap"
+
+    @property
+    def label(self) -> str:
+        return self.value.capitalize()
+
+
+class SceneId(Enum):
+    MENU = "menu"
+    SETTINGS = "settings"
+    PLAY = "play"
+    GAME_OVER = "game_over"

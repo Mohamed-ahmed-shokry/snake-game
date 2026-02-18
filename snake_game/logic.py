@@ -1,8 +1,8 @@
 import random
 
-from snake_game.config import GameConfig
+from snake_game.config import GameConfig, UserSettings, rules_for_difficulty
 from snake_game.state import GameState
-from snake_game.types import Direction, GameStatus, Point
+from snake_game.types import Direction, GameStatus, MapMode, Point
 
 
 def is_opposite(current: Direction, next_direction: Direction) -> bool:
@@ -13,11 +13,12 @@ def is_opposite(current: Direction, next_direction: Direction) -> bool:
 
 def spawn_food(
     snake_cells: list[Point] | set[Point],
+    obstacle_cells: set[Point],
     grid_width: int,
     grid_height: int,
     rng: random.Random,
 ) -> Point:
-    occupied = set(snake_cells)
+    occupied = set(snake_cells) | obstacle_cells
     candidates = [
         (x, y)
         for y in range(grid_height)
@@ -29,12 +30,57 @@ def spawn_food(
     return rng.choice(candidates)
 
 
-def create_initial_state(config: GameConfig, rng: random.Random | None = None) -> GameState:
-    local_rng = rng or random.Random()
+def spawn_obstacles(
+    obstacle_count: int,
+    forbidden_cells: set[Point],
+    grid_width: int,
+    grid_height: int,
+    rng: random.Random,
+) -> set[Point]:
+    candidates = [
+        (x, y)
+        for y in range(grid_height)
+        for x in range(grid_width)
+        if (x, y) not in forbidden_cells
+    ]
+    rng.shuffle(candidates)
+    return set(candidates[: min(len(candidates), obstacle_count)])
+
+
+def _initial_snake(config: GameConfig) -> list[Point]:
     center_x = config.grid_width // 2
     center_y = config.grid_height // 2
-    snake = [(center_x, center_y), (center_x - 1, center_y), (center_x - 2, center_y)]
-    food = spawn_food(snake, config.grid_width, config.grid_height, local_rng)
+    return [(center_x, center_y), (center_x - 1, center_y), (center_x - 2, center_y)]
+
+
+def create_initial_state(
+    config: GameConfig,
+    settings: UserSettings,
+    rng: random.Random | None = None,
+) -> GameState:
+    local_rng = rng or random.Random()
+    rules = rules_for_difficulty(settings.difficulty)
+
+    snake = _initial_snake(config)
+    obstacles: set[Point] = set()
+    if settings.obstacles_enabled:
+        center_x = config.grid_width // 2
+        center_y = config.grid_height // 2
+        safe_zone = {
+            (center_x + dx, center_y + dy)
+            for dx in range(-2, 3)
+            for dy in range(-2, 3)
+            if 0 <= center_x + dx < config.grid_width and 0 <= center_y + dy < config.grid_height
+        }
+        obstacles = spawn_obstacles(
+            obstacle_count=config.obstacle_count,
+            forbidden_cells=set(snake) | safe_zone,
+            grid_width=config.grid_width,
+            grid_height=config.grid_height,
+            rng=local_rng,
+        )
+
+    food = spawn_food(snake, obstacles, config.grid_width, config.grid_height, local_rng)
     return GameState(
         snake=snake,
         direction=Direction.RIGHT,
@@ -42,7 +88,13 @@ def create_initial_state(config: GameConfig, rng: random.Random | None = None) -
         food=food,
         score=0,
         status=GameStatus.RUNNING,
-        steps_per_second=config.base_steps_per_second,
+        steps_per_second=rules.base_steps_per_second,
+        speed_increment_per_food=rules.speed_increment_per_food,
+        max_steps_per_second=rules.max_steps_per_second,
+        score_per_food=rules.score_per_food,
+        difficulty=settings.difficulty,
+        map_mode=settings.map_mode,
+        obstacles=obstacles,
         accumulator_seconds=0.0,
     )
 
@@ -50,9 +102,10 @@ def create_initial_state(config: GameConfig, rng: random.Random | None = None) -
 def reset_state(
     state: GameState,
     config: GameConfig,
+    settings: UserSettings,
     rng: random.Random | None = None,
 ) -> None:
-    fresh = create_initial_state(config, rng)
+    fresh = create_initial_state(config, settings, rng)
     state.snake = fresh.snake
     state.direction = fresh.direction
     state.pending_direction = fresh.pending_direction
@@ -60,6 +113,12 @@ def reset_state(
     state.score = fresh.score
     state.status = fresh.status
     state.steps_per_second = fresh.steps_per_second
+    state.speed_increment_per_food = fresh.speed_increment_per_food
+    state.max_steps_per_second = fresh.max_steps_per_second
+    state.score_per_food = fresh.score_per_food
+    state.difficulty = fresh.difficulty
+    state.map_mode = fresh.map_mode
+    state.obstacles = fresh.obstacles
     state.accumulator_seconds = fresh.accumulator_seconds
 
 
@@ -71,6 +130,19 @@ def queue_direction_change(state: GameState, next_direction: Direction) -> None:
     state.pending_direction = next_direction
 
 
+def _next_head_position(state: GameState, config: GameConfig) -> Point | None:
+    head_x, head_y = state.snake[0]
+    move_x, move_y = state.direction.vector
+    new_x, new_y = (head_x + move_x, head_y + move_y)
+
+    if state.map_mode == MapMode.WRAP:
+        return (new_x % config.grid_width, new_y % config.grid_height)
+
+    if new_x < 0 or new_x >= config.grid_width or new_y < 0 or new_y >= config.grid_height:
+        return None
+    return (new_x, new_y)
+
+
 def advance_one_step(state: GameState, config: GameConfig, rng: random.Random) -> None:
     if state.status != GameStatus.RUNNING:
         return
@@ -79,12 +151,12 @@ def advance_one_step(state: GameState, config: GameConfig, rng: random.Random) -
         state.direction = state.pending_direction
     state.pending_direction = None
 
-    head_x, head_y = state.snake[0]
-    move_x, move_y = state.direction.vector
-    new_head = (head_x + move_x, head_y + move_y)
+    new_head = _next_head_position(state, config)
+    if new_head is None:
+        state.status = GameStatus.GAME_OVER
+        return
 
-    new_x, new_y = new_head
-    if new_x < 0 or new_x >= config.grid_width or new_y < 0 or new_y >= config.grid_height:
+    if new_head in state.obstacles:
         state.status = GameStatus.GAME_OVER
         return
 
@@ -97,13 +169,19 @@ def advance_one_step(state: GameState, config: GameConfig, rng: random.Random) -
     state.snake.insert(0, new_head)
 
     if will_grow:
-        state.score += 1
+        state.score += state.score_per_food
         state.steps_per_second = min(
-            config.max_steps_per_second,
-            state.steps_per_second + config.speed_increment_per_food,
+            state.max_steps_per_second,
+            state.steps_per_second + state.speed_increment_per_food,
         )
         try:
-            state.food = spawn_food(state.snake, config.grid_width, config.grid_height, rng)
+            state.food = spawn_food(
+                snake_cells=state.snake,
+                obstacle_cells=state.obstacles,
+                grid_width=config.grid_width,
+                grid_height=config.grid_height,
+                rng=rng,
+            )
         except RuntimeError:
             state.status = GameStatus.GAME_OVER
     else:

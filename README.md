@@ -1,6 +1,6 @@
-# Snake Game (Pygame)
+# Snake Game (Pygame) - v2
 
-Classic grid-based Snake built with Pygame.
+Snake v2 adds a scene-based flow, settings, difficulty modes, wrap/bounded maps, obstacle mode, persistent high scores, and optional sound.
 
 ## Requirements
 
@@ -27,23 +27,31 @@ uv run pytest
 
 ## Controls
 
+### Menu / Settings / Game Over
+
+- `Up/Down` or `W/S`: Navigate
+- `Left/Right` or `A/D`: Change setting values
+- `Enter` or `Space`: Select
+- `Esc`: Back/Exit depending on screen
+
+### In Game
+
 - `Arrow Keys` or `WASD`: Move snake
 - `P` or `Space`: Pause/Resume
-- `R`: Restart after game over
-- `Esc`: Quit
+- `Esc`: Return to main menu
 
-## Rules
+## Features in v2
 
-- Snake moves on fixed grid steps using accumulated delta timing.
-- Hitting a wall ends the game.
-- Hitting your own body ends the game.
-- Immediate reverse direction input is ignored.
-- Eating food increases score and snake speed (up to a cap).
+- Scene flow: Menu -> Settings -> Play -> Game Over
+- Difficulty presets: Easy / Normal / Hard
+- Map modes: Bounded / Wrap
+- Optional obstacle mode
+- Start countdown before movement
+- Per-setup high-score leaderboard (top 10)
+- Persistent settings and leaderboard in `data/save.json`
+- Lightweight generated SFX (mute supported)
 
-## Out of Scope in v1
+## Persistence Notes
 
-- Audio
-- Obstacles/levels
-- Difficulty menu
-- Save/high-score persistence
-- EXE packaging
+- Save file path: `data/save.json`
+- If save JSON is corrupted, the game falls back to defaults and attempts to keep a timestamped corrupt backup.

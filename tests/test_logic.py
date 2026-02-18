@@ -1,14 +1,15 @@
 import random
 
-from snake_game.config import GameConfig
+from snake_game.config import GameConfig, UserSettings
 from snake_game.logic import (
     advance_one_step,
     advance_simulation,
     create_initial_state,
     queue_direction_change,
     spawn_food,
+    spawn_obstacles,
 )
-from snake_game.types import Direction, GameStatus
+from snake_game.types import Difficulty, Direction, GameStatus, MapMode
 
 
 def make_config() -> GameConfig:
@@ -16,10 +17,8 @@ def make_config() -> GameConfig:
         window_width=200,
         window_height=200,
         cell_size=20,
-        base_steps_per_second=5.0,
-        speed_increment_per_food=0.5,
-        max_steps_per_second=6.0,
         max_steps_per_frame=3,
+        obstacle_count=6,
     )
     config.validate()
     return config
@@ -27,7 +26,8 @@ def make_config() -> GameConfig:
 
 def test_create_initial_state_has_valid_shape() -> None:
     config = make_config()
-    state = create_initial_state(config, random.Random(1))
+    settings = UserSettings()
+    state = create_initial_state(config, settings, random.Random(1))
 
     assert len(state.snake) == 3
     assert state.direction == Direction.RIGHT
@@ -38,7 +38,7 @@ def test_create_initial_state_has_valid_shape() -> None:
 
 def test_queue_direction_change_blocks_reverse_direction() -> None:
     config = make_config()
-    state = create_initial_state(config, random.Random(2))
+    state = create_initial_state(config, UserSettings(), random.Random(2))
 
     queue_direction_change(state, Direction.LEFT)
     assert state.pending_direction is None
@@ -49,7 +49,7 @@ def test_queue_direction_change_blocks_reverse_direction() -> None:
 
 def test_advance_one_step_moves_snake_and_trims_tail() -> None:
     config = make_config()
-    state = create_initial_state(config, random.Random(3))
+    state = create_initial_state(config, UserSettings(), random.Random(3))
     old_snake = list(state.snake)
     state.food = (0, 0)
 
@@ -60,25 +60,24 @@ def test_advance_one_step_moves_snake_and_trims_tail() -> None:
     assert state.status == GameStatus.RUNNING
 
 
-def test_advance_one_step_grows_snake_and_increments_score() -> None:
+def test_food_growth_increments_score_by_difficulty_rule() -> None:
     config = make_config()
+    settings = UserSettings(difficulty=Difficulty.HARD)
     rng = random.Random(4)
-    state = create_initial_state(config, rng)
+    state = create_initial_state(config, settings, rng)
     head_x, head_y = state.snake[0]
     state.food = (head_x + 1, head_y)
-    old_length = len(state.snake)
 
     advance_one_step(state, config, rng)
 
-    assert len(state.snake) == old_length + 1
-    assert state.score == 1
-    assert state.steps_per_second > config.base_steps_per_second
-    assert state.status == GameStatus.RUNNING
+    assert state.score == 3
+    assert state.steps_per_second > 10.0
 
 
-def test_wall_collision_sets_game_over() -> None:
+def test_wall_collision_sets_game_over_in_bounded_mode() -> None:
     config = make_config()
-    state = create_initial_state(config, random.Random(5))
+    settings = UserSettings(map_mode=MapMode.BOUNDED)
+    state = create_initial_state(config, settings, random.Random(5))
     state.snake = [(config.grid_width - 1, 2), (config.grid_width - 2, 2), (config.grid_width - 3, 2)]
     state.direction = Direction.RIGHT
     state.food = (0, 0)
@@ -88,46 +87,60 @@ def test_wall_collision_sets_game_over() -> None:
     assert state.status == GameStatus.GAME_OVER
 
 
-def test_self_collision_sets_game_over() -> None:
+def test_wrap_mode_wraps_head_instead_of_game_over() -> None:
     config = make_config()
-    state = create_initial_state(config, random.Random(6))
-    state.snake = [(5, 5), (4, 5), (4, 4), (5, 4), (6, 4), (6, 5)]
-    state.direction = Direction.LEFT
+    settings = UserSettings(map_mode=MapMode.WRAP)
+    state = create_initial_state(config, settings, random.Random(6))
+    state.snake = [(config.grid_width - 1, 2), (config.grid_width - 2, 2), (config.grid_width - 3, 2)]
+    state.direction = Direction.RIGHT
     state.food = (0, 0)
 
     advance_one_step(state, config, random.Random(6))
 
+    assert state.status == GameStatus.RUNNING
+    assert state.snake[0] == (0, 2)
+
+
+def test_obstacle_collision_sets_game_over() -> None:
+    config = make_config()
+    settings = UserSettings()
+    state = create_initial_state(config, settings, random.Random(7))
+    head_x, head_y = state.snake[0]
+    state.obstacles = {(head_x + 1, head_y)}
+    state.food = (0, 0)
+
+    advance_one_step(state, config, random.Random(7))
+
     assert state.status == GameStatus.GAME_OVER
 
 
-def test_speed_increase_is_capped() -> None:
-    config = make_config()
-    rng = random.Random(7)
-    state = create_initial_state(config, rng)
-    state.steps_per_second = config.max_steps_per_second - 0.1
-    head_x, head_y = state.snake[0]
-    state.food = (head_x + 1, head_y)
-
-    advance_one_step(state, config, rng)
-
-    assert state.steps_per_second == config.max_steps_per_second
-
-
-def test_spawn_food_never_overlaps_snake() -> None:
+def test_spawn_food_never_overlaps_snake_or_obstacles() -> None:
     rng = random.Random(8)
-    snake = [(0, 0), (1, 0), (2, 0), (3, 0)]
+    snake = {(0, 0), (1, 0), (2, 0)}
+    obstacles = {(0, 1), (1, 1)}
 
-    food = spawn_food(snake, grid_width=4, grid_height=2, rng=rng)
+    food = spawn_food(snake, obstacles, grid_width=4, grid_height=2, rng=rng)
 
     assert food not in snake
+    assert food not in obstacles
+
+
+def test_spawn_obstacles_avoids_forbidden_cells() -> None:
+    rng = random.Random(9)
+    forbidden = {(0, 0), (1, 0), (2, 0)}
+    obstacles = spawn_obstacles(4, forbidden, grid_width=5, grid_height=3, rng=rng)
+
+    assert len(obstacles) == 4
+    assert obstacles.isdisjoint(forbidden)
 
 
 def test_advance_simulation_uses_accumulated_delta() -> None:
     config = make_config()
-    state = create_initial_state(config, random.Random(9))
+    settings = UserSettings(difficulty=Difficulty.EASY)
+    state = create_initial_state(config, settings, random.Random(10))
     state.food = (0, 0)
 
-    steps = advance_simulation(state, config, delta_seconds=0.45, rng=random.Random(9))
+    steps = advance_simulation(state, config, delta_seconds=0.45, rng=random.Random(10))
 
     assert steps == 2
     assert state.snake[0] == (7, 5)
@@ -136,10 +149,10 @@ def test_advance_simulation_uses_accumulated_delta() -> None:
 
 def test_advance_simulation_caps_steps_per_frame() -> None:
     config = make_config()
-    state = create_initial_state(config, random.Random(10))
+    state = create_initial_state(config, UserSettings(), random.Random(11))
     state.food = (0, 0)
 
-    steps = advance_simulation(state, config, delta_seconds=2.0, rng=random.Random(10))
+    steps = advance_simulation(state, config, delta_seconds=2.0, rng=random.Random(11))
 
     assert steps == config.max_steps_per_frame
 

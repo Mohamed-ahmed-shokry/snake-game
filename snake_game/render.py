@@ -2,7 +2,7 @@ import pygame
 
 from snake_game.config import GameConfig
 from snake_game.state import GameState
-from snake_game.types import GameStatus
+from snake_game.types import GameStatus, Point
 
 
 def draw_centered_text(
@@ -60,6 +60,8 @@ def draw_playfield(
     countdown_remaining: float,
     best_score: int,
     stage: int,
+    powerup_position: Point | None,
+    active_effect_labels: list[str],
 ) -> None:
     screen.fill(config.background_color)
     _draw_grid(screen, config)
@@ -74,6 +76,14 @@ def draw_playfield(
         cell_size=config.cell_size,
         color=config.food_color,
     )
+    if powerup_position is not None:
+        _draw_cell(
+            screen=screen,
+            cell_x=powerup_position[0],
+            cell_y=powerup_position[1],
+            cell_size=config.cell_size,
+            color=config.powerup_color,
+        )
 
     for index, (cell_x, cell_y) in enumerate(state.snake):
         color = config.snake_head_color if index == 0 else config.snake_body_color
@@ -90,6 +100,10 @@ def draw_playfield(
     hud_text = "   ".join(hud_parts)
     score_surface = small_font.render(hud_text, True, config.text_color)
     screen.blit(score_surface, (12, 8))
+    if active_effect_labels:
+        effects_text = "Effects: " + " | ".join(active_effect_labels)
+        effects_surface = small_font.render(effects_text, True, config.accent_color)
+        screen.blit(effects_surface, (12, 32))
 
     if countdown_remaining > 0 and state.status == GameStatus.RUNNING:
         count_value = max(1, int(countdown_remaining) + 1)

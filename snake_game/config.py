@@ -64,6 +64,7 @@ class GameConfig:
     snake_body_color: tuple[int, int, int] = (55, 179, 92)
     obstacle_color: tuple[int, int, int] = (113, 123, 143)
     food_color: tuple[int, int, int] = (233, 88, 81)
+    powerup_color: tuple[int, int, int] = (247, 198, 85)
     accent_color: tuple[int, int, int] = (93, 198, 240)
     text_color: tuple[int, int, int] = (236, 239, 244)
     selected_text_color: tuple[int, int, int] = (255, 215, 86)

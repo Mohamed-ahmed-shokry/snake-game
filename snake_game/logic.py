@@ -158,6 +158,7 @@ def advance_one_step(
     state: GameState,
     config: GameConfig,
     rng: random.Random,
+    score_multiplier: int = 1,
     emit: EventEmitter | None = None,
 ) -> None:
     if state.status != GameStatus.RUNNING:
@@ -188,7 +189,8 @@ def advance_one_step(
     state.snake.insert(0, new_head)
 
     if will_grow:
-        state.score += state.score_per_food
+        applied_score_multiplier = max(1, score_multiplier)
+        state.score += state.score_per_food * applied_score_multiplier
         state.steps_per_second = min(
             state.max_steps_per_second,
             state.steps_per_second + state.speed_increment_per_food,
@@ -198,6 +200,7 @@ def advance_one_step(
             GameEventType.FOOD_EATEN,
             score=state.score,
             speed=state.steps_per_second,
+            score_multiplier=applied_score_multiplier,
         )
         try:
             state.food = spawn_food(
@@ -219,6 +222,8 @@ def advance_simulation(
     config: GameConfig,
     delta_seconds: float,
     rng: random.Random,
+    score_multiplier: int = 1,
+    speed_multiplier: float = 1.0,
     emit: EventEmitter | None = None,
 ) -> int:
     if state.status != GameStatus.RUNNING:
@@ -228,23 +233,28 @@ def advance_simulation(
     steps_taken = 0
 
     while steps_taken < config.max_steps_per_frame:
-        step_interval = 1.0 / state.steps_per_second
+        effective_steps_per_second = max(0.1, state.steps_per_second * max(0.1, speed_multiplier))
+        step_interval = 1.0 / effective_steps_per_second
         if state.accumulator_seconds < step_interval:
             break
         state.accumulator_seconds -= step_interval
-        advance_one_step(state, config, rng, emit=emit)
+        advance_one_step(state, config, rng, score_multiplier=score_multiplier, emit=emit)
         steps_taken += 1
+        head_x, head_y = state.snake[0]
         _emit(
             emit,
             GameEventType.STEP_ADVANCED,
             score=state.score,
-            speed=state.steps_per_second,
+            speed=effective_steps_per_second,
             status=state.status.value,
+            head_x=head_x,
+            head_y=head_y,
         )
         if state.status != GameStatus.RUNNING:
             break
 
-    max_carryover = config.max_steps_per_frame * (1.0 / state.steps_per_second)
+    effective_steps_per_second = max(0.1, state.steps_per_second * max(0.1, speed_multiplier))
+    max_carryover = config.max_steps_per_frame * (1.0 / effective_steps_per_second)
     if state.accumulator_seconds > max_carryover:
         state.accumulator_seconds = max_carryover
 

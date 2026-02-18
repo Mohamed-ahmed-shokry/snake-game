@@ -74,6 +74,19 @@ def test_food_growth_increments_score_by_difficulty_rule() -> None:
     assert state.steps_per_second > 10.0
 
 
+def test_food_growth_respects_score_multiplier() -> None:
+    config = make_config()
+    settings = UserSettings(difficulty=Difficulty.NORMAL)
+    rng = random.Random(41)
+    state = create_initial_state(config, settings, rng)
+    head_x, head_y = state.snake[0]
+    state.food = (head_x + 1, head_y)
+
+    advance_one_step(state, config, rng, score_multiplier=2)
+
+    assert state.score == 4
+
+
 def test_wall_collision_sets_game_over_in_bounded_mode() -> None:
     config = make_config()
     settings = UserSettings(map_mode=MapMode.BOUNDED)
@@ -156,3 +169,29 @@ def test_advance_simulation_caps_steps_per_frame() -> None:
 
     assert steps == config.max_steps_per_frame
 
+
+def test_advance_simulation_slow_time_multiplier_reduces_steps() -> None:
+    config = make_config()
+    settings = UserSettings(difficulty=Difficulty.NORMAL)
+
+    fast_state = create_initial_state(config, settings, random.Random(12))
+    slow_state = create_initial_state(config, settings, random.Random(12))
+    fast_state.food = (0, 0)
+    slow_state.food = (0, 0)
+
+    fast_steps = advance_simulation(
+        fast_state,
+        config,
+        delta_seconds=0.25,
+        rng=random.Random(12),
+        speed_multiplier=1.0,
+    )
+    slow_steps = advance_simulation(
+        slow_state,
+        config,
+        delta_seconds=0.25,
+        rng=random.Random(12),
+        speed_multiplier=0.5,
+    )
+
+    assert slow_steps < fast_steps

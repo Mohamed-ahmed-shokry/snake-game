@@ -1,6 +1,6 @@
 import pygame
 
-from snake_game.events import GameEventType
+from snake_game.events import GameEvent, GameEventType
 from snake_game.logic import advance_simulation, create_initial_state, queue_direction_change
 from snake_game.persistence import (
     best_score_for_settings,
@@ -95,28 +95,55 @@ class PlayScene(Scene):
             self.countdown_remaining = max(0.0, self.countdown_remaining - delta_seconds)
             return
 
+        self.powerups.update(delta_seconds)
         advance_simulation(
             self.state,
             self.ctx.config,
             delta_seconds,
             self.ctx.rng,
+            score_multiplier=self.powerups.score_multiplier(),
+            speed_multiplier=self.powerups.speed_multiplier(),
             emit=self.ctx.event_bus.emit,
         )
         self.hazards.update()
-        self.powerups.update(delta_seconds)
         self.progression.update_from_score(self.state.score, emit=self.ctx.event_bus.emit)
 
         events = self.ctx.event_bus.drain()
         for event in events:
             if event.type == GameEventType.FOOD_EATEN:
                 self.ctx.audio.play("eat")
+                occupied_cells = set(self.state.snake) | set(self.state.obstacles) | {self.state.food}
+                self.powerups.maybe_spawn(
+                    rng=self.ctx.rng,
+                    occupied_cells=occupied_cells,
+                    grid_width=self.ctx.config.grid_width,
+                    grid_height=self.ctx.config.grid_height,
+                )
+            elif event.type == GameEventType.STEP_ADVANCED:
+                head_x = int(event.payload.get("head_x", self.state.snake[0][0]))
+                head_y = int(event.payload.get("head_y", self.state.snake[0][1]))
+                collected = self.powerups.collect_at((head_x, head_y))
+                if collected is not None:
+                    self.ctx.event_bus.emit(
+                        GameEvent(
+                            type=GameEventType.POWERUP_COLLECTED,
+                            payload={
+                                "powerup": collected.type.value,
+                                "duration_seconds": round(collected.remaining_seconds, 1),
+                            },
+                        )
+                    )
             elif event.type == GameEventType.STAGE_ADVANCED:
+                self.ctx.audio.play("confirm")
+        for event in self.ctx.event_bus.drain():
+            if event.type == GameEventType.POWERUP_COLLECTED:
                 self.ctx.audio.play("confirm")
         if self.state.status == GameStatus.GAME_OVER:
             self._record_and_transition()
 
     def render(self, screen: pygame.Surface) -> None:
         best_score_now = max(self.best_score_at_start, self.state.score)
+        spawned_powerup_position = self.powerups.spawned.position if self.powerups.spawned is not None else None
         draw_playfield(
             screen=screen,
             state=self.state,
@@ -126,6 +153,8 @@ class PlayScene(Scene):
             countdown_remaining=self.countdown_remaining,
             best_score=best_score_now,
             stage=self.progression.current_stage,
+            powerup_position=spawned_powerup_position,
+            active_effect_labels=self.powerups.active_effect_labels(),
         )
         if self.countdown_remaining <= 0:
             draw_centered_text(

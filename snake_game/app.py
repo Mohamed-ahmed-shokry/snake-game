@@ -5,6 +5,7 @@ import pygame
 
 from snake_game.audio import AudioManager
 from snake_game.config import GameConfig
+from snake_game.events import EventBus
 from snake_game.persistence import load_persistent_data, save_persistent_data
 from snake_game.scenes.base import AppContext, Scene
 from snake_game.scenes.game_over_scene import GameOverScene
@@ -49,6 +50,7 @@ def run() -> None:
         data_path=data_path,
         persistent_data=persistent_data,
         audio=audio,
+        event_bus=EventBus(),
         rng=random.Random(),
         title_font=title_font,
         body_font=body_font,

@@ -1,7 +1,9 @@
+import json
 from pathlib import Path
 
 from snake_game.config import UserSettings
 from snake_game.persistence import (
+    SAVE_SCHEMA_VERSION,
     best_score_for_settings,
     PersistentData,
     is_new_high_score,
@@ -9,6 +11,7 @@ from snake_game.persistence import (
     load_persistent_data,
     record_score,
     save_persistent_data,
+    update_run_stats,
 )
 from snake_game.types import Difficulty, MapMode
 
@@ -44,6 +47,7 @@ def test_save_and_load_round_trip(tmp_path: Path) -> None:
     assert loaded.settings.obstacles_enabled is True
     assert loaded.settings.muted is True
     assert loaded.leaderboard["easy|wrap|obs"] == [9, 7, 4]
+    assert loaded.schema_version == SAVE_SCHEMA_VERSION
 
 
 def test_corrupt_file_falls_back_to_defaults(tmp_path: Path) -> None:
@@ -73,3 +77,33 @@ def test_best_score_for_settings_returns_top_score() -> None:
     key = leaderboard_key(settings)
     data = PersistentData(settings=UserSettings(), leaderboard={key: [25, 19, 4]})
     assert best_score_for_settings(data, settings) == 25
+
+
+def test_update_run_stats_tracks_totals() -> None:
+    data = PersistentData()
+    update_run_stats(data, 12)
+    update_run_stats(data, 5)
+
+    assert data.stats.total_runs == 2
+    assert data.stats.total_score == 17
+    assert data.stats.best_score_global == 12
+
+
+def test_load_migrates_v2_schema_payload(tmp_path: Path) -> None:
+    path = tmp_path / "save.json"
+    v2_payload = {
+        "settings": {
+            "difficulty": "normal",
+            "map_mode": "bounded",
+            "obstacles_enabled": False,
+            "muted": False,
+        },
+        "leaderboard": {"normal|bounded|clear": [17, 11]},
+    }
+    path.write_text(json.dumps(v2_payload), encoding="utf-8")
+
+    loaded = load_persistent_data(path)
+
+    assert loaded.schema_version == SAVE_SCHEMA_VERSION
+    assert loaded.stats.best_score_global == 17
+    assert loaded.achievements == []

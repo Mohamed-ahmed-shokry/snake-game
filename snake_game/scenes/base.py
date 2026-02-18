@@ -8,6 +8,7 @@ import pygame
 
 from snake_game.audio import AudioManager
 from snake_game.config import GameConfig
+from snake_game.events import EventBus
 from snake_game.persistence import PersistentData
 from snake_game.types import SceneId
 
@@ -26,6 +27,7 @@ class AppContext:
     data_path: Path
     persistent_data: PersistentData
     audio: AudioManager
+    event_bus: EventBus
     rng: random.Random
     title_font: pygame.font.Font
     body_font: pygame.font.Font

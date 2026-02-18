@@ -55,6 +55,7 @@ class GameConfig:
     countdown_seconds: float = 3.0
     obstacle_count: int = 14
     leaderboard_limit: int = 10
+    stage_points_interval: int = 25
     data_file: str = "data/save.json"
 
     background_color: tuple[int, int, int] = (16, 18, 22)
@@ -90,4 +91,5 @@ class GameConfig:
             raise ValueError("obstacle_count must be >= 0")
         if self.leaderboard_limit < 1:
             raise ValueError("leaderboard_limit must be >= 1")
-
+        if self.stage_points_interval < 1:
+            raise ValueError("stage_points_interval must be >= 1")

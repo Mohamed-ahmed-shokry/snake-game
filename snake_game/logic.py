@@ -1,6 +1,7 @@
 import random
 
 from snake_game.config import GameConfig, UserSettings, rules_for_difficulty
+from snake_game.events import EventEmitter, GameEvent, GameEventType
 from snake_game.state import GameState
 from snake_game.types import Direction, GameStatus, MapMode, Point
 
@@ -9,6 +10,16 @@ def is_opposite(current: Direction, next_direction: Direction) -> bool:
     dx1, dy1 = current.vector
     dx2, dy2 = next_direction.vector
     return dx1 + dx2 == 0 and dy1 + dy2 == 0
+
+
+def _emit(
+    emit: EventEmitter | None,
+    event_type: GameEventType,
+    **payload: int | float | str | bool,
+) -> None:
+    if emit is None:
+        return
+    emit(GameEvent(type=event_type, payload=payload))
 
 
 def spawn_food(
@@ -143,7 +154,12 @@ def _next_head_position(state: GameState, config: GameConfig) -> Point | None:
     return (new_x, new_y)
 
 
-def advance_one_step(state: GameState, config: GameConfig, rng: random.Random) -> None:
+def advance_one_step(
+    state: GameState,
+    config: GameConfig,
+    rng: random.Random,
+    emit: EventEmitter | None = None,
+) -> None:
     if state.status != GameStatus.RUNNING:
         return
 
@@ -154,16 +170,19 @@ def advance_one_step(state: GameState, config: GameConfig, rng: random.Random) -
     new_head = _next_head_position(state, config)
     if new_head is None:
         state.status = GameStatus.GAME_OVER
+        _emit(emit, GameEventType.PLAYER_DIED, reason="wall", score=state.score)
         return
 
     if new_head in state.obstacles:
         state.status = GameStatus.GAME_OVER
+        _emit(emit, GameEventType.PLAYER_DIED, reason="obstacle", score=state.score)
         return
 
     will_grow = new_head == state.food
     body_to_check = state.snake if will_grow else state.snake[:-1]
     if new_head in body_to_check:
         state.status = GameStatus.GAME_OVER
+        _emit(emit, GameEventType.PLAYER_DIED, reason="self_collision", score=state.score)
         return
 
     state.snake.insert(0, new_head)
@@ -173,6 +192,12 @@ def advance_one_step(state: GameState, config: GameConfig, rng: random.Random) -
         state.steps_per_second = min(
             state.max_steps_per_second,
             state.steps_per_second + state.speed_increment_per_food,
+        )
+        _emit(
+            emit,
+            GameEventType.FOOD_EATEN,
+            score=state.score,
+            speed=state.steps_per_second,
         )
         try:
             state.food = spawn_food(
@@ -184,6 +209,7 @@ def advance_one_step(state: GameState, config: GameConfig, rng: random.Random) -
             )
         except RuntimeError:
             state.status = GameStatus.GAME_OVER
+            _emit(emit, GameEventType.PLAYER_DIED, reason="board_full", score=state.score)
     else:
         state.snake.pop()
 
@@ -193,6 +219,7 @@ def advance_simulation(
     config: GameConfig,
     delta_seconds: float,
     rng: random.Random,
+    emit: EventEmitter | None = None,
 ) -> int:
     if state.status != GameStatus.RUNNING:
         return 0
@@ -205,8 +232,15 @@ def advance_simulation(
         if state.accumulator_seconds < step_interval:
             break
         state.accumulator_seconds -= step_interval
-        advance_one_step(state, config, rng)
+        advance_one_step(state, config, rng, emit=emit)
         steps_taken += 1
+        _emit(
+            emit,
+            GameEventType.STEP_ADVANCED,
+            score=state.score,
+            speed=state.steps_per_second,
+            status=state.status.value,
+        )
         if state.status != GameStatus.RUNNING:
             break
 
@@ -215,4 +249,3 @@ def advance_simulation(
         state.accumulator_seconds = max_carryover
 
     return steps_taken
-

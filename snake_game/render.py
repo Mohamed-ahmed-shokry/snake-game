@@ -59,6 +59,7 @@ def draw_playfield(
     small_font: pygame.font.Font,
     countdown_remaining: float,
     best_score: int,
+    stage: int,
 ) -> None:
     screen.fill(config.background_color)
     _draw_grid(screen, config)
@@ -81,6 +82,7 @@ def draw_playfield(
     hud_parts = [
         f"Score: {state.score}",
         f"Best: {best_score}",
+        f"Stage: {stage}",
         f"Difficulty: {state.difficulty.label}",
         f"Mode: {state.map_mode.label}",
         f"Obstacles: {'On' if state.obstacles else 'Off'}",

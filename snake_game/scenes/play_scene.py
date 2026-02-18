@@ -1,5 +1,6 @@
 import pygame
 
+from snake_game.events import GameEventType
 from snake_game.logic import advance_simulation, create_initial_state, queue_direction_change
 from snake_game.persistence import (
     best_score_for_settings,
@@ -7,9 +8,13 @@ from snake_game.persistence import (
     leaderboard_key,
     record_score,
     save_persistent_data,
+    update_run_stats,
 )
 from snake_game.render import draw_centered_text, draw_playfield
 from snake_game.scenes.base import AppContext, Scene, SessionResult
+from snake_game.systems.hazards import HazardSystem
+from snake_game.systems.powerups import PowerUpSystem
+from snake_game.systems.progression import StageProgression
 from snake_game.types import Direction, GameStatus, SceneId
 
 KEY_TO_DIRECTION = {
@@ -31,6 +36,9 @@ class PlayScene(Scene):
         super().__init__(ctx)
         self.state = create_initial_state(ctx.config, ctx.persistent_data.settings, ctx.rng)
         self.best_score_at_start = best_score_for_settings(ctx.persistent_data, ctx.persistent_data.settings)
+        self.progression = StageProgression(points_per_stage=ctx.config.stage_points_interval)
+        self.hazards = HazardSystem(enabled=False)
+        self.powerups = PowerUpSystem()
         self.countdown_remaining = ctx.config.countdown_seconds
         self.score_recorded = False
 
@@ -67,6 +75,7 @@ class PlayScene(Scene):
             self.state.score,
             self.ctx.config.leaderboard_limit,
         )
+        update_run_stats(self.ctx.persistent_data, self.state.score)
         save_persistent_data(self.ctx.persistent_data, self.ctx.data_path)
         self.ctx.last_result = SessionResult(
             score=self.state.score,
@@ -86,7 +95,23 @@ class PlayScene(Scene):
             self.countdown_remaining = max(0.0, self.countdown_remaining - delta_seconds)
             return
 
-        advance_simulation(self.state, self.ctx.config, delta_seconds, self.ctx.rng)
+        advance_simulation(
+            self.state,
+            self.ctx.config,
+            delta_seconds,
+            self.ctx.rng,
+            emit=self.ctx.event_bus.emit,
+        )
+        self.hazards.update()
+        self.powerups.update(delta_seconds)
+        self.progression.update_from_score(self.state.score, emit=self.ctx.event_bus.emit)
+
+        events = self.ctx.event_bus.drain()
+        for event in events:
+            if event.type == GameEventType.FOOD_EATEN:
+                self.ctx.audio.play("eat")
+            elif event.type == GameEventType.STAGE_ADVANCED:
+                self.ctx.audio.play("confirm")
         if self.state.status == GameStatus.GAME_OVER:
             self._record_and_transition()
 
@@ -100,6 +125,7 @@ class PlayScene(Scene):
             small_font=self.ctx.small_font,
             countdown_remaining=self.countdown_remaining,
             best_score=best_score_now,
+            stage=self.progression.current_stage,
         )
         if self.countdown_remaining <= 0:
             draw_centered_text(

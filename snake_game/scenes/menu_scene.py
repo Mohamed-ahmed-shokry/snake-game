@@ -1,6 +1,6 @@
 import pygame
 
-from snake_game.persistence import leaderboard_key
+from snake_game.persistence import best_score_for_settings
 from snake_game.render import draw_centered_text, draw_menu_list
 from snake_game.scenes.base import AppContext, Scene
 from snake_game.types import SceneId
@@ -47,8 +47,6 @@ class MenuScene(Scene):
 
     def render(self, screen: pygame.Surface) -> None:
         settings = self.ctx.persistent_data.settings
-        active_key = leaderboard_key(settings)
-        leaderboard = self.ctx.persistent_data.leaderboard.get(active_key, [])
 
         screen.fill(self.ctx.config.background_color)
         draw_centered_text(
@@ -80,7 +78,7 @@ class MenuScene(Scene):
             self.ctx.config.text_color,
             (self.ctx.config.window_width // 2, 390),
         )
-        best_score = leaderboard[0] if leaderboard else 0
+        best_score = best_score_for_settings(self.ctx.persistent_data, settings)
         draw_centered_text(
             screen,
             f"Best Score (Current Setup): {best_score}",
@@ -95,4 +93,3 @@ class MenuScene(Scene):
             self.ctx.config.text_color,
             (self.ctx.config.window_width // 2, 470),
         )
-

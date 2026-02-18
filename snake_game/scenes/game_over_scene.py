@@ -56,6 +56,7 @@ class GameOverScene(Scene):
 
         score_value = self.ctx.last_result.score if self.ctx.last_result else 0
         leaderboard = self.ctx.last_result.leaderboard if self.ctx.last_result else []
+        new_best = self.ctx.last_result.is_new_high_score if self.ctx.last_result else False
 
         draw_centered_text(
             screen,
@@ -64,11 +65,19 @@ class GameOverScene(Scene):
             self.ctx.config.text_color,
             (self.ctx.config.window_width // 2, 165),
         )
+        if new_best:
+            draw_centered_text(
+                screen,
+                "New High Score!",
+                self.ctx.small_font,
+                self.ctx.config.selected_text_color,
+                (self.ctx.config.window_width // 2, 195),
+            )
         draw_menu_list(
             screen=screen,
             lines=self.options,
             selected_index=self.selected_index,
-            top_y=230,
+            top_y=240,
             font=self.ctx.body_font,
             color=self.ctx.config.text_color,
             selected_color=self.ctx.config.selected_text_color,
@@ -80,7 +89,7 @@ class GameOverScene(Scene):
             "Top Scores (Current Setup)",
             self.ctx.small_font,
             self.ctx.config.accent_color,
-            (self.ctx.config.window_width // 2, 365),
+            (self.ctx.config.window_width // 2, 385),
         )
         for index, value in enumerate(leaderboard[:5], start=1):
             draw_centered_text(
@@ -88,6 +97,5 @@ class GameOverScene(Scene):
                 f"{index}. {value}",
                 self.ctx.small_font,
                 self.ctx.config.text_color,
-                (self.ctx.config.window_width // 2, 365 + index * 24),
+                (self.ctx.config.window_width // 2, 385 + index * 24),
             )
-

@@ -2,7 +2,9 @@ from pathlib import Path
 
 from snake_game.config import UserSettings
 from snake_game.persistence import (
+    best_score_for_settings,
     PersistentData,
+    is_new_high_score,
     leaderboard_key,
     load_persistent_data,
     record_score,
@@ -53,3 +55,21 @@ def test_corrupt_file_falls_back_to_defaults(tmp_path: Path) -> None:
     assert loaded.settings == UserSettings()
     assert loaded.leaderboard == {}
 
+
+def test_is_new_high_score_behavior() -> None:
+    assert is_new_high_score([], 5) is True
+    assert is_new_high_score([10, 8, 6], 11) is True
+    assert is_new_high_score([10, 8, 6], 10) is False
+    assert is_new_high_score([10, 8, 6], 0) is False
+
+
+def test_best_score_for_settings_returns_zero_when_empty() -> None:
+    data = PersistentData(settings=UserSettings(), leaderboard={})
+    assert best_score_for_settings(data, data.settings) == 0
+
+
+def test_best_score_for_settings_returns_top_score() -> None:
+    settings = UserSettings(difficulty=Difficulty.HARD, map_mode=MapMode.WRAP, obstacles_enabled=True)
+    key = leaderboard_key(settings)
+    data = PersistentData(settings=UserSettings(), leaderboard={key: [25, 19, 4]})
+    assert best_score_for_settings(data, settings) == 25

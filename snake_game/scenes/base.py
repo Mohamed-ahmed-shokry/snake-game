@@ -17,6 +17,7 @@ class SessionResult:
     score: int
     leaderboard_key: str
     leaderboard: list[int]
+    is_new_high_score: bool
 
 
 @dataclass(slots=True)
@@ -53,4 +54,3 @@ class Scene:
         next_scene = self.next_scene
         self.next_scene = None
         return next_scene
-

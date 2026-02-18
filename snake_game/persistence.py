@@ -15,6 +15,20 @@ class PersistentData:
     leaderboard: dict[str, list[int]]
 
 
+def is_new_high_score(existing_scores: list[int], candidate_score: int) -> bool:
+    if candidate_score <= 0:
+        return False
+    if not existing_scores:
+        return True
+    return candidate_score > max(existing_scores)
+
+
+def best_score_for_settings(data: PersistentData, settings: UserSettings) -> int:
+    key = leaderboard_key(settings)
+    scores = data.leaderboard.get(key, [])
+    return scores[0] if scores else 0
+
+
 def leaderboard_key(settings: UserSettings) -> str:
     obstacle_tag = "obs" if settings.obstacles_enabled else "clear"
     return f"{settings.difficulty.value}|{settings.map_mode.value}|{obstacle_tag}"
@@ -116,4 +130,3 @@ def record_score(data: PersistentData, settings: UserSettings, score: int, limit
     trimmed = table[:limit]
     data.leaderboard[key] = trimmed
     return trimmed
-

@@ -1,7 +1,13 @@
 import pygame
 
 from snake_game.logic import advance_simulation, create_initial_state, queue_direction_change
-from snake_game.persistence import leaderboard_key, record_score, save_persistent_data
+from snake_game.persistence import (
+    best_score_for_settings,
+    is_new_high_score,
+    leaderboard_key,
+    record_score,
+    save_persistent_data,
+)
 from snake_game.render import draw_centered_text, draw_playfield
 from snake_game.scenes.base import AppContext, Scene, SessionResult
 from snake_game.types import Direction, GameStatus, SceneId
@@ -24,6 +30,7 @@ class PlayScene(Scene):
     def __init__(self, ctx: AppContext) -> None:
         super().__init__(ctx)
         self.state = create_initial_state(ctx.config, ctx.persistent_data.settings, ctx.rng)
+        self.best_score_at_start = best_score_for_settings(ctx.persistent_data, ctx.persistent_data.settings)
         self.countdown_remaining = ctx.config.countdown_seconds
         self.score_recorded = False
 
@@ -50,17 +57,22 @@ class PlayScene(Scene):
         if self.score_recorded:
             return
 
+        settings = self.ctx.persistent_data.settings
+        score_key = leaderboard_key(settings)
+        existing_scores = list(self.ctx.persistent_data.leaderboard.get(score_key, []))
+
         leaderboard = record_score(
             self.ctx.persistent_data,
-            self.ctx.persistent_data.settings,
+            settings,
             self.state.score,
             self.ctx.config.leaderboard_limit,
         )
         save_persistent_data(self.ctx.persistent_data, self.ctx.data_path)
         self.ctx.last_result = SessionResult(
             score=self.state.score,
-            leaderboard_key=leaderboard_key(self.ctx.persistent_data.settings),
+            leaderboard_key=score_key,
             leaderboard=leaderboard,
+            is_new_high_score=is_new_high_score(existing_scores, self.state.score),
         )
         self.score_recorded = True
         self.ctx.audio.play("death")
@@ -79,6 +91,7 @@ class PlayScene(Scene):
             self._record_and_transition()
 
     def render(self, screen: pygame.Surface) -> None:
+        best_score_now = max(self.best_score_at_start, self.state.score)
         draw_playfield(
             screen=screen,
             state=self.state,
@@ -86,6 +99,7 @@ class PlayScene(Scene):
             hud_font=self.ctx.title_font,
             small_font=self.ctx.small_font,
             countdown_remaining=self.countdown_remaining,
+            best_score=best_score_now,
         )
         if self.countdown_remaining <= 0:
             draw_centered_text(
@@ -95,4 +109,3 @@ class PlayScene(Scene):
                 self.ctx.config.text_color,
                 (self.ctx.config.window_width // 2, self.ctx.config.window_height - 24),
             )
-

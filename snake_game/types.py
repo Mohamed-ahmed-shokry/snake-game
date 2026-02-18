@@ -44,3 +44,9 @@ class SceneId(Enum):
     SETTINGS = "settings"
     PLAY = "play"
     GAME_OVER = "game_over"
+
+
+class ThemeId(Enum):
+    NEON = "neon"
+    SUNSET = "sunset"
+    OCEAN = "ocean"

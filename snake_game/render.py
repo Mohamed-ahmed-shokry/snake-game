@@ -1,8 +1,14 @@
 import pygame
 
 from snake_game.config import GameConfig
+from snake_game.rendering.assets import RenderAssets
+from snake_game.rendering.layers import PlayfieldRenderer
 from snake_game.state import GameState
-from snake_game.types import GameStatus, Point
+from snake_game.types import Point
+from snake_game.ui.theme import resolve_theme
+
+_SHARED_ASSETS = RenderAssets()
+_PLAYFIELD_RENDERERS: dict[tuple[int, int, int, str, bool], PlayfieldRenderer] = {}
 
 
 def draw_centered_text(
@@ -33,22 +39,20 @@ def draw_menu_list(
         draw_centered_text(screen, text, font, text_color, (center_x, top_y + index * 38))
 
 
-def _draw_cell(
-    screen: pygame.Surface,
-    cell_x: int,
-    cell_y: int,
-    cell_size: int,
-    color: tuple[int, int, int],
-) -> None:
-    rect = pygame.Rect(cell_x * cell_size, cell_y * cell_size, cell_size, cell_size)
-    pygame.draw.rect(screen, color, rect)
-
-
-def _draw_grid(screen: pygame.Surface, config: GameConfig) -> None:
-    for x in range(0, config.window_width, config.cell_size):
-        pygame.draw.line(screen, config.grid_color, (x, 0), (x, config.window_height), 1)
-    for y in range(0, config.window_height, config.cell_size):
-        pygame.draw.line(screen, config.grid_color, (0, y), (config.window_width, y), 1)
+def _playfield_renderer(config: GameConfig) -> PlayfieldRenderer:
+    theme = resolve_theme(config.graphics.theme_id)
+    key = (
+        config.window_width,
+        config.window_height,
+        config.cell_size,
+        theme.theme_id.value,
+        config.graphics.show_grid,
+    )
+    renderer = _PLAYFIELD_RENDERERS.get(key)
+    if renderer is None:
+        renderer = PlayfieldRenderer(config=config, theme=theme, assets=_SHARED_ASSETS)
+        _PLAYFIELD_RENDERERS[key] = renderer
+    return renderer
 
 
 def draw_playfield(
@@ -63,63 +67,16 @@ def draw_playfield(
     powerup_position: Point | None,
     active_effect_labels: list[str],
 ) -> None:
-    screen.fill(config.background_color)
-    _draw_grid(screen, config)
-
-    for obstacle_x, obstacle_y in state.obstacles:
-        _draw_cell(screen, obstacle_x, obstacle_y, config.cell_size, config.obstacle_color)
-
-    _draw_cell(
+    renderer = _playfield_renderer(config)
+    renderer.render(
         screen=screen,
-        cell_x=state.food[0],
-        cell_y=state.food[1],
-        cell_size=config.cell_size,
-        color=config.food_color,
+        state=state,
+        hud_font=hud_font,
+        small_font=small_font,
+        countdown_remaining=countdown_remaining,
+        best_score=best_score,
+        stage=stage,
+        powerup_position=powerup_position,
+        active_effect_labels=active_effect_labels,
     )
-    if powerup_position is not None:
-        _draw_cell(
-            screen=screen,
-            cell_x=powerup_position[0],
-            cell_y=powerup_position[1],
-            cell_size=config.cell_size,
-            color=config.powerup_color,
-        )
 
-    for index, (cell_x, cell_y) in enumerate(state.snake):
-        color = config.snake_head_color if index == 0 else config.snake_body_color
-        _draw_cell(screen, cell_x, cell_y, config.cell_size, color)
-
-    hud_parts = [
-        f"Score: {state.score}",
-        f"Best: {best_score}",
-        f"Stage: {stage}",
-        f"Difficulty: {state.difficulty.label}",
-        f"Mode: {state.map_mode.label}",
-        f"Obstacles: {'On' if state.obstacles else 'Off'}",
-    ]
-    hud_text = "   ".join(hud_parts)
-    score_surface = small_font.render(hud_text, True, config.text_color)
-    screen.blit(score_surface, (12, 8))
-    if active_effect_labels:
-        effects_text = "Effects: " + " | ".join(active_effect_labels)
-        effects_surface = small_font.render(effects_text, True, config.accent_color)
-        screen.blit(effects_surface, (12, 32))
-
-    if countdown_remaining > 0 and state.status == GameStatus.RUNNING:
-        count_value = max(1, int(countdown_remaining) + 1)
-        draw_centered_text(
-            screen,
-            str(count_value),
-            hud_font,
-            config.accent_color,
-            (config.window_width // 2, config.window_height // 2),
-        )
-
-    if state.status == GameStatus.PAUSED:
-        draw_centered_text(
-            screen,
-            "Paused - Press P/Space to resume",
-            small_font,
-            config.text_color,
-            (config.window_width // 2, config.window_height // 2),
-        )

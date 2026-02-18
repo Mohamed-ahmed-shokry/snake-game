@@ -1,6 +1,6 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
-from snake_game.types import Difficulty, MapMode
+from snake_game.types import Difficulty, MapMode, ThemeId
 
 
 @dataclass(frozen=True, slots=True)
@@ -17,6 +17,17 @@ class UserSettings:
     map_mode: MapMode = MapMode.BOUNDED
     obstacles_enabled: bool = False
     muted: bool = False
+
+
+@dataclass(slots=True)
+class GraphicsSettings:
+    theme_id: ThemeId = ThemeId.NEON
+    ui_scale: float = 1.0
+    show_grid: bool = True
+    particles_enabled: bool = True
+    screen_shake_enabled: bool = False
+    reduced_motion: bool = False
+    colorblind_mode: str = "off"
 
 
 RULES_BY_DIFFICULTY: dict[Difficulty, GameRules] = {
@@ -57,6 +68,7 @@ class GameConfig:
     leaderboard_limit: int = 10
     stage_points_interval: int = 25
     data_file: str = "data/save.json"
+    graphics: GraphicsSettings = field(default_factory=GraphicsSettings)
 
     background_color: tuple[int, int, int] = (16, 18, 22)
     grid_color: tuple[int, int, int] = (30, 34, 42)
@@ -94,3 +106,5 @@ class GameConfig:
             raise ValueError("leaderboard_limit must be >= 1")
         if self.stage_points_interval < 1:
             raise ValueError("stage_points_interval must be >= 1")
+        if self.graphics.ui_scale <= 0:
+            raise ValueError("graphics.ui_scale must be > 0")

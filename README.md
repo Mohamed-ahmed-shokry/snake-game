@@ -57,6 +57,7 @@ uv run pytest
   - `Slow Time`: temporarily slows snake movement rate
   - `Double Score`: temporarily doubles points from food
 - Active power-up timers shown in HUD
+- Themed rendering foundation (Neon/Sunset/Ocean) with layered playfield renderer
 
 ## Persistence Notes
 

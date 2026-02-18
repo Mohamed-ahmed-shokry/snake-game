@@ -4,6 +4,7 @@ from snake_game.persistence import save_persistent_data
 from snake_game.render import draw_centered_text, draw_menu_list
 from snake_game.scenes.base import AppContext, Scene
 from snake_game.types import Difficulty, MapMode, SceneId
+from snake_game.ui.theme import resolve_theme
 
 
 def _cycle_difficulty(current: Difficulty, step: int) -> Difficulty:
@@ -93,12 +94,15 @@ class SettingsScene(Scene):
 
     def render(self, screen: pygame.Surface) -> None:
         rows = self._rows()
-        screen.fill(self.ctx.config.background_color)
+        theme = resolve_theme(self.ctx.config.graphics.theme_id)
+        palette = theme.palette
+
+        screen.fill(palette.background_top)
         draw_centered_text(
             screen,
             "Settings",
             self.ctx.title_font,
-            self.ctx.config.accent_color,
+            palette.accent,
             (self.ctx.config.window_width // 2, 110),
         )
         draw_menu_list(
@@ -107,14 +111,14 @@ class SettingsScene(Scene):
             selected_index=self.selected_index,
             top_y=220,
             font=self.ctx.body_font,
-            color=self.ctx.config.text_color,
-            selected_color=self.ctx.config.selected_text_color,
+            color=palette.text,
+            selected_color=palette.selected_text,
             center_x=self.ctx.config.window_width // 2,
         )
         draw_centered_text(
             screen,
             "Left/Right or Enter to change   Esc to return",
             self.ctx.small_font,
-            self.ctx.config.text_color,
+            palette.text,
             (self.ctx.config.window_width // 2, 470),
         )

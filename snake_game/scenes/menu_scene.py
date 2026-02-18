@@ -4,6 +4,7 @@ from snake_game.persistence import best_score_for_settings
 from snake_game.render import draw_centered_text, draw_menu_list
 from snake_game.scenes.base import AppContext, Scene
 from snake_game.types import SceneId
+from snake_game.ui.theme import resolve_theme
 
 
 class MenuScene(Scene):
@@ -47,13 +48,15 @@ class MenuScene(Scene):
 
     def render(self, screen: pygame.Surface) -> None:
         settings = self.ctx.persistent_data.settings
+        theme = resolve_theme(self.ctx.config.graphics.theme_id)
+        palette = theme.palette
 
-        screen.fill(self.ctx.config.background_color)
+        screen.fill(palette.background_top)
         draw_centered_text(
             screen,
             "Snake V2",
             self.ctx.title_font,
-            self.ctx.config.accent_color,
+            palette.accent,
             (self.ctx.config.window_width // 2, 110),
         )
         draw_menu_list(
@@ -62,8 +65,8 @@ class MenuScene(Scene):
             selected_index=self.selected_index,
             top_y=210,
             font=self.ctx.body_font,
-            color=self.ctx.config.text_color,
-            selected_color=self.ctx.config.selected_text_color,
+            color=palette.text,
+            selected_color=palette.selected_text,
             center_x=self.ctx.config.window_width // 2,
         )
 
@@ -75,7 +78,7 @@ class MenuScene(Scene):
             screen,
             settings_line,
             self.ctx.small_font,
-            self.ctx.config.text_color,
+            palette.text,
             (self.ctx.config.window_width // 2, 390),
         )
         best_score = best_score_for_settings(self.ctx.persistent_data, settings)
@@ -83,13 +86,13 @@ class MenuScene(Scene):
             screen,
             f"Best Score (Current Setup): {best_score}",
             self.ctx.small_font,
-            self.ctx.config.text_color,
+            palette.text,
             (self.ctx.config.window_width // 2, 420),
         )
         draw_centered_text(
             screen,
             "Enter: Select   Up/Down: Navigate",
             self.ctx.small_font,
-            self.ctx.config.text_color,
+            palette.text,
             (self.ctx.config.window_width // 2, 470),
         )

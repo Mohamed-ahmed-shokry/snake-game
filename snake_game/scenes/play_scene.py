@@ -16,6 +16,7 @@ from snake_game.systems.hazards import HazardSystem
 from snake_game.systems.powerups import PowerUpSystem
 from snake_game.systems.progression import StageProgression
 from snake_game.types import Direction, GameStatus, SceneId
+from snake_game.ui.theme import resolve_theme
 
 KEY_TO_DIRECTION = {
     pygame.K_UP: Direction.UP,
@@ -150,6 +151,7 @@ class PlayScene(Scene):
     def render(self, screen: pygame.Surface) -> None:
         best_score_now = max(self.best_score_at_start, self.state.score)
         spawned_powerup_position = self.powerups.spawned.position if self.powerups.spawned is not None else None
+        theme = resolve_theme(self.ctx.config.graphics.theme_id)
         draw_playfield(
             screen=screen,
             state=self.state,
@@ -167,6 +169,6 @@ class PlayScene(Scene):
                 screen,
                 "P/Space: Pause   Esc: Menu",
                 self.ctx.small_font,
-                self.ctx.config.text_color,
+                theme.palette.text,
                 (self.ctx.config.window_width // 2, self.ctx.config.window_height - 24),
             )

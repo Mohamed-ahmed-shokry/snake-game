@@ -3,6 +3,7 @@ import pygame
 from snake_game.render import draw_centered_text, draw_menu_list
 from snake_game.scenes.base import AppContext, Scene
 from snake_game.types import SceneId
+from snake_game.ui.theme import resolve_theme
 
 
 class GameOverScene(Scene):
@@ -45,12 +46,15 @@ class GameOverScene(Scene):
         _ = delta_seconds
 
     def render(self, screen: pygame.Surface) -> None:
-        screen.fill(self.ctx.config.background_color)
+        theme = resolve_theme(self.ctx.config.graphics.theme_id)
+        palette = theme.palette
+
+        screen.fill(palette.background_top)
         draw_centered_text(
             screen,
             "Game Over",
             self.ctx.title_font,
-            self.ctx.config.food_color,
+            palette.food,
             (self.ctx.config.window_width // 2, 110),
         )
 
@@ -62,7 +66,7 @@ class GameOverScene(Scene):
             screen,
             f"Score: {score_value}",
             self.ctx.body_font,
-            self.ctx.config.text_color,
+            palette.text,
             (self.ctx.config.window_width // 2, 165),
         )
         if new_best:
@@ -70,7 +74,7 @@ class GameOverScene(Scene):
                 screen,
                 "New High Score!",
                 self.ctx.small_font,
-                self.ctx.config.selected_text_color,
+                palette.selected_text,
                 (self.ctx.config.window_width // 2, 195),
             )
         draw_menu_list(
@@ -79,8 +83,8 @@ class GameOverScene(Scene):
             selected_index=self.selected_index,
             top_y=240,
             font=self.ctx.body_font,
-            color=self.ctx.config.text_color,
-            selected_color=self.ctx.config.selected_text_color,
+            color=palette.text,
+            selected_color=palette.selected_text,
             center_x=self.ctx.config.window_width // 2,
         )
 
@@ -88,7 +92,7 @@ class GameOverScene(Scene):
             screen,
             "Top Scores (Current Setup)",
             self.ctx.small_font,
-            self.ctx.config.accent_color,
+            palette.accent,
             (self.ctx.config.window_width // 2, 385),
         )
         for index, value in enumerate(leaderboard[:5], start=1):
@@ -96,6 +100,6 @@ class GameOverScene(Scene):
                 screen,
                 f"{index}. {value}",
                 self.ctx.small_font,
-                self.ctx.config.text_color,
+                palette.text,
                 (self.ctx.config.window_width // 2, 385 + index * 24),
             )

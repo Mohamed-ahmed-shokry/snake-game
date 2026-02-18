@@ -78,12 +78,80 @@ THEMES: dict[ThemeId, UiTheme] = {
 }
 
 
-def resolve_theme(theme_id: ThemeId | str) -> UiTheme:
+def _with_palette(theme: UiTheme, palette: ThemePalette) -> UiTheme:
+    return UiTheme(theme_id=theme.theme_id, palette=palette)
+
+
+def _apply_colorblind_mode(theme: UiTheme, colorblind_mode: str) -> UiTheme:
+    mode = colorblind_mode.strip().lower()
+    palette = theme.palette
+    if mode in {"", "off", "none"}:
+        return theme
+
+    if mode == "deuteranopia":
+        return _with_palette(
+            theme,
+            ThemePalette(
+                background_top=palette.background_top,
+                background_bottom=palette.background_bottom,
+                grid=palette.grid,
+                snake_head=(114, 184, 255),
+                snake_body=(86, 154, 232),
+                obstacle=palette.obstacle,
+                food=(255, 173, 82),
+                powerup=palette.powerup,
+                text=palette.text,
+                accent=palette.accent,
+                selected_text=palette.selected_text,
+            ),
+        )
+
+    if mode == "tritanopia":
+        return _with_palette(
+            theme,
+            ThemePalette(
+                background_top=palette.background_top,
+                background_bottom=palette.background_bottom,
+                grid=(72, 72, 72),
+                snake_head=(112, 220, 142),
+                snake_body=(72, 182, 112),
+                obstacle=(136, 136, 136),
+                food=(255, 112, 112),
+                powerup=(255, 208, 92),
+                text=palette.text,
+                accent=(255, 184, 76),
+                selected_text=palette.selected_text,
+            ),
+        )
+
+    if mode == "high_contrast":
+        return _with_palette(
+            theme,
+            ThemePalette(
+                background_top=(10, 10, 10),
+                background_bottom=(18, 18, 18),
+                grid=(60, 60, 60),
+                snake_head=(0, 255, 128),
+                snake_body=(0, 210, 110),
+                obstacle=(170, 170, 170),
+                food=(255, 80, 80),
+                powerup=(255, 220, 50),
+                text=(255, 255, 255),
+                accent=(80, 220, 255),
+                selected_text=(255, 245, 120),
+            ),
+        )
+
+    return theme
+
+
+def resolve_theme(theme_id: ThemeId | str, colorblind_mode: str = "off") -> UiTheme:
     if isinstance(theme_id, ThemeId):
-        return THEMES[theme_id]
+        base = THEMES[theme_id]
+        return _apply_colorblind_mode(base, colorblind_mode)
     try:
         parsed = ThemeId(str(theme_id))
     except ValueError:
         parsed = ThemeId.NEON
-    return THEMES[parsed]
-
+    base = THEMES[parsed]
+    return _apply_colorblind_mode(base, colorblind_mode)

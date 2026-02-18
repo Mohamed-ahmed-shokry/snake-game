@@ -1,3 +1,5 @@
+import math
+
 import pygame
 
 type Color = tuple[int, int, int]
@@ -18,4 +20,25 @@ def build_vertical_gradient_surface(width: int, height: int, top_color: Color, b
         )
         pygame.draw.line(surface, color, (0, y), (width, y))
     return surface
+
+
+def draw_fade_overlay(screen: pygame.Surface, alpha: int, color: Color = (0, 0, 0)) -> None:
+    if alpha <= 0:
+        return
+    overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+    overlay.fill((*color, max(0, min(alpha, 255))))
+    screen.blit(overlay, (0, 0))
+
+
+def pulse_alpha(
+    timer_seconds: float,
+    min_alpha: int = 90,
+    max_alpha: int = 230,
+    frequency: float = 5.0,
+    reduced_motion: bool = False,
+) -> int:
+    if reduced_motion:
+        return max_alpha
+    wave = (math.sin(timer_seconds * frequency) + 1.0) * 0.5
+    return int(min_alpha + (max_alpha - min_alpha) * wave)
 

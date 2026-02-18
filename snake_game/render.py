@@ -40,12 +40,12 @@ def draw_menu_list(
 
 
 def _playfield_renderer(config: GameConfig) -> PlayfieldRenderer:
-    theme = resolve_theme(config.graphics.theme_id)
+    theme = resolve_theme(config.graphics.theme_id, config.graphics.colorblind_mode)
     key = (
         config.window_width,
         config.window_height,
         config.cell_size,
-        theme.theme_id.value,
+        f"{theme.theme_id.value}:{config.graphics.colorblind_mode}",
         config.graphics.show_grid,
     )
     renderer = _PLAYFIELD_RENDERERS.get(key)
@@ -66,6 +66,11 @@ def draw_playfield(
     stage: int,
     powerup_position: Point | None,
     active_effect_labels: list[str],
+    stage_banner_text: str | None = None,
+    stage_banner_alpha: int = 0,
+    flash_alpha: int = 0,
+    camera_offset: tuple[int, int] = (0, 0),
+    particles: list[tuple[float, float, int, tuple[int, int, int]]] | None = None,
 ) -> None:
     renderer = _playfield_renderer(config)
     renderer.render(
@@ -78,5 +83,9 @@ def draw_playfield(
         stage=stage,
         powerup_position=powerup_position,
         active_effect_labels=active_effect_labels,
+        stage_banner_text=stage_banner_text,
+        stage_banner_alpha=stage_banner_alpha,
+        flash_alpha=flash_alpha,
+        camera_offset=camera_offset,
+        particles=particles,
     )
-

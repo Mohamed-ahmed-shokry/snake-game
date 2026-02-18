@@ -7,6 +7,7 @@ from snake_game.audio import AudioManager
 from snake_game.config import GameConfig
 from snake_game.events import EventBus
 from snake_game.persistence import load_persistent_data, save_persistent_data
+from snake_game.rendering.effects import draw_fade_overlay
 from snake_game.scenes.base import AppContext, Scene
 from snake_game.scenes.game_over_scene import GameOverScene
 from snake_game.scenes.menu_scene import MenuScene
@@ -31,18 +32,19 @@ def run() -> None:
     pygame.init()
 
     config = GameConfig()
+    data_path = Path(config.data_file)
+    persistent_data = load_persistent_data(data_path)
+    config.graphics = persistent_data.graphics
     config.validate()
 
     screen = pygame.display.set_mode((config.window_width, config.window_height))
-    pygame.display.set_caption("Snake V2")
+    pygame.display.set_caption("Snake V4")
     clock = pygame.time.Clock()
 
     title_font = pygame.font.Font(None, 76)
     body_font = pygame.font.Font(None, 42)
     small_font = pygame.font.Font(None, 28)
 
-    data_path = Path(config.data_file)
-    persistent_data = load_persistent_data(data_path)
     audio = AudioManager(muted=persistent_data.settings.muted)
 
     ctx = AppContext(
@@ -59,6 +61,7 @@ def run() -> None:
 
     scene: Scene = _build_scene(SceneId.MENU, ctx)
     running = True
+    transition_alpha = 0 if config.graphics.reduced_motion else 255
 
     while running:
         delta_seconds = clock.tick(config.render_fps) / 1000.0
@@ -75,6 +78,8 @@ def run() -> None:
         next_scene = scene.consume_next_scene()
         if next_scene is not None:
             scene = _build_scene(next_scene, ctx)
+            if not config.graphics.reduced_motion:
+                transition_alpha = 180
 
         if scene.quit_requested:
             break
@@ -86,8 +91,13 @@ def run() -> None:
         post_update_scene = scene.consume_next_scene()
         if post_update_scene is not None:
             scene = _build_scene(post_update_scene, ctx)
+            if not config.graphics.reduced_motion:
+                transition_alpha = 180
 
         scene.render(screen)
+        if transition_alpha > 0:
+            draw_fade_overlay(screen, transition_alpha)
+            transition_alpha = max(0, transition_alpha - int(420 * delta_seconds))
         pygame.display.flip()
 
     save_persistent_data(ctx.persistent_data, data_path)

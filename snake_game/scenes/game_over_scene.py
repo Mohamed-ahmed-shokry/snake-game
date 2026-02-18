@@ -1,8 +1,8 @@
 import pygame
 
-from snake_game.render import draw_centered_text, draw_menu_list
 from snake_game.scenes.base import AppContext, Scene
 from snake_game.types import SceneId
+from snake_game.ui.components import draw_hint_footer, draw_option_rows, draw_scene_header
 from snake_game.ui.theme import resolve_theme
 
 
@@ -46,60 +46,82 @@ class GameOverScene(Scene):
         _ = delta_seconds
 
     def render(self, screen: pygame.Surface) -> None:
-        theme = resolve_theme(self.ctx.config.graphics.theme_id)
+        theme = resolve_theme(
+            self.ctx.config.graphics.theme_id,
+            self.ctx.config.graphics.colorblind_mode,
+        )
         palette = theme.palette
 
         screen.fill(palette.background_top)
-        draw_centered_text(
-            screen,
-            "Game Over",
-            self.ctx.title_font,
-            palette.food,
-            (self.ctx.config.window_width // 2, 110),
+        draw_scene_header(
+            screen=screen,
+            width=self.ctx.config.window_width,
+            title="Game Over",
+            subtitle="Run Summary",
+            title_font=self.ctx.title_font,
+            body_font=self.ctx.small_font,
+            title_color=palette.food,
+            text_color=palette.text,
         )
 
-        score_value = self.ctx.last_result.score if self.ctx.last_result else 0
-        leaderboard = self.ctx.last_result.leaderboard if self.ctx.last_result else []
-        new_best = self.ctx.last_result.is_new_high_score if self.ctx.last_result else False
+        result = self.ctx.last_result
+        score_value = result.score if result else 0
+        leaderboard = result.leaderboard if result else []
+        new_best = result.is_new_high_score if result else False
+        stage_reached = result.stage_reached if result else 1
+        food_eaten = result.food_eaten if result else 0
+        run_seconds = result.run_seconds if result else 0.0
 
-        draw_centered_text(
-            screen,
-            f"Score: {score_value}",
-            self.ctx.body_font,
-            palette.text,
-            (self.ctx.config.window_width // 2, 165),
+        summary_text = (
+            f"Score {score_value}  |  Stage {stage_reached}  |  "
+            f"Food {food_eaten}  |  Time {run_seconds:0.1f}s"
+        )
+        draw_hint_footer(
+            screen=screen,
+            text=summary_text,
+            width=self.ctx.config.window_width,
+            y=180,
+            font=self.ctx.small_font,
+            color=palette.text,
         )
         if new_best:
-            draw_centered_text(
-                screen,
-                "New High Score!",
-                self.ctx.small_font,
-                palette.selected_text,
-                (self.ctx.config.window_width // 2, 195),
+            draw_hint_footer(
+                screen=screen,
+                text="New High Score!",
+                width=self.ctx.config.window_width,
+                y=208,
+                font=self.ctx.small_font,
+                color=palette.selected_text,
             )
-        draw_menu_list(
+
+        draw_option_rows(
             screen=screen,
-            lines=self.options,
+            options=self.options,
             selected_index=self.selected_index,
-            top_y=240,
-            font=self.ctx.body_font,
-            color=palette.text,
-            selected_color=palette.selected_text,
             center_x=self.ctx.config.window_width // 2,
+            start_y=280,
+            row_gap=42,
+            font=self.ctx.body_font,
+            text_color=palette.text,
+            selected_text_color=palette.selected_text,
+            row_width=460,
+            row_height=34,
         )
 
-        draw_centered_text(
-            screen,
-            "Top Scores (Current Setup)",
-            self.ctx.small_font,
-            palette.accent,
-            (self.ctx.config.window_width // 2, 385),
+        draw_hint_footer(
+            screen=screen,
+            text="Top Scores (Current Setup): " + ", ".join(str(value) for value in leaderboard[:5]),
+            width=self.ctx.config.window_width,
+            y=430,
+            font=self.ctx.small_font,
+            color=palette.accent,
         )
-        for index, value in enumerate(leaderboard[:5], start=1):
-            draw_centered_text(
-                screen,
-                f"{index}. {value}",
-                self.ctx.small_font,
-                palette.text,
-                (self.ctx.config.window_width // 2, 385 + index * 24),
-            )
+        draw_hint_footer(
+            screen=screen,
+            text="Enter: Select   Esc: Main Menu",
+            width=self.ctx.config.window_width,
+            y=470,
+            font=self.ctx.small_font,
+            color=palette.text,
+        )
+

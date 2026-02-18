@@ -1,9 +1,9 @@
 import pygame
 
 from snake_game.persistence import best_score_for_settings
-from snake_game.render import draw_centered_text, draw_menu_list
 from snake_game.scenes.base import AppContext, Scene
 from snake_game.types import SceneId
+from snake_game.ui.components import draw_hint_footer, draw_option_rows, draw_scene_header
 from snake_game.ui.theme import resolve_theme
 
 
@@ -48,51 +48,61 @@ class MenuScene(Scene):
 
     def render(self, screen: pygame.Surface) -> None:
         settings = self.ctx.persistent_data.settings
-        theme = resolve_theme(self.ctx.config.graphics.theme_id)
+        theme = resolve_theme(
+            self.ctx.config.graphics.theme_id,
+            self.ctx.config.graphics.colorblind_mode,
+        )
         palette = theme.palette
 
         screen.fill(palette.background_top)
-        draw_centered_text(
+        draw_scene_header(
             screen,
-            "Snake V2",
-            self.ctx.title_font,
-            palette.accent,
-            (self.ctx.config.window_width // 2, 110),
+            width=self.ctx.config.window_width,
+            title="Snake V4",
+            subtitle="Arcade Run",
+            title_font=self.ctx.title_font,
+            body_font=self.ctx.small_font,
+            title_color=palette.accent,
+            text_color=palette.text,
         )
-        draw_menu_list(
+        draw_option_rows(
             screen=screen,
-            lines=self.options,
+            options=self.options,
             selected_index=self.selected_index,
-            top_y=210,
-            font=self.ctx.body_font,
-            color=palette.text,
-            selected_color=palette.selected_text,
             center_x=self.ctx.config.window_width // 2,
+            start_y=220,
+            row_gap=42,
+            font=self.ctx.body_font,
+            text_color=palette.text,
+            selected_text_color=palette.selected_text,
         )
 
         settings_line = (
             f"{settings.difficulty.label} | {settings.map_mode.label} | "
-            f"Obstacles {'On' if settings.obstacles_enabled else 'Off'}"
+            f"Obstacles {'On' if settings.obstacles_enabled else 'Off'} | Theme {self.ctx.config.graphics.theme_id.value.capitalize()}"
         )
-        draw_centered_text(
-            screen,
-            settings_line,
-            self.ctx.small_font,
-            palette.text,
-            (self.ctx.config.window_width // 2, 390),
+        draw_hint_footer(
+            screen=screen,
+            text=settings_line,
+            width=self.ctx.config.window_width,
+            y=390,
+            font=self.ctx.small_font,
+            color=palette.text,
         )
         best_score = best_score_for_settings(self.ctx.persistent_data, settings)
-        draw_centered_text(
-            screen,
-            f"Best Score (Current Setup): {best_score}",
-            self.ctx.small_font,
-            palette.text,
-            (self.ctx.config.window_width // 2, 420),
+        draw_hint_footer(
+            screen=screen,
+            text=f"Best Score (Current Setup): {best_score}",
+            width=self.ctx.config.window_width,
+            y=420,
+            font=self.ctx.small_font,
+            color=palette.text,
         )
-        draw_centered_text(
-            screen,
-            "Enter: Select   Up/Down: Navigate",
-            self.ctx.small_font,
-            palette.text,
-            (self.ctx.config.window_width // 2, 470),
+        draw_hint_footer(
+            screen=screen,
+            text="Enter: Select   Up/Down: Navigate",
+            width=self.ctx.config.window_width,
+            y=470,
+            font=self.ctx.small_font,
+            color=palette.text,
         )

@@ -5,10 +5,10 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
-from snake_game.config import UserSettings
-from snake_game.types import Difficulty, MapMode
+from snake_game.config import GraphicsSettings, UserSettings
+from snake_game.types import Difficulty, MapMode, ThemeId
 
-SAVE_SCHEMA_VERSION = 3
+SAVE_SCHEMA_VERSION = 4
 
 
 @dataclass(slots=True)
@@ -21,9 +21,11 @@ class PlayerStats:
 @dataclass(slots=True)
 class PersistentData:
     settings: UserSettings = field(default_factory=UserSettings)
+    graphics: GraphicsSettings = field(default_factory=GraphicsSettings)
     leaderboard: dict[str, list[int]] = field(default_factory=dict)
     stats: PlayerStats = field(default_factory=PlayerStats)
     achievements: list[str] = field(default_factory=list)
+    onboarding_seen: bool = False
     schema_version: int = SAVE_SCHEMA_VERSION
 
 
@@ -62,6 +64,18 @@ def _settings_to_dict(settings: UserSettings) -> dict[str, object]:
     }
 
 
+def _graphics_to_dict(graphics: GraphicsSettings) -> dict[str, object]:
+    return {
+        "theme_id": graphics.theme_id.value,
+        "ui_scale": graphics.ui_scale,
+        "show_grid": graphics.show_grid,
+        "particles_enabled": graphics.particles_enabled,
+        "screen_shake_enabled": graphics.screen_shake_enabled,
+        "reduced_motion": graphics.reduced_motion,
+        "colorblind_mode": graphics.colorblind_mode,
+    }
+
+
 def _stats_to_dict(stats: PlayerStats) -> dict[str, int]:
     return {
         "total_runs": stats.total_runs,
@@ -92,6 +106,56 @@ def _settings_from_dict(data: object) -> UserSettings:
         map_mode=map_mode,
         obstacles_enabled=bool(data.get("obstacles_enabled", False)),
         muted=bool(data.get("muted", False)),
+    )
+
+
+def _coerce_bool(value: object, default: bool) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return value != 0
+    if isinstance(value, str):
+        lowered = value.strip().lower()
+        if lowered in {"1", "true", "yes", "on"}:
+            return True
+        if lowered in {"0", "false", "no", "off"}:
+            return False
+    return default
+
+
+def _coerce_positive_float(value: object, default: float) -> float:
+    if isinstance(value, bool):
+        return default
+    if isinstance(value, (int, float)):
+        parsed = float(value)
+        return parsed if parsed > 0 else default
+    if isinstance(value, str):
+        try:
+            parsed = float(value)
+        except ValueError:
+            return default
+        return parsed if parsed > 0 else default
+    return default
+
+
+def _graphics_from_dict(data: object) -> GraphicsSettings:
+    if not isinstance(data, dict):
+        return GraphicsSettings()
+
+    raw_theme_id = str(data.get("theme_id", ThemeId.NEON.value))
+    try:
+        theme_id = ThemeId(raw_theme_id)
+    except ValueError:
+        theme_id = ThemeId.NEON
+
+    return GraphicsSettings(
+        theme_id=theme_id,
+        ui_scale=_coerce_positive_float(data.get("ui_scale"), 1.0),
+        show_grid=_coerce_bool(data.get("show_grid"), True),
+        particles_enabled=_coerce_bool(data.get("particles_enabled"), True),
+        screen_shake_enabled=_coerce_bool(data.get("screen_shake_enabled"), False),
+        reduced_motion=_coerce_bool(data.get("reduced_motion"), False),
+        colorblind_mode=str(data.get("colorblind_mode", "off")),
     )
 
 
@@ -178,6 +242,9 @@ def _migrate_payload(payload: dict[str, object]) -> dict[str, object]:
             },
         )
         migrated.setdefault("achievements", [])
+    if version < 4:
+        migrated.setdefault("graphics", _graphics_to_dict(GraphicsSettings()))
+    migrated.setdefault("onboarding_seen", False)
 
     migrated["schema_version"] = SAVE_SCHEMA_VERSION
     return migrated
@@ -201,13 +268,17 @@ def load_persistent_data(path: Path) -> PersistentData:
     migrated = _migrate_payload(payload)
     leaderboard = _normalize_leaderboard(migrated.get("leaderboard"))
     settings = _settings_from_dict(migrated.get("settings"))
+    graphics = _graphics_from_dict(migrated.get("graphics"))
     stats = _stats_from_dict(migrated.get("stats"))
     achievements = _normalize_achievements(migrated.get("achievements"))
+    onboarding_seen = _coerce_bool(migrated.get("onboarding_seen"), False)
     return PersistentData(
         settings=settings,
+        graphics=graphics,
         leaderboard=leaderboard,
         stats=stats,
         achievements=achievements,
+        onboarding_seen=onboarding_seen,
         schema_version=SAVE_SCHEMA_VERSION,
     )
 
@@ -216,9 +287,11 @@ def save_persistent_data(data: PersistentData, path: Path) -> None:
     payload = {
         "schema_version": SAVE_SCHEMA_VERSION,
         "settings": _settings_to_dict(data.settings),
+        "graphics": _graphics_to_dict(data.graphics),
         "leaderboard": data.leaderboard,
         "stats": _stats_to_dict(data.stats),
         "achievements": data.achievements,
+        "onboarding_seen": data.onboarding_seen,
     }
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
@@ -232,4 +305,3 @@ def record_score(data: PersistentData, settings: UserSettings, score: int, limit
     trimmed = table[:limit]
     data.leaderboard[key] = trimmed
     return trimmed
-

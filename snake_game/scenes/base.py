@@ -19,6 +19,9 @@ class SessionResult:
     leaderboard_key: str
     leaderboard: list[int]
     is_new_high_score: bool
+    stage_reached: int = 1
+    food_eaten: int = 0
+    run_seconds: float = 0.0
 
 
 @dataclass(slots=True)

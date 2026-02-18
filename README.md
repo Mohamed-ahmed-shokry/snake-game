@@ -58,6 +58,10 @@ uv run pytest
   - `Double Score`: temporarily doubles points from food
 - Active power-up timers shown in HUD
 - Themed rendering foundation (Neon/Sunset/Ocean) with layered playfield renderer
+- Theme can be switched in Settings and persists across restarts
+- Expanded graphics/settings UX: color mode, grid, particles, reduced motion, screen shake
+- First-run onboarding overlay and richer game-over run summary
+- Transition and in-run visual feedback (stage banner, flashes, optional particles)
 
 ## Persistence Notes
 

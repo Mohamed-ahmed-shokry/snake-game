@@ -205,6 +205,8 @@ def advance_one_step(
             score=state.score,
             speed=state.steps_per_second,
             score_multiplier=applied_score_multiplier,
+            head_x=new_head[0],
+            head_y=new_head[1],
         )
         try:
             state.food = spawn_food(

@@ -59,3 +59,24 @@ def test_collecting_same_type_refreshes_duration() -> None:
     assert refreshed is first
     assert refreshed.remaining_seconds >= 1.0
     assert len(system.active_effects) == 1
+
+
+def test_absorb_fatal_collision_consumes_shield() -> None:
+    system = PowerUpSystem()
+    system.spawned = SpawnedPowerUp(type=PowerUpType.SHIELD, position=(2, 2), remaining_seconds=5.0)
+    system.collect_at((2, 2))
+
+    absorbed = system.absorb_fatal_collision("wall")
+
+    assert absorbed is True
+    assert system.is_active(PowerUpType.SHIELD) is False
+
+
+def test_phase_active_flag_reflects_effect_state() -> None:
+    system = PowerUpSystem()
+    assert system.phase_active() is False
+
+    system.spawned = SpawnedPowerUp(type=PowerUpType.PHASE, position=(3, 1), remaining_seconds=5.0)
+    system.collect_at((3, 1))
+
+    assert system.phase_active() is True

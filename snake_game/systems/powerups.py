@@ -44,8 +44,10 @@ class PowerUpSystem:
     slow_time_multiplier: float = 0.65
     double_score_multiplier: int = 2
     available_spawn_types: tuple[PowerUpType, ...] = (
+        PowerUpType.SHIELD,
         PowerUpType.SLOW_TIME,
         PowerUpType.DOUBLE_SCORE,
+        PowerUpType.PHASE,
     )
     effect_duration_seconds: dict[PowerUpType, float] = field(
         default_factory=lambda: {
@@ -107,8 +109,20 @@ class PowerUpSystem:
         self.active_effects.append(new_effect)
         return new_effect
 
+    def consume_effect(self, power_type: PowerUpType) -> bool:
+        for index, effect in enumerate(self.active_effects):
+            if effect.type == power_type:
+                del self.active_effects[index]
+                return True
+        return False
+
     def is_active(self, power_type: PowerUpType) -> bool:
         return any(effect.type == power_type for effect in self.active_effects)
+
+    def absorb_fatal_collision(self, reason: str) -> bool:
+        if reason not in {"wall", "obstacle", "self_collision"}:
+            return False
+        return self.consume_effect(PowerUpType.SHIELD)
 
     def score_multiplier(self) -> int:
         if self.is_active(PowerUpType.DOUBLE_SCORE):
@@ -119,6 +133,9 @@ class PowerUpSystem:
         if self.is_active(PowerUpType.SLOW_TIME):
             return self.slow_time_multiplier
         return 1.0
+
+    def phase_active(self) -> bool:
+        return self.is_active(PowerUpType.PHASE)
 
     def active_effect_labels(self) -> list[str]:
         labels: list[str] = []
@@ -138,4 +155,3 @@ class PowerUpSystem:
         for effect in self.active_effects:
             effect.remaining_seconds -= elapsed
         self.active_effects = [effect for effect in self.active_effects if effect.remaining_seconds > 0.0]
-

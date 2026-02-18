@@ -127,6 +127,34 @@ def test_obstacle_collision_sets_game_over() -> None:
     assert state.status == GameStatus.GAME_OVER
 
 
+def test_phase_active_allows_passing_through_obstacle() -> None:
+    config = make_config()
+    settings = UserSettings()
+    state = create_initial_state(config, settings, random.Random(71))
+    head_x, head_y = state.snake[0]
+    state.obstacles = {(head_x + 1, head_y)}
+    state.food = (0, 0)
+
+    advance_one_step(state, config, random.Random(71), phase_active=True)
+
+    assert state.status == GameStatus.RUNNING
+    assert state.snake[0] == (head_x + 1, head_y)
+
+
+def test_phase_active_wraps_when_hitting_wall_in_bounded_mode() -> None:
+    config = make_config()
+    settings = UserSettings(map_mode=MapMode.BOUNDED)
+    state = create_initial_state(config, settings, random.Random(72))
+    state.snake = [(config.grid_width - 1, 3), (config.grid_width - 2, 3), (config.grid_width - 3, 3)]
+    state.direction = Direction.RIGHT
+    state.food = (0, 0)
+
+    advance_one_step(state, config, random.Random(72), phase_active=True)
+
+    assert state.status == GameStatus.RUNNING
+    assert state.snake[0] == (0, 3)
+
+
 def test_spawn_food_never_overlaps_snake_or_obstacles() -> None:
     rng = random.Random(8)
     snake = {(0, 0), (1, 0), (2, 0)}

@@ -103,6 +103,7 @@ class PlayScene(Scene):
             self.ctx.rng,
             score_multiplier=self.powerups.score_multiplier(),
             speed_multiplier=self.powerups.speed_multiplier(),
+            phase_active=self.powerups.phase_active(),
             emit=self.ctx.event_bus.emit,
         )
         self.hazards.update()
@@ -135,6 +136,11 @@ class PlayScene(Scene):
                     )
             elif event.type == GameEventType.STAGE_ADVANCED:
                 self.ctx.audio.play("confirm")
+            elif event.type == GameEventType.PLAYER_DIED:
+                reason = str(event.payload.get("reason", ""))
+                if self.powerups.absorb_fatal_collision(reason):
+                    self.state.status = GameStatus.RUNNING
+                    self.ctx.audio.play("confirm")
         for event in self.ctx.event_bus.drain():
             if event.type == GameEventType.POWERUP_COLLECTED:
                 self.ctx.audio.play("confirm")

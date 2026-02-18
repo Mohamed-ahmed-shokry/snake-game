@@ -141,12 +141,15 @@ def queue_direction_change(state: GameState, next_direction: Direction) -> None:
     state.pending_direction = next_direction
 
 
-def _next_head_position(state: GameState, config: GameConfig) -> Point | None:
+def _next_head_position(state: GameState, config: GameConfig, phase_active: bool = False) -> Point | None:
     head_x, head_y = state.snake[0]
     move_x, move_y = state.direction.vector
     new_x, new_y = (head_x + move_x, head_y + move_y)
 
     if state.map_mode == MapMode.WRAP:
+        return (new_x % config.grid_width, new_y % config.grid_height)
+
+    if phase_active and (new_x < 0 or new_x >= config.grid_width or new_y < 0 or new_y >= config.grid_height):
         return (new_x % config.grid_width, new_y % config.grid_height)
 
     if new_x < 0 or new_x >= config.grid_width or new_y < 0 or new_y >= config.grid_height:
@@ -159,6 +162,7 @@ def advance_one_step(
     config: GameConfig,
     rng: random.Random,
     score_multiplier: int = 1,
+    phase_active: bool = False,
     emit: EventEmitter | None = None,
 ) -> None:
     if state.status != GameStatus.RUNNING:
@@ -168,13 +172,13 @@ def advance_one_step(
         state.direction = state.pending_direction
     state.pending_direction = None
 
-    new_head = _next_head_position(state, config)
+    new_head = _next_head_position(state, config, phase_active=phase_active)
     if new_head is None:
         state.status = GameStatus.GAME_OVER
         _emit(emit, GameEventType.PLAYER_DIED, reason="wall", score=state.score)
         return
 
-    if new_head in state.obstacles:
+    if new_head in state.obstacles and not phase_active:
         state.status = GameStatus.GAME_OVER
         _emit(emit, GameEventType.PLAYER_DIED, reason="obstacle", score=state.score)
         return
@@ -224,6 +228,7 @@ def advance_simulation(
     rng: random.Random,
     score_multiplier: int = 1,
     speed_multiplier: float = 1.0,
+    phase_active: bool = False,
     emit: EventEmitter | None = None,
 ) -> int:
     if state.status != GameStatus.RUNNING:
@@ -238,7 +243,14 @@ def advance_simulation(
         if state.accumulator_seconds < step_interval:
             break
         state.accumulator_seconds -= step_interval
-        advance_one_step(state, config, rng, score_multiplier=score_multiplier, emit=emit)
+        advance_one_step(
+            state,
+            config,
+            rng,
+            score_multiplier=score_multiplier,
+            phase_active=phase_active,
+            emit=emit,
+        )
         steps_taken += 1
         head_x, head_y = state.snake[0]
         _emit(

@@ -52,6 +52,8 @@ uv run pytest
 - Lightweight generated SFX (mute supported)
 - Stage progression (score-based stage indicator)
 - Power-up spawns during runs:
+  - `Shield`: absorbs one fatal collision (`wall`, `obstacle`, or `self`)
+  - `Phase`: temporarily phases through obstacles and wraps through walls
   - `Slow Time`: temporarily slows snake movement rate
   - `Double Score`: temporarily doubles points from food
 - Active power-up timers shown in HUD

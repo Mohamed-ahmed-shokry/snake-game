@@ -1,7 +1,19 @@
 [project]
 name = "snake-game"
 version = "0.1.0"
-description = "Add your description here"
+description = "Classic snake game built with pygame"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "pygame>=2.6.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = [
+    ".",
+]

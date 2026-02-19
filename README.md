@@ -1,25 +1,53 @@
-# Snake Game (Pygame) - v3 (in progress)
+# Snake Game (Pygame)
 
-Current version includes scene flow, settings, difficulty modes, wrap/bounded maps, obstacle mode, persistent high scores, optional sound, stage progression, and power-up gameplay.
+A modern Snake build focused on game feel: clean visuals, responsive controls, progression, and replayable runs with power-ups.
 
-## Requirements
+This project is currently in the **v4 visual + UX pass**, with ongoing polish to rendering, accessibility, and interface flow.
 
-- Python 3.12+
-- `uv` installed
+## What You Get
 
-## Setup
+- Classic Snake core loop with smooth grid-step movement.
+- Multiple run styles:
+  - Difficulty presets (`Easy`, `Normal`, `Hard`)
+  - Map modes (`Bounded`, `Wrap`)
+  - Optional obstacles
+- Power-ups with real gameplay impact:
+  - `Shield`: absorbs one fatal collision
+  - `Phase`: pass through obstacles and wrap through walls
+  - `Slow Time`: temporary speed slowdown
+  - `Double Score`: temporary score multiplier
+- Persistent data in `data/save.json`:
+  - Settings
+  - Graphics preferences
+  - Leaderboards
+  - Run stats
+- UI/graphics features:
+  - Theme switching (`Neon`, `Sunset`, `Ocean`)
+  - Color modes (`off`, `deuteranopia`, `tritanopia`, `high_contrast`)
+  - Grid toggle, particles toggle, reduced motion, screen shake toggle
+  - First-run onboarding overlay
+  - Enhanced game-over summary
+
+## Quick Start
+
+### Requirements
+
+- Python `3.12+`
+- `uv`
+
+### Install
 
 ```bash
 uv sync --group dev
 ```
 
-## Run
+### Run
 
 ```bash
 uv run python main.py
 ```
 
-## Test
+### Test
 
 ```bash
 uv run pytest
@@ -27,43 +55,33 @@ uv run pytest
 
 ## Controls
 
-### Menu / Settings / Game Over
+| Context | Keys | Action |
+|---|---|---|
+| Menus | `Up/Down` or `W/S` | Navigate |
+| Menus | `Left/Right` or `A/D` | Change value |
+| Menus | `Enter` or `Space` | Select |
+| Menus | `Esc` | Back / Exit |
+| In game | `Arrow Keys` or `WASD` | Move |
+| In game | `P` or `Space` | Pause / Resume |
+| In game | `Esc` | Return to menu |
 
-- `Up/Down` or `W/S`: Navigate
-- `Left/Right` or `A/D`: Change setting values
-- `Enter` or `Space`: Select
-- `Esc`: Back/Exit depending on screen
+## Visual and UX Direction
 
-### In Game
+v4 focuses on:
 
-- `Arrow Keys` or `WASD`: Move snake
-- `P` or `Space`: Pause/Resume
-- `Esc`: Return to main menu
-
-## Features
-
-- Scene flow: Menu -> Settings -> Play -> Game Over
-- Difficulty presets: Easy / Normal / Hard
-- Map modes: Bounded / Wrap
-- Optional obstacle mode
-- Start countdown before movement
-- Per-setup high-score leaderboard (top 10)
-- Persistent settings and leaderboard in `data/save.json`
-- Lightweight generated SFX (mute supported)
-- Stage progression (score-based stage indicator)
-- Power-up spawns during runs:
-  - `Shield`: absorbs one fatal collision (`wall`, `obstacle`, or `self`)
-  - `Phase`: temporarily phases through obstacles and wraps through walls
-  - `Slow Time`: temporarily slows snake movement rate
-  - `Double Score`: temporarily doubles points from food
-- Active power-up timers shown in HUD
-- Themed rendering foundation (Neon/Sunset/Ocean) with layered playfield renderer
-- Theme can be switched in Settings and persists across restarts
-- Expanded graphics/settings UX: color mode, grid, particles, reduced motion, screen shake
-- First-run onboarding overlay and richer game-over run summary
-- Transition and in-run visual feedback (stage banner, flashes, optional particles)
+- Stronger readability in motion.
+- Better scene hierarchy (menu, settings, play, game-over).
+- Cleaner HUD structure with effect timers and stage feedback.
+- Accessibility-first options for color and motion sensitivity.
 
 ## Persistence Notes
 
-- Save file path: `data/save.json`
-- If save JSON is corrupted, the game falls back to defaults and attempts to keep a timestamped corrupt backup.
+- Save path: `data/save.json`
+- Save schema migration is supported across versions.
+- If save data is corrupt, the game falls back to safe defaults and attempts backup.
+
+## Development Snapshot
+
+- Rendering is organized around themed, layered playfield drawing.
+- Game systems are modular (`progression`, `powerups`, `hazards`).
+- Core behavior is covered by automated tests.

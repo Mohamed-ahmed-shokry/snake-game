@@ -185,6 +185,29 @@ def test_load_sanitizes_leaderboard_scores(tmp_path: Path) -> None:
     assert loaded.leaderboard["normal|bounded|clear"] == [12, 7]
 
 
+def test_load_coerces_string_boolean_settings(tmp_path: Path) -> None:
+    path = tmp_path / "save.json"
+    payload = {
+        "schema_version": SAVE_SCHEMA_VERSION,
+        "settings": {
+            "difficulty": "normal",
+            "map_mode": "bounded",
+            "obstacles_enabled": "false",
+            "muted": "yes",
+        },
+        "graphics": {},
+        "leaderboard": {},
+        "stats": {"total_runs": 0, "total_score": 0, "best_score_global": 0},
+        "achievements": [],
+    }
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+    loaded = load_persistent_data(path)
+
+    assert loaded.settings.obstacles_enabled is False
+    assert loaded.settings.muted is True
+
+
 def test_onboarding_flag_round_trip(tmp_path: Path) -> None:
     path = tmp_path / "save.json"
     data = PersistentData(onboarding_seen=True)

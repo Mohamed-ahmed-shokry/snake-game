@@ -104,8 +104,8 @@ def _settings_from_dict(data: object) -> UserSettings:
     return UserSettings(
         difficulty=difficulty,
         map_mode=map_mode,
-        obstacles_enabled=bool(data.get("obstacles_enabled", False)),
-        muted=bool(data.get("muted", False)),
+        obstacles_enabled=_coerce_bool(data.get("obstacles_enabled"), False),
+        muted=_coerce_bool(data.get("muted"), False),
     )
 
 

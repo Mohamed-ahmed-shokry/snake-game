@@ -50,6 +50,9 @@ def spawn_obstacles(
     grid_height: int,
     rng: random.Random,
 ) -> set[Point]:
+    if obstacle_count <= 0:
+        return set()
+
     candidates = [
         (x, y)
         for y in range(grid_height)

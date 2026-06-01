@@ -209,6 +209,12 @@ def test_spawn_obstacles_avoids_forbidden_cells() -> None:
     assert obstacles.isdisjoint(forbidden)
 
 
+def test_spawn_obstacles_treats_negative_count_as_empty() -> None:
+    obstacles = spawn_obstacles(-1, set(), grid_width=5, grid_height=3, rng=random.Random(91))
+
+    assert obstacles == set()
+
+
 def test_advance_simulation_uses_accumulated_delta() -> None:
     config = make_config()
     settings = UserSettings(difficulty=Difficulty.EASY)

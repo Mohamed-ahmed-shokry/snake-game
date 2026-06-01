@@ -187,7 +187,11 @@ def _normalize_leaderboard(data: object) -> dict[str, list[int]]:
             continue
         if not isinstance(values, list):
             continue
-        clean_values = [int(value) for value in values if isinstance(value, (int, float))]
+        clean_values = [
+            int(value)
+            for value in values
+            if not isinstance(value, bool) and isinstance(value, (int, float)) and value >= 0
+        ]
         clean_values.sort(reverse=True)
         normalized[key] = clean_values[:10]
     return normalized

@@ -32,6 +32,7 @@ def test_create_initial_state_has_valid_shape() -> None:
     assert len(state.snake) == 3
     assert state.direction == Direction.RIGHT
     assert state.pending_direction is None
+    assert state.direction_queue == []
     assert state.status == GameStatus.RUNNING
     assert state.food not in state.snake
 
@@ -45,6 +46,39 @@ def test_queue_direction_change_blocks_reverse_direction() -> None:
 
     queue_direction_change(state, Direction.UP)
     assert state.pending_direction == Direction.UP
+    assert state.direction_queue == [Direction.UP]
+
+
+def test_queue_direction_change_buffers_fast_corner_input() -> None:
+    config = make_config()
+    state = create_initial_state(config, UserSettings(), random.Random(21))
+
+    queue_direction_change(state, Direction.UP)
+    queue_direction_change(state, Direction.LEFT)
+
+    assert state.pending_direction == Direction.UP
+    assert state.direction_queue == [Direction.UP, Direction.LEFT]
+
+
+def test_direction_queue_applies_one_turn_per_step() -> None:
+    config = make_config()
+    state = create_initial_state(config, UserSettings(), random.Random(22))
+    state.food = (0, 0)
+
+    queue_direction_change(state, Direction.UP)
+    queue_direction_change(state, Direction.LEFT)
+
+    advance_one_step(state, config, random.Random(22))
+
+    assert state.direction == Direction.UP
+    assert state.pending_direction == Direction.LEFT
+    assert state.direction_queue == [Direction.LEFT]
+
+    advance_one_step(state, config, random.Random(22))
+
+    assert state.direction == Direction.LEFT
+    assert state.pending_direction is None
+    assert state.direction_queue == []
 
 
 def test_advance_one_step_moves_snake_and_trims_tail() -> None:

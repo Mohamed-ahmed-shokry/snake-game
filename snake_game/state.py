@@ -8,6 +8,7 @@ class GameState:
     snake: list[Point]
     direction: Direction
     pending_direction: Direction | None
+    direction_queue: list[Direction]
     food: Point
     score: int
     status: GameStatus

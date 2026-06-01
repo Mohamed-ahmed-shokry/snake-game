@@ -5,6 +5,8 @@ from snake_game.events import EventEmitter, GameEvent, GameEventType
 from snake_game.state import GameState
 from snake_game.types import Direction, GameStatus, MapMode, Point
 
+MAX_DIRECTION_QUEUE = 2
+
 
 def is_opposite(current: Direction, next_direction: Direction) -> bool:
     dx1, dy1 = current.vector
@@ -96,6 +98,7 @@ def create_initial_state(
         snake=snake,
         direction=Direction.RIGHT,
         pending_direction=None,
+        direction_queue=[],
         food=food,
         score=0,
         status=GameStatus.RUNNING,
@@ -120,6 +123,7 @@ def reset_state(
     state.snake = fresh.snake
     state.direction = fresh.direction
     state.pending_direction = fresh.pending_direction
+    state.direction_queue = fresh.direction_queue
     state.food = fresh.food
     state.score = fresh.score
     state.status = fresh.status
@@ -136,9 +140,24 @@ def reset_state(
 def queue_direction_change(state: GameState, next_direction: Direction) -> None:
     if state.status != GameStatus.RUNNING:
         return
-    if is_opposite(state.direction, next_direction):
+    reference_direction = state.direction_queue[-1] if state.direction_queue else state.direction
+    if next_direction == reference_direction:
         return
-    state.pending_direction = next_direction
+    if is_opposite(reference_direction, next_direction):
+        return
+    if len(state.direction_queue) >= MAX_DIRECTION_QUEUE:
+        return
+    state.direction_queue.append(next_direction)
+    state.pending_direction = state.direction_queue[0]
+
+
+def _apply_next_direction(state: GameState) -> None:
+    while state.direction_queue:
+        next_direction = state.direction_queue.pop(0)
+        if not is_opposite(state.direction, next_direction):
+            state.direction = next_direction
+            break
+    state.pending_direction = state.direction_queue[0] if state.direction_queue else None
 
 
 def _next_head_position(state: GameState, config: GameConfig, phase_active: bool = False) -> Point | None:
@@ -168,9 +187,7 @@ def advance_one_step(
     if state.status != GameStatus.RUNNING:
         return
 
-    if state.pending_direction is not None and not is_opposite(state.direction, state.pending_direction):
-        state.direction = state.pending_direction
-    state.pending_direction = None
+    _apply_next_direction(state)
 
     new_head = _next_head_position(state, config, phase_active=phase_active)
     if new_head is None:

@@ -25,3 +25,19 @@ def test_game_config_rejects_invalid_ui_scale() -> None:
     config = GameConfig(graphics=GraphicsSettings(ui_scale=0.0))
     with pytest.raises(ValueError):
         config.validate()
+
+
+def test_game_config_rejects_non_positive_dimensions() -> None:
+    for config in [
+        GameConfig(window_width=0),
+        GameConfig(window_height=0),
+        GameConfig(cell_size=0),
+    ]:
+        with pytest.raises(ValueError):
+            config.validate()
+
+
+def test_game_config_rejects_invalid_render_fps() -> None:
+    config = GameConfig(render_fps=0)
+    with pytest.raises(ValueError):
+        config.validate()

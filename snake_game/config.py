@@ -90,12 +90,20 @@ class GameConfig:
         return self.window_height // self.cell_size
 
     def validate(self) -> None:
+        if self.window_width <= 0:
+            raise ValueError("window_width must be > 0")
+        if self.window_height <= 0:
+            raise ValueError("window_height must be > 0")
+        if self.cell_size <= 0:
+            raise ValueError("cell_size must be > 0")
         if self.window_width % self.cell_size != 0:
             raise ValueError("window_width must be divisible by cell_size")
         if self.window_height % self.cell_size != 0:
             raise ValueError("window_height must be divisible by cell_size")
         if self.grid_width < 8 or self.grid_height < 8:
             raise ValueError("grid dimensions must be at least 8x8 cells")
+        if self.render_fps < 1:
+            raise ValueError("render_fps must be >= 1")
         if self.max_steps_per_frame < 1:
             raise ValueError("max_steps_per_frame must be >= 1")
         if self.countdown_seconds < 0:

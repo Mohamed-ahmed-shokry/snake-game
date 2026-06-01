@@ -1,5 +1,7 @@
 import random
 
+import pytest
+
 from snake_game.config import GameConfig, UserSettings
 from snake_game.events import EventBus, GameEvent, GameEventType
 from snake_game.logic import advance_one_step, advance_simulation, create_initial_state
@@ -68,6 +70,11 @@ def test_stage_progression_emits_stage_advanced() -> None:
     assert changed is True
     assert progression.current_stage == 3
     assert [event.type for event in events] == [GameEventType.STAGE_ADVANCED, GameEventType.STAGE_ADVANCED]
+
+
+def test_stage_progression_rejects_invalid_interval() -> None:
+    with pytest.raises(ValueError):
+        StageProgression(points_per_stage=0)
 
 
 def test_advance_simulation_emits_step_head_position() -> None:

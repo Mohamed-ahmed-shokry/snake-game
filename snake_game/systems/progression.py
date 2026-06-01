@@ -10,6 +10,10 @@ class StageProgression:
     points_per_stage: int
     current_stage: int = 1
 
+    def __post_init__(self) -> None:
+        if self.points_per_stage < 1:
+            raise ValueError("points_per_stage must be >= 1")
+
     def stage_for_score(self, score: int) -> int:
         return max(1, (score // self.points_per_stage) + 1)
 
@@ -28,4 +32,3 @@ class StageProgression:
                     )
                 )
         return True
-

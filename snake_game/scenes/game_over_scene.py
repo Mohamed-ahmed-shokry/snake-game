@@ -6,6 +6,18 @@ from snake_game.ui.components import draw_hint_footer, draw_option_rows, draw_sc
 from snake_game.ui.theme import resolve_theme
 
 
+def format_run_time(seconds: float) -> str:
+    safe_seconds = max(0, int(seconds))
+    minutes, remaining_seconds = divmod(safe_seconds, 60)
+    return f"{minutes}:{remaining_seconds:02d}"
+
+
+def top_scores_text(leaderboard: list[int]) -> str:
+    if not leaderboard:
+        return "Top Scores (Current Setup): None yet"
+    return "Top Scores (Current Setup): " + ", ".join(str(value) for value in leaderboard[:5])
+
+
 class GameOverScene(Scene):
     scene_id = SceneId.GAME_OVER
 
@@ -74,7 +86,7 @@ class GameOverScene(Scene):
 
         summary_text = (
             f"Score {score_value}  |  Stage {stage_reached}  |  "
-            f"Food {food_eaten}  |  Time {run_seconds:0.1f}s"
+            f"Food {food_eaten}  |  Time {format_run_time(run_seconds)}"
         )
         draw_hint_footer(
             screen=screen,
@@ -110,7 +122,7 @@ class GameOverScene(Scene):
 
         draw_hint_footer(
             screen=screen,
-            text="Top Scores (Current Setup): " + ", ".join(str(value) for value in leaderboard[:5]),
+            text=top_scores_text(leaderboard),
             width=self.ctx.config.window_width,
             y=430,
             font=self.ctx.small_font,
@@ -124,4 +136,3 @@ class GameOverScene(Scene):
             font=self.ctx.small_font,
             color=palette.text,
         )
-

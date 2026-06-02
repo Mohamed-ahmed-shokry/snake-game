@@ -4,6 +4,7 @@ import json
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 
 from snake_game.config import GraphicsSettings, UserSettings
 from snake_game.types import Difficulty, MapMode, ThemeId
@@ -298,7 +299,26 @@ def save_persistent_data(data: PersistentData, path: Path) -> None:
         "onboarding_seen": data.onboarding_seen,
     }
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    temporary_path: Path | None = None
+    try:
+        with NamedTemporaryFile(
+            "w",
+            encoding="utf-8",
+            dir=path.parent,
+            prefix=f".{path.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as temporary_file:
+            temporary_path = Path(temporary_file.name)
+            json.dump(payload, temporary_file, indent=2)
+            temporary_file.write("\n")
+        temporary_path.replace(path)
+    finally:
+        if temporary_path is not None and temporary_path.exists():
+            try:
+                temporary_path.unlink()
+            except OSError:
+                pass
 
 
 def record_score(data: PersistentData, settings: UserSettings, score: int, limit: int) -> list[int]:

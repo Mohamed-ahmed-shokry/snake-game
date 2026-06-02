@@ -64,6 +64,19 @@ def test_save_and_load_round_trip(tmp_path: Path) -> None:
     assert loaded.schema_version == SAVE_SCHEMA_VERSION
 
 
+def test_save_persistent_data_replaces_existing_file_atomically(tmp_path: Path) -> None:
+    path = tmp_path / "nested" / "save.json"
+    path.parent.mkdir()
+    path.write_text("legacy", encoding="utf-8")
+    data = PersistentData(settings=UserSettings(difficulty=Difficulty.HARD))
+
+    save_persistent_data(data, path)
+    loaded = load_persistent_data(path)
+
+    assert loaded.settings.difficulty == Difficulty.HARD
+    assert list(path.parent.glob("*.tmp")) == []
+
+
 def test_corrupt_file_falls_back_to_defaults(tmp_path: Path) -> None:
     path = tmp_path / "save.json"
     path.write_text("{not-json", encoding="utf-8")

@@ -323,8 +323,9 @@ def save_persistent_data(data: PersistentData, path: Path) -> None:
 
 def record_score(data: PersistentData, settings: UserSettings, score: int, limit: int) -> list[int]:
     key = leaderboard_key(settings)
-    table = list(data.leaderboard.get(key, []))
-    table.append(max(score, 0))
+    table = [value for value in data.leaderboard.get(key, []) if value > 0]
+    if score > 0:
+        table.append(score)
     table.sort(reverse=True)
     trimmed = table[:limit]
     data.leaderboard[key] = trimmed

@@ -27,6 +27,16 @@ def test_record_score_sorts_and_trims() -> None:
     assert data.leaderboard[key] == [18, 10, 7]
 
 
+def test_record_score_keeps_leaderboards_positive() -> None:
+    settings = UserSettings()
+    key = leaderboard_key(settings)
+    data = PersistentData(settings=settings, leaderboard={key: [12, 0, 5]})
+
+    assert record_score(data, settings, 0, limit=5) == [12, 5]
+    assert record_score(data, settings, -3, limit=5) == [12, 5]
+    assert record_score(data, settings, 7, limit=5) == [12, 7, 5]
+
+
 def test_save_and_load_round_trip(tmp_path: Path) -> None:
     path = tmp_path / "save.json"
     data = PersistentData(

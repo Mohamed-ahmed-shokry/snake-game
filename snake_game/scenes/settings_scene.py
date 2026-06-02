@@ -1,12 +1,11 @@
 import pygame
 
+from snake_game.config import COLORBLIND_MODES, normalize_colorblind_mode
 from snake_game.persistence import save_persistent_data
 from snake_game.scenes.base import AppContext, Scene
 from snake_game.types import Difficulty, MapMode, SceneId, ThemeId
 from snake_game.ui.components import draw_hint_footer, draw_option_rows, draw_scene_header
 from snake_game.ui.theme import resolve_theme
-
-COLORBLIND_MODES = ["off", "deuteranopia", "tritanopia", "high_contrast"]
 
 
 def _cycle_theme(current: ThemeId, step: int) -> ThemeId:
@@ -16,9 +15,7 @@ def _cycle_theme(current: ThemeId, step: int) -> ThemeId:
 
 
 def _cycle_color_mode(current: str, step: int) -> str:
-    normalized = current.strip().lower()
-    if normalized not in COLORBLIND_MODES:
-        normalized = "off"
+    normalized = normalize_colorblind_mode(current)
     index = COLORBLIND_MODES.index(normalized)
     return COLORBLIND_MODES[(index + step) % len(COLORBLIND_MODES)]
 
@@ -198,4 +195,3 @@ class SettingsScene(Scene):
             font=self.ctx.small_font,
             color=palette.accent,
         )
-

@@ -167,7 +167,7 @@ def test_invalid_graphics_values_fall_back_to_defaults(tmp_path: Path) -> None:
     payload = {
         "schema_version": SAVE_SCHEMA_VERSION,
         "settings": {"difficulty": "normal", "map_mode": "bounded", "obstacles_enabled": False, "muted": False},
-        "graphics": {"theme_id": "invalid-theme", "ui_scale": 0, "show_grid": "no"},
+        "graphics": {"theme_id": "invalid-theme", "ui_scale": 0, "show_grid": "no", "colorblind_mode": "unknown"},
         "leaderboard": {},
         "stats": {"total_runs": 0, "total_score": 0, "best_score_global": 0},
         "achievements": [],
@@ -179,6 +179,7 @@ def test_invalid_graphics_values_fall_back_to_defaults(tmp_path: Path) -> None:
     assert loaded.graphics.theme_id == ThemeId.NEON
     assert loaded.graphics.ui_scale == 1.0
     assert loaded.graphics.show_grid is False
+    assert loaded.graphics.colorblind_mode == "off"
 
 
 def test_load_sanitizes_leaderboard_scores(tmp_path: Path) -> None:

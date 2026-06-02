@@ -2,6 +2,21 @@ from dataclasses import dataclass, field
 
 from snake_game.types import Difficulty, MapMode, ThemeId
 
+COLORBLIND_MODES: tuple[str, ...] = ("off", "deuteranopia", "tritanopia", "high_contrast")
+DEFAULT_COLORBLIND_MODE = "off"
+
+
+def normalize_colorblind_mode(value: object, default: str = DEFAULT_COLORBLIND_MODE) -> str:
+    if not isinstance(value, str):
+        return default
+
+    normalized = value.strip().lower()
+    if normalized in {"", "none"}:
+        return DEFAULT_COLORBLIND_MODE
+    if normalized in COLORBLIND_MODES:
+        return normalized
+    return default
+
 
 @dataclass(frozen=True, slots=True)
 class GameRules:
@@ -27,7 +42,7 @@ class GraphicsSettings:
     particles_enabled: bool = True
     screen_shake_enabled: bool = False
     reduced_motion: bool = False
-    colorblind_mode: str = "off"
+    colorblind_mode: str = DEFAULT_COLORBLIND_MODE
 
 
 RULES_BY_DIFFICULTY: dict[Difficulty, GameRules] = {
@@ -116,3 +131,5 @@ class GameConfig:
             raise ValueError("stage_points_interval must be >= 1")
         if self.graphics.ui_scale <= 0:
             raise ValueError("graphics.ui_scale must be > 0")
+        if self.graphics.colorblind_mode not in COLORBLIND_MODES:
+            raise ValueError("graphics.colorblind_mode must be a supported mode")

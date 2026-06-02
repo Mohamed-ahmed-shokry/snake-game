@@ -41,3 +41,9 @@ def test_game_config_rejects_invalid_render_fps() -> None:
     config = GameConfig(render_fps=0)
     with pytest.raises(ValueError):
         config.validate()
+
+
+def test_game_config_rejects_invalid_colorblind_mode() -> None:
+    config = GameConfig(graphics=GraphicsSettings(colorblind_mode="invalid"))
+    with pytest.raises(ValueError):
+        config.validate()

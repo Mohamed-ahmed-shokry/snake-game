@@ -6,7 +6,7 @@ from datetime import datetime
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
-from snake_game.config import GraphicsSettings, UserSettings
+from snake_game.config import GraphicsSettings, UserSettings, normalize_colorblind_mode
 from snake_game.types import Difficulty, MapMode, ThemeId
 
 SAVE_SCHEMA_VERSION = 4
@@ -156,7 +156,7 @@ def _graphics_from_dict(data: object) -> GraphicsSettings:
         particles_enabled=_coerce_bool(data.get("particles_enabled"), True),
         screen_shake_enabled=_coerce_bool(data.get("screen_shake_enabled"), False),
         reduced_motion=_coerce_bool(data.get("reduced_motion"), False),
-        colorblind_mode=str(data.get("colorblind_mode", "off")),
+        colorblind_mode=normalize_colorblind_mode(data.get("colorblind_mode")),
     )
 
 

@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from snake_game.config import normalize_colorblind_mode
 from snake_game.types import ThemeId
 
 type Color = tuple[int, int, int]
@@ -83,9 +84,9 @@ def _with_palette(theme: UiTheme, palette: ThemePalette) -> UiTheme:
 
 
 def _apply_colorblind_mode(theme: UiTheme, colorblind_mode: str) -> UiTheme:
-    mode = colorblind_mode.strip().lower()
+    mode = normalize_colorblind_mode(colorblind_mode)
     palette = theme.palette
-    if mode in {"", "off", "none"}:
+    if mode == "off":
         return theme
 
     if mode == "deuteranopia":

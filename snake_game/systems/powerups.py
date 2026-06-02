@@ -71,7 +71,7 @@ class PowerUpSystem:
             return None
         if not self.available_spawn_types:
             return None
-        if rng.random() > self.spawn_chance_per_food:
+        if rng.random() >= self.spawn_chance_per_food:
             return None
 
         candidates = [

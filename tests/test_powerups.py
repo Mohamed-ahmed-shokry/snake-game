@@ -3,6 +3,14 @@ import random
 from snake_game.systems.powerups import PowerUpSystem, PowerUpType, SpawnedPowerUp
 
 
+class ZeroRollRandom:
+    def random(self) -> float:
+        return 0.0
+
+    def choice(self, values):
+        return values[0]
+
+
 def test_maybe_spawn_places_powerup_in_free_cell() -> None:
     system = PowerUpSystem(
         spawn_chance_per_food=1.0,
@@ -17,6 +25,15 @@ def test_maybe_spawn_places_powerup_in_free_cell() -> None:
     assert spawned is system.spawned
     assert spawned.position not in occupied
     assert spawned.type in {PowerUpType.SLOW_TIME, PowerUpType.DOUBLE_SCORE}
+
+
+def test_zero_spawn_chance_never_spawns_on_zero_roll() -> None:
+    system = PowerUpSystem(spawn_chance_per_food=0.0)
+
+    spawned = system.maybe_spawn(ZeroRollRandom(), occupied_cells=set(), grid_width=2, grid_height=2)
+
+    assert spawned is None
+    assert system.spawned is None
 
 
 def test_collect_at_activates_effect_and_clears_spawn() -> None:

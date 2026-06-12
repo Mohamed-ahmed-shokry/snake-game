@@ -72,7 +72,6 @@ v4 focuses on:
 - Stronger readability in motion.
 - Better scene hierarchy (menu, settings, play, game-over).
 - Cleaner HUD structure with effect timers and stage feedback.
-- Accessibility-first options for color and motion sensitivity.
 
 ## Persistence Notes
 

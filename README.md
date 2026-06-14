@@ -78,9 +78,3 @@ v4 focuses on:
 - Save path: `data/save.json`
 - Save schema migration is supported across versions.
 - If save data is corrupt, the game falls back to safe defaults and attempts backup.
-
-## Development Snapshot
-
-- Rendering is organized around themed, layered playfield drawing.
-- Game systems are modular (`progression`, `powerups`, `hazards`).
-- Core behavior is covered by automated tests.

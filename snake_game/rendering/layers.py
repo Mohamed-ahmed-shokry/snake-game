@@ -1224,13 +1224,19 @@ class PlayfieldRenderer:
                     2,
                 )
             target.blit(ring_layer, (0, 0))
-            _draw_centered_text(
-                target,
-                "GET READY",
-                small_font,
-                self.theme.palette.accent,
-                (center[0], center[1] - ring_radius - 44),
+            ready_surface = small_font.render("GET READY", True, self.theme.palette.accent)
+            ready_rect = ready_surface.get_rect(
+                center=(center[0], center[1] - ring_radius - 44)
+            ).inflate(28, 12)
+            draw_panel(
+                screen=target,
+                rect=ready_rect,
+                fill=(5, 10, 16),
+                border=self.theme.palette.accent,
+                alpha=205,
+                radius=ready_rect.height // 2,
             )
+            target.blit(ready_surface, ready_surface.get_rect(center=ready_rect.center))
             _draw_centered_text(
                 target,
                 str(count_value),
@@ -1238,13 +1244,26 @@ class PlayfieldRenderer:
                 self.theme.palette.text,
                 center,
             )
-            _draw_centered_text(
-                target,
+            prompt_surface = small_font.render(
                 "CHOOSE YOUR OPENING",
-                small_font,
+                True,
                 self.theme.palette.selected_text,
-                (center[0], center[1] + ring_radius + 44),
             )
+            prompt_rect = prompt_surface.get_rect(
+                center=(center[0], center[1] + ring_radius + 44)
+            ).inflate(30, 12)
+            draw_panel(
+                screen=target,
+                rect=prompt_rect,
+                fill=(5, 10, 16),
+                border=tuple(
+                    max(28, channel // 2)
+                    for channel in self.theme.palette.selected_text
+                ),
+                alpha=218,
+                radius=prompt_rect.height // 2,
+            )
+            target.blit(prompt_surface, prompt_surface.get_rect(center=prompt_rect.center))
 
         if go_cue_timer > 0 and countdown_remaining <= 0 and state.status == GameStatus.RUNNING:
             strength = max(0.0, min(1.0, go_cue_timer / 0.55))

@@ -44,4 +44,8 @@ def config_from_args(args: argparse.Namespace) -> GameConfig:
 def main(argv: Sequence[str] | None = None) -> None:
     parser = build_parser()
     args = parser.parse_args(argv)
-    run(config=config_from_args(args), seed=args.seed)
+    try:
+        config = config_from_args(args)
+    except ValueError as error:
+        parser.error(str(error))
+    run(config=config, seed=args.seed)

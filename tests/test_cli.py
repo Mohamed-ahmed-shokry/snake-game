@@ -1,6 +1,6 @@
 import pytest
 
-from snake_game.cli import build_parser, config_from_args
+from snake_game.cli import build_parser, config_from_args, main
 
 
 def test_cli_builds_config_from_runtime_options() -> None:
@@ -39,6 +39,18 @@ def test_cli_rejects_invalid_board_geometry() -> None:
 
     with pytest.raises(ValueError):
         config_from_args(args)
+
+
+def test_cli_presents_invalid_configuration_without_a_traceback(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    with pytest.raises(SystemExit) as exit_info:
+        main(["--width", "401"])
+
+    error = capsys.readouterr().err
+    assert exit_info.value.code == 2
+    assert "window_width must be >= 800" in error
+    assert "Traceback" not in error
 
 
 def test_cli_reports_release_version(capsys: pytest.CaptureFixture[str]) -> None:

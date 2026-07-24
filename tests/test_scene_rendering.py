@@ -452,6 +452,24 @@ def test_active_powerup_changes_head_visual_effect(app_context: AppContext) -> N
     assert render_head(set()) != render_head({PowerUpType.SHIELD})
 
 
+def test_queued_turns_render_as_direction_intent(app_context: AppContext) -> None:
+    scene = PlayScene(app_context)
+    renderer = PlayfieldRenderer(
+        config=app_context.config,
+        theme=resolve_theme(app_context.config.graphics.theme_id),
+        assets=RenderAssets(),
+    )
+    without_queue = pygame.Surface((800, 600), pygame.SRCALPHA)
+    with_queue = pygame.Surface((800, 600), pygame.SRCALPHA)
+
+    renderer._draw_turn_intent(without_queue, scene.state, 0.4)
+    scene.state.direction_queue = [Direction.UP, Direction.LEFT]
+    renderer._draw_turn_intent(with_queue, scene.state, 0.4)
+
+    assert without_queue.get_bounding_rect().width == 0
+    assert with_queue.get_bounding_rect().width > 0
+
+
 def test_snake_positions_interpolate_between_simulation_steps(app_context: AppContext) -> None:
     scene = PlayScene(app_context)
     scene.state.previous_snake = [(10, 10), (9, 10), (8, 10)]

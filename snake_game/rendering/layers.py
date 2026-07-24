@@ -690,6 +690,80 @@ class PlayfieldRenderer:
             )
             pygame.draw.line(target, self.theme.palette.food, tongue_start, tongue_end, 2)
 
+    def _draw_turn_intent(
+        self,
+        target: pygame.Surface,
+        state: GameState,
+        animation_seconds: float,
+    ) -> None:
+        if not state.direction_queue:
+            return
+
+        layer = pygame.Surface(target.get_size(), pygame.SRCALPHA)
+        cell_x, cell_y = state.snake[0]
+        pulse = (
+            1.0
+            if self.config.graphics.reduced_motion
+            else 0.72 + 0.28 * (math.sin(animation_seconds * 8.0) + 1.0) / 2
+        )
+        previous_center = self._cell_rect(cell_x, cell_y).center
+        for index, queued_direction in enumerate(state.direction_queue[:2]):
+            direction_x, direction_y = queued_direction.vector
+            cell_x += direction_x
+            cell_y += direction_y
+            if state.map_mode.value == "wrap":
+                cell_x %= self.config.grid_width
+                cell_y %= self.config.grid_height
+            elif not (
+                0 <= cell_x < self.config.grid_width
+                and 0 <= cell_y < self.config.grid_height
+            ):
+                break
+
+            center = self._cell_rect(cell_x, cell_y).center
+            alpha = round((205 - index * 70) * pulse)
+            radius = max(6, self.config.cell_size // 3)
+            pygame.draw.line(
+                layer,
+                (*self.theme.palette.accent, max(35, alpha // 3)),
+                previous_center,
+                center,
+                max(1, self.config.cell_size // 14),
+            )
+            pygame.draw.circle(
+                layer,
+                (*self.theme.palette.accent, alpha),
+                center,
+                radius,
+                max(1, self.config.cell_size // 12),
+            )
+
+            forward = max(4, radius - 2)
+            side = max(3, radius // 2)
+            perpendicular_x, perpendicular_y = -direction_y, direction_x
+            arrow_points = [
+                (
+                    center[0] + direction_x * forward,
+                    center[1] + direction_y * forward,
+                ),
+                (
+                    center[0] - direction_x * side + perpendicular_x * side,
+                    center[1] - direction_y * side + perpendicular_y * side,
+                ),
+                (
+                    center[0] - direction_x * side - perpendicular_x * side,
+                    center[1] - direction_y * side - perpendicular_y * side,
+                ),
+            ]
+            pygame.draw.polygon(
+                layer,
+                (*self.theme.palette.selected_text, alpha),
+                arrow_points,
+            )
+            previous_center = center
+
+        target.blit(layer, (0, 0))
+
     def _draw_entities(
         self,
         target: pygame.Surface,
@@ -743,6 +817,7 @@ class PlayfieldRenderer:
             animation_seconds,
             movement_alpha,
         )
+        self._draw_turn_intent(target, state, animation_seconds)
 
     def _draw_particles(
         self,

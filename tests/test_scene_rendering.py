@@ -15,6 +15,10 @@ from snake_game.scenes.menu_scene import MenuScene
 from snake_game.scenes.play_scene import PlayScene
 from snake_game.scenes.progress_scene import ProgressScene
 from snake_game.scenes.settings_scene import SettingsScene
+from snake_game.systems.powerups import PowerUpType
+from snake_game.ui.theme import resolve_theme
+from snake_game.rendering.assets import RenderAssets
+from snake_game.rendering.layers import PlayfieldRenderer
 
 
 class SilentAudio:
@@ -68,3 +72,31 @@ def test_every_scene_renders_at_default_viewport(app_context: AppContext) -> Non
         screen.fill((0, 0, 0))
         scene.render(screen)
         assert screen.get_at((0, 0))[:3] != (0, 0, 0)
+
+
+def test_powerup_types_have_distinct_visual_glyphs(app_context: AppContext) -> None:
+    play_scene = PlayScene(app_context)
+    renderer = PlayfieldRenderer(
+        config=app_context.config,
+        theme=resolve_theme(app_context.config.graphics.theme_id),
+        assets=RenderAssets(),
+    )
+    images: list[bytes] = []
+
+    for powerup_type in PowerUpType:
+        screen = pygame.Surface((app_context.config.window_width, app_context.config.window_height))
+        renderer.render(
+            screen=screen,
+            state=play_scene.state,
+            hud_font=app_context.title_font,
+            small_font=app_context.small_font,
+            countdown_remaining=0.0,
+            best_score=0,
+            stage=1,
+            powerup_position=(1, 1),
+            powerup_type=powerup_type,
+            active_effect_labels=[],
+        )
+        images.append(pygame.image.tobytes(screen.subsurface(pygame.Rect(20, 20, 20, 20)), "RGB"))
+
+    assert len(set(images)) == len(PowerUpType)

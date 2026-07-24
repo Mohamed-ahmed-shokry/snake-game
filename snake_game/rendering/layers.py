@@ -1,3 +1,4 @@
+import math
 from enum import Enum
 
 import pygame
@@ -5,6 +6,7 @@ import pygame
 from snake_game.config import GameConfig
 from snake_game.rendering.assets import RenderAssets
 from snake_game.state import GameState
+from snake_game.systems.powerups import PowerUpType
 from snake_game.types import GameStatus, Point
 from snake_game.ui.components import draw_panel
 from snake_game.ui.theme import UiTheme
@@ -62,23 +64,172 @@ class PlayfieldRenderer:
         grid = self.assets.grid_surface(self.config, self.theme.palette.grid)
         target.blit(grid, (0, 0))
 
-    def _draw_entities(self, target: pygame.Surface, state: GameState, powerup_position: Point | None) -> None:
-        for obstacle_x, obstacle_y in state.obstacles:
-            obstacle_rect = self._cell_rect(obstacle_x, obstacle_y)
-            pygame.draw.rect(target, self.theme.palette.obstacle, obstacle_rect, border_radius=6)
+    def _draw_obstacle(self, target: pygame.Surface, cell: Point) -> None:
+        cell_rect = self._cell_rect(*cell)
+        inset = max(1, self.config.cell_size // 10)
+        shape = cell_rect.inflate(-inset * 2, -inset * 2)
+        shadow = shape.move(max(1, inset), max(1, inset))
+        pygame.draw.rect(target, (8, 10, 14), shadow, border_radius=max(2, self.config.cell_size // 4))
+        pygame.draw.rect(
+            target,
+            self.theme.palette.obstacle,
+            shape,
+            border_radius=max(2, self.config.cell_size // 4),
+        )
+        highlight = tuple(min(255, channel + 28) for channel in self.theme.palette.obstacle)
+        pygame.draw.line(
+            target,
+            highlight,
+            (shape.left + 3, shape.top + 3),
+            (shape.right - 4, shape.top + 3),
+            max(1, self.config.cell_size // 12),
+        )
 
-        food_rect = self._cell_rect(state.food[0], state.food[1])
-        pygame.draw.circle(target, self.theme.palette.food, food_rect.center, self.config.cell_size // 2 - 2)
+    def _draw_food(self, target: pygame.Surface, animation_seconds: float, position: Point) -> None:
+        cell_rect = self._cell_rect(*position)
+        pulse = 0 if self.config.graphics.reduced_motion else int(math.sin(animation_seconds * 5.0))
+        radius = max(3, self.config.cell_size // 2 - 3 + pulse)
+        shadow_center = (cell_rect.centerx + 2, cell_rect.centery + 2)
+        pygame.draw.circle(target, (18, 8, 10), shadow_center, radius)
+        pygame.draw.circle(target, self.theme.palette.food, cell_rect.center, radius)
+        highlight_radius = max(1, radius // 4)
+        pygame.draw.circle(
+            target,
+            (255, 220, 214),
+            (cell_rect.centerx - radius // 3, cell_rect.centery - radius // 3),
+            highlight_radius,
+        )
+        leaf_color = self.theme.palette.snake_head
+        pygame.draw.ellipse(
+            target,
+            leaf_color,
+            pygame.Rect(cell_rect.centerx, cell_rect.top + 1, max(3, radius), max(2, radius // 2)),
+        )
 
-        if powerup_position is not None:
-            power_rect = self._cell_rect(powerup_position[0], powerup_position[1])
-            pygame.draw.circle(target, self.theme.palette.powerup, power_rect.center, self.config.cell_size // 2 - 2)
+    def _draw_powerup(
+        self,
+        target: pygame.Surface,
+        animation_seconds: float,
+        position: Point,
+        powerup_type: PowerUpType,
+    ) -> None:
+        cell_rect = self._cell_rect(*position)
+        pulse = 0.0 if self.config.graphics.reduced_motion else (math.sin(animation_seconds * 6.0) + 1.0) * 0.5
+        radius = max(4, self.config.cell_size // 2 - 2)
+        glow_radius = radius + 2 + int(pulse * 2)
+        glow = pygame.Surface((glow_radius * 2 + 2, glow_radius * 2 + 2), pygame.SRCALPHA)
+        pygame.draw.circle(
+            glow,
+            (*self.theme.palette.powerup, 55),
+            (glow_radius + 1, glow_radius + 1),
+            glow_radius,
+        )
+        target.blit(glow, (cell_rect.centerx - glow_radius - 1, cell_rect.centery - glow_radius - 1))
+        pygame.draw.circle(target, (18, 22, 30), cell_rect.center, radius)
+        pygame.draw.circle(target, self.theme.palette.powerup, cell_rect.center, radius, max(2, radius // 3))
 
-        for index, (cell_x, cell_y) in enumerate(state.snake):
-            cell_rect = self._cell_rect(cell_x, cell_y)
+        center_x, center_y = cell_rect.center
+        glyph_color = self.theme.palette.text
+        glyph_radius = max(2, radius // 2)
+        if powerup_type == PowerUpType.SHIELD:
+            points = [
+                (center_x, center_y - glyph_radius),
+                (center_x + glyph_radius, center_y - glyph_radius // 2),
+                (center_x + glyph_radius // 2, center_y + glyph_radius),
+                (center_x, center_y + glyph_radius + 1),
+                (center_x - glyph_radius // 2, center_y + glyph_radius),
+                (center_x - glyph_radius, center_y - glyph_radius // 2),
+            ]
+            pygame.draw.polygon(target, glyph_color, points, max(1, radius // 4))
+        elif powerup_type == PowerUpType.SLOW_TIME:
+            pygame.draw.circle(target, glyph_color, (center_x, center_y), glyph_radius, max(1, radius // 4))
+            pygame.draw.line(target, glyph_color, (center_x, center_y), (center_x, center_y - glyph_radius + 1), 1)
+            pygame.draw.line(target, glyph_color, (center_x, center_y), (center_x + glyph_radius - 1, center_y), 1)
+        elif powerup_type == PowerUpType.DOUBLE_SCORE:
+            offset = max(2, glyph_radius // 2)
+            pygame.draw.circle(target, glyph_color, (center_x - offset, center_y), max(2, glyph_radius // 2), 1)
+            pygame.draw.circle(target, glyph_color, (center_x + offset, center_y), max(2, glyph_radius // 2), 1)
+        else:
+            pygame.draw.arc(
+                target,
+                glyph_color,
+                pygame.Rect(
+                    center_x - glyph_radius,
+                    center_y - glyph_radius,
+                    glyph_radius * 2,
+                    glyph_radius * 2,
+                ),
+                math.pi * 0.15,
+                math.pi * 1.25,
+                max(1, radius // 4),
+            )
+            pygame.draw.circle(target, glyph_color, (center_x, center_y), max(1, glyph_radius // 3))
+
+    def _draw_snake(self, target: pygame.Surface, state: GameState) -> None:
+        inset = max(1, self.config.cell_size // 10)
+        for index in range(len(state.snake) - 1):
+            start = self._cell_rect(*state.snake[index]).center
+            end = self._cell_rect(*state.snake[index + 1]).center
+            if abs(start[0] - end[0]) <= self.config.cell_size and abs(start[1] - end[1]) <= self.config.cell_size:
+                pygame.draw.line(
+                    target,
+                    self.theme.palette.snake_body,
+                    start,
+                    end,
+                    max(3, self.config.cell_size - inset * 3),
+                )
+
+        for index in range(len(state.snake) - 1, -1, -1):
+            cell_rect = self._cell_rect(*state.snake[index])
+            shape = cell_rect.inflate(-inset * 2, -inset * 2)
             color = self.theme.palette.snake_head if index == 0 else self.theme.palette.snake_body
-            radius = 8 if index == 0 else 5
-            pygame.draw.rect(target, color, cell_rect.inflate(-2, -2), border_radius=radius)
+            radius = max(2, self.config.cell_size // (3 if index == 0 else 4))
+            pygame.draw.rect(target, (7, 12, 11), shape.move(2, 2), border_radius=radius)
+            pygame.draw.rect(target, color, shape, border_radius=radius)
+            if index > 0:
+                highlight = tuple(min(255, channel + 24) for channel in color)
+                pygame.draw.line(
+                    target,
+                    highlight,
+                    (shape.left + 3, shape.top + 3),
+                    (shape.right - 4, shape.top + 3),
+                    1,
+                )
+
+        head_rect = self._cell_rect(*state.snake[0])
+        direction_x, direction_y = state.direction.vector
+        perpendicular_x, perpendicular_y = -direction_y, direction_x
+        forward = max(2, self.config.cell_size // 5)
+        spread = max(2, self.config.cell_size // 5)
+        eye_radius = max(1, self.config.cell_size // 12)
+        for side in (-1, 1):
+            eye_x = head_rect.centerx + direction_x * forward + perpendicular_x * spread * side
+            eye_y = head_rect.centery + direction_y * forward + perpendicular_y * spread * side
+            pygame.draw.circle(target, (248, 252, 255), (eye_x, eye_y), eye_radius + 1)
+            pygame.draw.circle(
+                target,
+                (12, 18, 20),
+                (eye_x + direction_x, eye_y + direction_y),
+                eye_radius,
+            )
+
+    def _draw_entities(
+        self,
+        target: pygame.Surface,
+        state: GameState,
+        powerup_position: Point | None,
+        powerup_type: PowerUpType | None,
+        animation_seconds: float,
+    ) -> None:
+        for obstacle_x, obstacle_y in state.obstacles:
+            self._draw_obstacle(target, (obstacle_x, obstacle_y))
+
+        self._draw_food(target, animation_seconds, state.food)
+
+        if powerup_position is not None and powerup_type is not None:
+            self._draw_powerup(target, animation_seconds, powerup_position, powerup_type)
+
+        self._draw_snake(target, state)
 
     def _draw_particles(
         self,
@@ -181,7 +332,9 @@ class PlayfieldRenderer:
         best_score: int,
         stage: int,
         powerup_position: Point | None,
+        powerup_type: PowerUpType | None,
         active_effect_labels: list[str],
+        animation_seconds: float = 0.0,
         stage_banner_text: str | None = None,
         stage_banner_alpha: int = 0,
         flash_alpha: int = 0,
@@ -191,7 +344,7 @@ class PlayfieldRenderer:
         world = pygame.Surface((self.config.window_width, self.config.window_height), pygame.SRCALPHA)
         self._draw_background(world)
         self._draw_grid(world)
-        self._draw_entities(world, state, powerup_position)
+        self._draw_entities(world, state, powerup_position, powerup_type, animation_seconds)
         if particles:
             self._draw_particles(world, particles)
         self._draw_hud(world, state, small_font, best_score, stage, active_effect_labels)
@@ -206,4 +359,3 @@ class PlayfieldRenderer:
             flash_alpha,
         )
         screen.blit(world, camera_offset)
-

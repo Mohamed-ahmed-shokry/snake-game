@@ -4,6 +4,7 @@ from snake_game.config import GameConfig
 from snake_game.rendering.assets import RenderAssets
 from snake_game.rendering.layers import PlayfieldRenderer
 from snake_game.state import GameState
+from snake_game.systems.powerups import PowerUpType
 from snake_game.types import Point
 from snake_game.ui.theme import resolve_theme
 
@@ -65,7 +66,9 @@ def draw_playfield(
     best_score: int,
     stage: int,
     powerup_position: Point | None,
+    powerup_type: PowerUpType | None,
     active_effect_labels: list[str],
+    animation_seconds: float = 0.0,
     stage_banner_text: str | None = None,
     stage_banner_alpha: int = 0,
     flash_alpha: int = 0,
@@ -82,7 +85,9 @@ def draw_playfield(
         best_score=best_score,
         stage=stage,
         powerup_position=powerup_position,
+        powerup_type=powerup_type,
         active_effect_labels=active_effect_labels,
+        animation_seconds=animation_seconds,
         stage_banner_text=stage_banner_text,
         stage_banner_alpha=stage_banner_alpha,
         flash_alpha=flash_alpha,

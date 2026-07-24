@@ -68,6 +68,7 @@ class PlayScene(Scene):
 
         self.onboarding_visible = not ctx.persistent_data.onboarding_seen
         self.particles: list[FxParticle] = []
+        self.visual_time = 0.0
 
     def _spawn_burst(self, cell_x: int, cell_y: int, color: tuple[int, int, int], count: int = 8) -> None:
         if not self.ctx.config.graphics.particles_enabled:
@@ -173,6 +174,7 @@ class PlayScene(Scene):
             self.ctx.audio.play("confirm")
 
     def update(self, delta_seconds: float) -> None:
+        self.visual_time += max(0.0, delta_seconds)
         self._update_particles(delta_seconds)
 
         if self.stage_banner_timer > 0:
@@ -303,6 +305,7 @@ class PlayScene(Scene):
     def render(self, screen: pygame.Surface) -> None:
         best_score_now = max(self.best_score_at_start, self.state.score)
         spawned_powerup_position = self.powerups.spawned.position if self.powerups.spawned is not None else None
+        spawned_powerup_type = self.powerups.spawned.type if self.powerups.spawned is not None else None
         theme = resolve_theme(
             self.ctx.config.graphics.theme_id,
             self.ctx.config.graphics.colorblind_mode,
@@ -324,7 +327,9 @@ class PlayScene(Scene):
             best_score=best_score_now,
             stage=self.progression.current_stage,
             powerup_position=spawned_powerup_position,
+            powerup_type=spawned_powerup_type,
             active_effect_labels=self.powerups.active_effect_labels(),
+            animation_seconds=self.visual_time,
             stage_banner_text=self.stage_banner_text,
             stage_banner_alpha=stage_banner_alpha,
             flash_alpha=flash_alpha,

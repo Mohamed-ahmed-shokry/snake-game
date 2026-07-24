@@ -176,3 +176,44 @@ def draw_hint_footer(
         radius=max(8, panel_rect.height // 2),
     )
     screen.blit(surface, surface.get_rect(center=(width // 2, y)))
+
+
+def draw_save_warning(
+    screen: pygame.Surface,
+    message: str,
+    font: pygame.font.Font,
+) -> pygame.Rect:
+    text_surface = font.render(message.upper(), True, (255, 242, 238))
+    panel_rect = text_surface.get_rect(
+        midbottom=(screen.get_width() // 2, screen.get_height() - 12)
+    ).inflate(58, 18)
+    shadow_rect = panel_rect.move(0, 3)
+    draw_panel(
+        screen=screen,
+        rect=shadow_rect,
+        fill=(0, 0, 0),
+        border=(0, 0, 0),
+        alpha=105,
+        radius=12,
+    )
+    draw_panel(
+        screen=screen,
+        rect=panel_rect,
+        fill=(62, 14, 20),
+        border=(255, 102, 94),
+        alpha=238,
+        radius=12,
+    )
+    icon_center = (panel_rect.left + 17, panel_rect.centery)
+    pygame.draw.circle(screen, (255, 196, 86), icon_center, 8)
+    pygame.draw.line(
+        screen,
+        (62, 14, 20),
+        (icon_center[0], icon_center[1] - 4),
+        (icon_center[0], icon_center[1] + 1),
+        2,
+    )
+    pygame.draw.circle(screen, (62, 14, 20), (icon_center[0], icon_center[1] + 4), 1)
+    text_center = (panel_rect.centerx + 6, panel_rect.centery)
+    screen.blit(text_surface, text_surface.get_rect(center=text_center))
+    return panel_rect

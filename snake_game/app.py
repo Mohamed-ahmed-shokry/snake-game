@@ -16,6 +16,7 @@ from snake_game.scenes.play_scene import PlayScene
 from snake_game.scenes.progress_scene import ProgressScene
 from snake_game.scenes.settings_scene import SettingsScene
 from snake_game.types import SceneId
+from snake_game.ui.components import draw_save_warning
 
 
 def _load_window_icon(size: int = 64) -> pygame.Surface | None:
@@ -137,6 +138,8 @@ def run(config: GameConfig | None = None, seed: int | None = None) -> None:
             if transition_alpha > 0:
                 draw_fade_overlay(screen, transition_alpha)
                 transition_alpha = max(0, transition_alpha - int(420 * delta_seconds))
+            if ctx.save_error_message is not None:
+                draw_save_warning(screen, ctx.save_error_message, ctx.small_font)
             pygame.display.flip()
     finally:
         try:

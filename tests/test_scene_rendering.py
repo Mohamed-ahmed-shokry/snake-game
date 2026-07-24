@@ -25,6 +25,7 @@ from snake_game.scenes.progress_scene import ProgressScene
 from snake_game.scenes.settings_scene import SettingsScene
 from snake_game.systems.powerups import PowerUpType
 from snake_game.types import Direction, GameStatus, MapMode, SceneId
+from snake_game.ui.components import draw_save_warning
 from snake_game.ui.theme import resolve_theme
 
 
@@ -118,6 +119,20 @@ def test_context_tracks_interactive_save_failures(
     assert saved is False
     assert app_context.save_error_message == "Save failed - progress may be lost"
     assert "read-only save folder" in caplog.text
+
+
+def test_save_failure_warning_is_visible_at_minimum_viewport(app_context: AppContext) -> None:
+    screen = pygame.Surface((800, 600))
+    screen.fill((0, 0, 0))
+
+    warning_rect = draw_save_warning(
+        screen,
+        "Save failed - progress may be lost",
+        app_context.small_font,
+    )
+
+    assert screen.get_rect().contains(warning_rect)
+    assert screen.get_at(warning_rect.center)[:3] != (0, 0, 0)
 
 
 def test_powerup_types_have_distinct_visual_glyphs(app_context: AppContext) -> None:

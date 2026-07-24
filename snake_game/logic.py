@@ -99,6 +99,7 @@ def create_initial_state(
     food = spawn_food(snake, obstacles, config.grid_width, config.grid_height, local_rng)
     return GameState(
         snake=snake,
+        previous_snake=list(snake),
         direction=Direction.RIGHT,
         pending_direction=None,
         direction_queue=[],
@@ -124,6 +125,7 @@ def reset_state(
 ) -> None:
     fresh = create_initial_state(config, settings, rng)
     state.snake = fresh.snake
+    state.previous_snake = fresh.previous_snake
     state.direction = fresh.direction
     state.pending_direction = fresh.pending_direction
     state.direction_queue = fresh.direction_queue
@@ -191,6 +193,7 @@ def advance_one_step(
         return
 
     _apply_next_direction(state)
+    state.previous_snake = list(state.snake)
 
     new_head = _next_head_position(state, config, phase_active=phase_active)
     if new_head is None:

@@ -35,6 +35,26 @@ def _draw_centered_text(
     screen.blit(surface, rect)
 
 
+def interpolate_snake_positions(state: GameState, movement_alpha: float) -> list[tuple[float, float]]:
+    alpha = max(0.0, min(movement_alpha, 1.0))
+    if not state.previous_snake:
+        return [(float(x), float(y)) for x, y in state.snake]
+
+    positions: list[tuple[float, float]] = []
+    for index, (current_x, current_y) in enumerate(state.snake):
+        previous_x, previous_y = state.previous_snake[min(index, len(state.previous_snake) - 1)]
+        if abs(current_x - previous_x) > 1 or abs(current_y - previous_y) > 1:
+            positions.append((float(current_x), float(current_y)))
+            continue
+        positions.append(
+            (
+                previous_x + (current_x - previous_x) * alpha,
+                previous_y + (current_y - previous_y) * alpha,
+            )
+        )
+    return positions
+
+
 class PlayfieldRenderer:
     def __init__(self, config: GameConfig, theme: UiTheme, assets: RenderAssets) -> None:
         self.config = config
@@ -214,9 +234,19 @@ class PlayfieldRenderer:
         state: GameState,
         active_powerup_types: set[PowerUpType],
         animation_seconds: float,
+        movement_alpha: float,
     ) -> None:
-        inset = max(1, self.config.cell_size // 10)
-        head_rect = self._cell_rect(*state.snake[0])
+        base_inset = max(1, self.config.cell_size // 10)
+        positions = interpolate_snake_positions(state, movement_alpha)
+        centers = [
+            (
+                round((cell_x + 0.5) * self.config.cell_size),
+                round((cell_y + 0.5) * self.config.cell_size),
+            )
+            for cell_x, cell_y in positions
+        ]
+        head_rect = pygame.Rect(0, 0, self.config.cell_size, self.config.cell_size)
+        head_rect.center = centers[0]
         head_center = head_rect.center
         motion_pulse = 0.0 if self.config.graphics.reduced_motion else (math.sin(animation_seconds * 7.0) + 1.0) * 0.5
 
@@ -269,36 +299,82 @@ class PlayfieldRenderer:
             )
             target.blit(phase_layer, (0, 0))
 
-        for index in range(len(state.snake) - 1):
-            start = self._cell_rect(*state.snake[index]).center
-            end = self._cell_rect(*state.snake[index + 1]).center
+        for index in range(len(centers) - 1):
+            start = centers[index]
+            end = centers[index + 1]
             if abs(start[0] - end[0]) <= self.config.cell_size and abs(start[1] - end[1]) <= self.config.cell_size:
+                taper = index / max(1, len(centers) - 1)
+                connector_width = max(
+                    3,
+                    self.config.cell_size - base_inset * 3 - round(taper * self.config.cell_size * 0.16),
+                )
+                pygame.draw.line(
+                    target,
+                    (6, 12, 10),
+                    (start[0] + 2, start[1] + 3),
+                    (end[0] + 2, end[1] + 3),
+                    connector_width,
+                )
                 pygame.draw.line(
                     target,
                     self.theme.palette.snake_body,
                     start,
                     end,
-                    max(3, self.config.cell_size - inset * 3),
+                    connector_width,
                 )
 
-        for index in range(len(state.snake) - 1, -1, -1):
-            cell_rect = self._cell_rect(*state.snake[index])
+        for index in range(len(centers) - 1, -1, -1):
+            taper = index / max(1, len(centers) - 1)
+            inset = base_inset + round(taper * self.config.cell_size * 0.11)
+            cell_rect = pygame.Rect(0, 0, self.config.cell_size, self.config.cell_size)
+            cell_rect.center = centers[index]
             shape = cell_rect.inflate(-inset * 2, -inset * 2)
             color = self.theme.palette.snake_head if index == 0 else self.theme.palette.snake_body
-            radius = max(2, self.config.cell_size // (3 if index == 0 else 4))
-            pygame.draw.rect(target, (7, 12, 11), shape.move(2, 2), border_radius=radius)
-            pygame.draw.rect(target, color, shape, border_radius=radius)
+            shadow_shape = shape.move(max(2, base_inset), max(2, base_inset))
+            pygame.draw.ellipse(target, (6, 11, 10), shadow_shape)
+            pygame.draw.ellipse(target, color, shape)
+            outline = tuple(max(5, channel // 2) for channel in color)
+            pygame.draw.ellipse(target, outline, shape, max(1, self.config.cell_size // 18))
             if index > 0:
                 highlight = tuple(min(255, channel + 24) for channel in color)
-                pygame.draw.line(
+                sheen = pygame.Rect(
+                    shape.left + shape.width // 4,
+                    shape.top + max(2, shape.height // 6),
+                    max(2, shape.width // 2),
+                    max(2, shape.height // 4),
+                )
+                pygame.draw.ellipse(
                     target,
                     highlight,
-                    (shape.left + 3, shape.top + 3),
-                    (shape.right - 4, shape.top + 3),
-                    1,
+                    sheen,
                 )
 
+        head_shape = head_rect.inflate(-base_inset * 2, -base_inset * 2)
         direction_x, direction_y = state.direction.vector
+        if direction_x:
+            head_shape.inflate_ip(max(2, self.config.cell_size // 8), 0)
+        else:
+            head_shape.inflate_ip(0, max(2, self.config.cell_size // 8))
+        pygame.draw.ellipse(target, (6, 11, 10), head_shape.move(2, 3))
+        pygame.draw.ellipse(target, self.theme.palette.snake_head, head_shape)
+        pygame.draw.ellipse(
+            target,
+            tuple(max(8, channel // 2) for channel in self.theme.palette.snake_head),
+            head_shape,
+            max(1, self.config.cell_size // 18),
+        )
+        head_highlight = pygame.Rect(
+            head_shape.left + head_shape.width // 4,
+            head_shape.top + max(2, head_shape.height // 7),
+            max(3, head_shape.width // 3),
+            max(2, head_shape.height // 5),
+        )
+        pygame.draw.ellipse(
+            target,
+            tuple(min(255, channel + 38) for channel in self.theme.palette.snake_head),
+            head_highlight,
+        )
+
         perpendicular_x, perpendicular_y = -direction_y, direction_x
         forward = max(2, self.config.cell_size // 5)
         spread = max(2, self.config.cell_size // 5)
@@ -314,6 +390,36 @@ class PlayfieldRenderer:
                 eye_radius,
             )
 
+        mouth_forward = max(3, self.config.cell_size // 3)
+        mouth_half = max(2, self.config.cell_size // 9)
+        mouth_center = (
+            head_rect.centerx + direction_x * mouth_forward,
+            head_rect.centery + direction_y * mouth_forward,
+        )
+        pygame.draw.line(
+            target,
+            (18, 70, 42),
+            (
+                mouth_center[0] - perpendicular_x * mouth_half,
+                mouth_center[1] - perpendicular_y * mouth_half,
+            ),
+            (
+                mouth_center[0] + perpendicular_x * mouth_half,
+                mouth_center[1] + perpendicular_y * mouth_half,
+            ),
+            max(1, self.config.cell_size // 16),
+        )
+        if not self.config.graphics.reduced_motion and math.sin(animation_seconds * 4.2) > 0.82:
+            tongue_start = (
+                mouth_center[0] + direction_x * 2,
+                mouth_center[1] + direction_y * 2,
+            )
+            tongue_end = (
+                tongue_start[0] + direction_x * max(4, self.config.cell_size // 4),
+                tongue_start[1] + direction_y * max(4, self.config.cell_size // 4),
+            )
+            pygame.draw.line(target, self.theme.palette.food, tongue_start, tongue_end, 2)
+
     def _draw_entities(
         self,
         target: pygame.Surface,
@@ -322,6 +428,7 @@ class PlayfieldRenderer:
         powerup_type: PowerUpType | None,
         active_powerup_types: set[PowerUpType],
         animation_seconds: float,
+        movement_alpha: float,
     ) -> None:
         for obstacle_x, obstacle_y in state.obstacles:
             self._draw_obstacle(target, (obstacle_x, obstacle_y))
@@ -331,7 +438,13 @@ class PlayfieldRenderer:
         if powerup_position is not None and powerup_type is not None:
             self._draw_powerup(target, animation_seconds, powerup_position, powerup_type)
 
-        self._draw_snake(target, state, active_powerup_types, animation_seconds)
+        self._draw_snake(
+            target,
+            state,
+            active_powerup_types,
+            animation_seconds,
+            movement_alpha,
+        )
 
     def _draw_particles(
         self,
@@ -501,6 +614,7 @@ class PlayfieldRenderer:
         active_effect_labels: list[str],
         active_powerup_types: set[PowerUpType] | None = None,
         animation_seconds: float = 0.0,
+        movement_alpha: float = 1.0,
         stage_banner_text: str | None = None,
         stage_banner_alpha: int = 0,
         flash_alpha: int = 0,
@@ -518,6 +632,7 @@ class PlayfieldRenderer:
             powerup_type,
             active_powerup_types or set(),
             animation_seconds,
+            movement_alpha,
         )
         if particles:
             self._draw_particles(world, particles)

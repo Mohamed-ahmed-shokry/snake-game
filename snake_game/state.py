@@ -6,6 +6,7 @@ from snake_game.types import Difficulty, Direction, GameStatus, MapMode, Point
 @dataclass(slots=True)
 class GameState:
     snake: list[Point]
+    previous_snake: list[Point]
     direction: Direction
     pending_direction: Direction | None
     direction_queue: list[Direction]

@@ -89,6 +89,7 @@ def test_advance_one_step_moves_snake_and_trims_tail() -> None:
 
     advance_one_step(state, config, random.Random(3))
 
+    assert state.previous_snake == old_snake
     assert state.snake[0] == (old_snake[0][0] + 1, old_snake[0][1])
     assert len(state.snake) == len(old_snake)
     assert state.status == GameStatus.RUNNING

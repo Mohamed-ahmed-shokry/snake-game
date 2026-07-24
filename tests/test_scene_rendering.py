@@ -11,7 +11,7 @@ from snake_game.config import GameConfig
 from snake_game.events import EventBus
 from snake_game.persistence import PersistentData
 from snake_game.rendering.assets import RenderAssets
-from snake_game.rendering.layers import PlayfieldRenderer
+from snake_game.rendering.layers import PlayfieldRenderer, interpolate_snake_positions
 from snake_game.scenes.base import AppContext, SessionResult, build_ui_fonts
 from snake_game.scenes.game_over_scene import GameOverScene
 from snake_game.scenes.menu_scene import MenuScene
@@ -229,6 +229,28 @@ def test_active_powerup_changes_head_visual_effect(app_context: AppContext) -> N
         return pygame.image.tobytes(screen.subsurface(sample), "RGB")
 
     assert render_head(set()) != render_head({PowerUpType.SHIELD})
+
+
+def test_snake_positions_interpolate_between_simulation_steps(app_context: AppContext) -> None:
+    scene = PlayScene(app_context)
+    scene.state.previous_snake = [(10, 10), (9, 10), (8, 10)]
+    scene.state.snake = [(11, 10), (10, 10), (9, 10)]
+
+    assert interpolate_snake_positions(scene.state, 0.5) == [
+        (10.5, 10.0),
+        (9.5, 10.0),
+        (8.5, 10.0),
+    ]
+
+
+def test_snake_interpolation_snaps_across_wrap_boundary(app_context: AppContext) -> None:
+    scene = PlayScene(app_context)
+    scene.state.previous_snake = [(39, 10), (38, 10), (37, 10)]
+    scene.state.snake = [(0, 10), (39, 10), (38, 10)]
+
+    positions = interpolate_snake_positions(scene.state, 0.5)
+
+    assert positions[0] == (0.0, 10.0)
 
 
 def test_menu_supports_mouse_hover_and_click(app_context: AppContext) -> None:

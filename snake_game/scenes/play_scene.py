@@ -381,6 +381,11 @@ class PlayScene(Scene):
         particle_primitives = [
             (particle.x, particle.y, particle.size, particle.color) for particle in self.particles
         ]
+        effective_step_rate = max(0.1, self.state.steps_per_second * self.powerups.speed_multiplier())
+        if self.ctx.config.graphics.reduced_motion:
+            movement_alpha = 1.0
+        else:
+            movement_alpha = min(1.0, 0.25 + self.state.accumulator_seconds * effective_step_rate * 0.75)
         stage_banner_alpha = int(210 * min(1.0, self.stage_banner_timer / 1.2))
         flash_alpha = int(150 * min(1.0, self.flash_timer / 0.18))
 
@@ -398,6 +403,7 @@ class PlayScene(Scene):
             active_effect_labels=self.powerups.active_effect_labels(),
             active_powerup_types=self.powerups.active_types(),
             animation_seconds=self.visual_time,
+            movement_alpha=movement_alpha,
             stage_banner_text=self.stage_banner_text,
             stage_banner_alpha=stage_banner_alpha,
             flash_alpha=flash_alpha,

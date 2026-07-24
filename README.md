@@ -6,6 +6,10 @@
 
 A complete, modern Snake game focused on responsive controls, readable visuals, meaningful progression, and replayable arcade runs.
 
+<p align="center">
+  <img src="docs/screenshots/gameplay.png" alt="Snake Arcade gameplay with the neon arena theme" width="900">
+</p>
+
 Version **1.1.0** is a self-contained desktop game with persistent settings, career progress, achievements, per-mode leaderboards, mouse controls, and a polished audiovisual presentation.
 
 ## What You Get

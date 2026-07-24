@@ -12,7 +12,7 @@ from snake_game.events import EventBus
 from snake_game.persistence import PersistentData
 from snake_game.rendering.assets import RenderAssets
 from snake_game.rendering.layers import PlayfieldRenderer
-from snake_game.scenes.base import AppContext, SessionResult
+from snake_game.scenes.base import AppContext, SessionResult, build_ui_fonts
 from snake_game.scenes.game_over_scene import GameOverScene
 from snake_game.scenes.menu_scene import MenuScene
 from snake_game.scenes.play_scene import PlayScene, direction_for_pointer
@@ -129,6 +129,28 @@ def test_settings_supports_forward_and_reverse_mouse_changes(app_context: AppCon
 
     scene.handle_event(pygame.event.Event(pygame.MOUSEBUTTONDOWN, pos=(400, 178), button=3))
     assert app_context.persistent_data.graphics.theme_id == original_theme
+
+
+def test_text_size_setting_refreshes_fonts_and_wraps_options(app_context: AppContext) -> None:
+    scene = SettingsScene(app_context)
+    original_height = app_context.small_font.get_height()
+    scene.selected_index = 2
+
+    scene._change_value(1)
+
+    assert app_context.persistent_data.graphics.ui_scale == 1.1
+    assert app_context.small_font.get_height() > original_height
+    scene._change_value(1)
+    assert app_context.persistent_data.graphics.ui_scale == 0.85
+
+
+def test_build_ui_fonts_clamps_untrusted_saved_scale() -> None:
+    config = GameConfig()
+    config.graphics.ui_scale = 99.0
+
+    _, _, small_font = build_ui_fonts(config)
+
+    assert small_font.get_height() == pygame.font.Font(None, round(28 * 1.1)).get_height()
 
 
 def test_pointer_direction_uses_dominant_axis_and_dead_zone() -> None:

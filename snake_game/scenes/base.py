@@ -12,6 +12,17 @@ from snake_game.events import EventBus
 from snake_game.persistence import PersistentData
 from snake_game.types import SceneId
 
+UI_SCALE_OPTIONS: tuple[float, ...] = (0.85, 1.0, 1.1)
+
+
+def build_ui_fonts(config: GameConfig) -> tuple[pygame.font.Font, pygame.font.Font, pygame.font.Font]:
+    scale = min(max(config.graphics.ui_scale, UI_SCALE_OPTIONS[0]), UI_SCALE_OPTIONS[-1])
+    return (
+        pygame.font.Font(None, round(76 * scale)),
+        pygame.font.Font(None, round(42 * scale)),
+        pygame.font.Font(None, round(28 * scale)),
+    )
+
 
 @dataclass(slots=True)
 class SessionResult:
@@ -38,6 +49,9 @@ class AppContext:
     body_font: pygame.font.Font
     small_font: pygame.font.Font
     last_result: SessionResult | None = None
+
+    def refresh_fonts(self) -> None:
+        self.title_font, self.body_font, self.small_font = build_ui_fonts(self.config)
 
 
 class Scene:

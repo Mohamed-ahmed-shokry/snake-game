@@ -9,7 +9,7 @@ from snake_game.config import GameConfig
 from snake_game.events import EventBus
 from snake_game.persistence import load_persistent_data, save_persistent_data
 from snake_game.rendering.effects import draw_fade_overlay
-from snake_game.scenes.base import AppContext, Scene
+from snake_game.scenes.base import AppContext, Scene, build_ui_fonts
 from snake_game.scenes.game_over_scene import GameOverScene
 from snake_game.scenes.menu_scene import MenuScene
 from snake_game.scenes.play_scene import PlayScene
@@ -58,9 +58,7 @@ def run(config: GameConfig | None = None, seed: int | None = None) -> None:
         pygame.display.set_icon(window_icon)
     clock = pygame.time.Clock()
 
-    title_font = pygame.font.Font(None, 76)
-    body_font = pygame.font.Font(None, 42)
-    small_font = pygame.font.Font(None, 28)
+    title_font, body_font, small_font = build_ui_fonts(config)
 
     audio = AudioManager(muted=persistent_data.settings.muted)
 

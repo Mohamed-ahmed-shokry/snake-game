@@ -98,6 +98,8 @@ class PlayScene(Scene):
         self.toast_text: str | None = None
         self.toast_timer = 0.0
         self.toast_color: tuple[int, int, int] = (255, 255, 255)
+        self.pointer_feedback_position: tuple[int, int] | None = None
+        self.pointer_feedback_timer = 0.0
         self.end_reason = "collision"
 
     def _spawn_burst(self, cell_x: int, cell_y: int, color: tuple[int, int, int], count: int = 8) -> None:
@@ -275,6 +277,72 @@ class PlayScene(Scene):
                 cursor_x += group_gap
         return dock
 
+    def _draw_pointer_feedback(self, screen: pygame.Surface) -> None:
+        if self.pointer_feedback_position is None or self.pointer_feedback_timer <= 0:
+            return
+
+        theme = resolve_theme(
+            self.ctx.config.graphics.theme_id,
+            self.ctx.config.graphics.colorblind_mode,
+        )
+        layer = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+        strength = max(0.0, min(1.0, self.pointer_feedback_timer / 0.45))
+        progress = 1.0 - strength
+        target_x, target_y = self.pointer_feedback_position
+        head_x, head_y = self.state.snake[0]
+        head_center = (
+            head_x * self.ctx.config.cell_size + self.ctx.config.cell_size // 2,
+            head_y * self.ctx.config.cell_size + self.ctx.config.cell_size // 2,
+        )
+
+        delta_x = target_x - head_center[0]
+        delta_y = target_y - head_center[1]
+        distance = max(1.0, (delta_x * delta_x + delta_y * delta_y) ** 0.5)
+        dot_count = min(14, max(1, int(distance // 34)))
+        for index in range(1, dot_count + 1):
+            fraction = index / (dot_count + 1)
+            dot_center = (
+                round(head_center[0] + delta_x * fraction),
+                round(head_center[1] + delta_y * fraction),
+            )
+            pygame.draw.circle(
+                layer,
+                (*theme.palette.accent, round(38 * strength)),
+                dot_center,
+                1 + (index % 3 == 0),
+            )
+
+        radius = 18 if self.ctx.config.graphics.reduced_motion else round(14 + progress * 22)
+        pygame.draw.circle(
+            layer,
+            (*theme.palette.accent, round(210 * strength)),
+            (target_x, target_y),
+            radius,
+            2,
+        )
+        tick_gap = radius + 5
+        tick_length = 7
+        for start, end in (
+            ((target_x - tick_gap, target_y), (target_x - tick_gap + tick_length, target_y)),
+            ((target_x + tick_gap, target_y), (target_x + tick_gap - tick_length, target_y)),
+            ((target_x, target_y - tick_gap), (target_x, target_y - tick_gap + tick_length)),
+            ((target_x, target_y + tick_gap), (target_x, target_y + tick_gap - tick_length)),
+        ):
+            pygame.draw.line(
+                layer,
+                (*theme.palette.selected_text, round(230 * strength)),
+                start,
+                end,
+                2,
+            )
+        pygame.draw.circle(
+            layer,
+            (*theme.palette.selected_text, round(230 * strength)),
+            (target_x, target_y),
+            3,
+        )
+        screen.blit(layer, (0, 0))
+
     def _record_and_transition(self) -> None:
         if self.score_recorded:
             return
@@ -336,6 +404,8 @@ class PlayScene(Scene):
                 self._dismiss_onboarding()
                 self.ctx.audio.play("confirm")
                 return
+            self.pointer_feedback_position = event.pos
+            self.pointer_feedback_timer = 0.45
             head_x, head_y = self.state.snake[0]
             head_center = (
                 head_x * self.ctx.config.cell_size + self.ctx.config.cell_size // 2,
@@ -392,6 +462,10 @@ class PlayScene(Scene):
             self.toast_timer = max(0.0, self.toast_timer - delta_seconds)
             if self.toast_timer == 0:
                 self.toast_text = None
+        if self.pointer_feedback_timer > 0:
+            self.pointer_feedback_timer = max(0.0, self.pointer_feedback_timer - delta_seconds)
+            if self.pointer_feedback_timer == 0:
+                self.pointer_feedback_position = None
 
         if self.ctx.config.graphics.reduced_motion:
             self.stage_banner_text = None
@@ -579,6 +653,7 @@ class PlayScene(Scene):
             camera_offset=self._camera_offset(),
             particles=particle_primitives,
         )
+        self._draw_pointer_feedback(screen)
         self._draw_floating_scores(screen)
         if self.countdown_remaining <= 0 and not self.onboarding_visible:
             control_dock = self._draw_control_dock(screen)

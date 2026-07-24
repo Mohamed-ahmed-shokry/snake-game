@@ -486,6 +486,30 @@ def test_pointer_direction_uses_dominant_axis_and_dead_zone() -> None:
     assert direction_for_pointer((102, 103), (100, 100)) is None
 
 
+def test_pointer_click_shows_feedback_then_expires(app_context: AppContext) -> None:
+    scene = PlayScene(app_context)
+    scene.onboarding_visible = False
+    click_position = (640, 300)
+
+    scene.handle_event(
+        pygame.event.Event(
+            pygame.MOUSEBUTTONDOWN,
+            pos=click_position,
+            button=1,
+        )
+    )
+
+    assert scene.pointer_feedback_position == click_position
+    assert scene.pointer_feedback_timer == 0.45
+
+    screen = pygame.Surface((800, 600), pygame.SRCALPHA)
+    scene._draw_pointer_feedback(screen)
+    assert screen.get_at(click_position).a > 0
+
+    scene.update(0.5)
+    assert scene.pointer_feedback_position is None
+
+
 def test_focus_loss_auto_pauses_active_game(app_context: AppContext) -> None:
     scene = PlayScene(app_context)
     scene.onboarding_visible = False

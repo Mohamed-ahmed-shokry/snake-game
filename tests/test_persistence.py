@@ -209,6 +209,51 @@ def test_load_sanitizes_leaderboard_scores(tmp_path: Path) -> None:
     assert loaded.leaderboard["normal|bounded|clear"] == [12, 7]
 
 
+def test_load_sanitizes_non_finite_numeric_values(tmp_path: Path) -> None:
+    path = tmp_path / "save.json"
+    payload = {
+        "schema_version": SAVE_SCHEMA_VERSION,
+        "settings": {},
+        "graphics": {"ui_scale": float("inf")},
+        "leaderboard": {
+            "normal|bounded|clear": [float("inf"), float("nan"), 12],
+        },
+        "stats": {
+            "total_runs": float("inf"),
+            "total_score": float("nan"),
+            "best_score_global": 12,
+        },
+        "achievements": [],
+    }
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+    loaded = load_persistent_data(path)
+
+    assert loaded.graphics.ui_scale == 1.0
+    assert loaded.leaderboard["normal|bounded|clear"] == [12]
+    assert loaded.stats.total_runs == 0
+    assert loaded.stats.total_score == 0
+    assert loaded.stats.best_score_global == 12
+
+
+def test_save_rejects_non_finite_values_without_replacing_existing_file(tmp_path: Path) -> None:
+    path = tmp_path / "save.json"
+    original = PersistentData()
+    save_persistent_data(original, path)
+    original_content = path.read_text(encoding="utf-8")
+
+    invalid = PersistentData(graphics=GraphicsSettings(ui_scale=float("inf")))
+    try:
+        save_persistent_data(invalid, path)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("non-finite persistence values must be rejected")
+
+    assert path.read_text(encoding="utf-8") == original_content
+    assert list(tmp_path.glob("*.tmp")) == []
+
+
 def test_load_coerces_string_boolean_settings(tmp_path: Path) -> None:
     path = tmp_path / "save.json"
     payload = {

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -128,14 +129,17 @@ def _coerce_positive_float(value: object, default: float) -> float:
     if isinstance(value, bool):
         return default
     if isinstance(value, (int, float)):
-        parsed = float(value)
-        return parsed if parsed > 0 else default
+        try:
+            parsed = float(value)
+        except OverflowError:
+            return default
+        return parsed if math.isfinite(parsed) and parsed > 0 else default
     if isinstance(value, str):
         try:
             parsed = float(value)
         except ValueError:
             return default
-        return parsed if parsed > 0 else default
+        return parsed if math.isfinite(parsed) and parsed > 0 else default
     return default
 
 
@@ -163,7 +167,11 @@ def _graphics_from_dict(data: object) -> GraphicsSettings:
 def _coerce_non_negative_int(value: object) -> int:
     if isinstance(value, bool):
         return int(value)
-    if isinstance(value, (int, float)):
+    if isinstance(value, int):
+        return max(0, value)
+    if isinstance(value, float):
+        if not math.isfinite(value):
+            return 0
         return max(0, int(value))
     return 0
 
@@ -188,11 +196,15 @@ def _normalize_leaderboard(data: object) -> dict[str, list[int]]:
             continue
         if not isinstance(values, list):
             continue
-        clean_values = [
-            int(value)
-            for value in values
-            if not isinstance(value, bool) and isinstance(value, (int, float)) and value >= 0
-        ]
+        clean_values: list[int] = []
+        for value in values:
+            if isinstance(value, bool) or not isinstance(value, (int, float)):
+                continue
+            if isinstance(value, float) and not math.isfinite(value):
+                continue
+            if value < 0:
+                continue
+            clean_values.append(int(value))
         clean_values.sort(reverse=True)
         normalized[key] = clean_values[:10]
     return normalized
@@ -310,7 +322,7 @@ def save_persistent_data(data: PersistentData, path: Path) -> None:
             delete=False,
         ) as temporary_file:
             temporary_path = Path(temporary_file.name)
-            json.dump(payload, temporary_file, indent=2)
+            json.dump(payload, temporary_file, indent=2, allow_nan=False)
             temporary_file.write("\n")
         temporary_path.replace(path)
     finally:

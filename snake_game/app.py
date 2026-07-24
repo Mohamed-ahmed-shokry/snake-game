@@ -63,80 +63,84 @@ def _build_scene(scene_id: SceneId, ctx: AppContext) -> Scene:
 
 def run(config: GameConfig | None = None, seed: int | None = None) -> None:
     pygame.init()
+    ctx: AppContext | None = None
+    try:
+        config = config or GameConfig()
+        data_path = Path(config.data_file)
+        persistent_data = load_persistent_data(data_path)
+        config.graphics = persistent_data.graphics
+        config.validate()
 
-    config = config or GameConfig()
-    data_path = Path(config.data_file)
-    persistent_data = load_persistent_data(data_path)
-    config.graphics = persistent_data.graphics
-    config.validate()
+        screen = _create_display(config)
+        clock = pygame.time.Clock()
 
-    screen = _create_display(config)
-    clock = pygame.time.Clock()
+        title_font, body_font, small_font = build_ui_fonts(config)
 
-    title_font, body_font, small_font = build_ui_fonts(config)
+        audio = AudioManager(muted=persistent_data.settings.muted)
 
-    audio = AudioManager(muted=persistent_data.settings.muted)
+        ctx = AppContext(
+            config=config,
+            data_path=data_path,
+            persistent_data=persistent_data,
+            audio=audio,
+            event_bus=EventBus(),
+            rng=random.Random(seed),
+            title_font=title_font,
+            body_font=body_font,
+            small_font=small_font,
+        )
 
-    ctx = AppContext(
-        config=config,
-        data_path=data_path,
-        persistent_data=persistent_data,
-        audio=audio,
-        event_bus=EventBus(),
-        rng=random.Random(seed),
-        title_font=title_font,
-        body_font=body_font,
-        small_font=small_font,
-    )
+        scene: Scene = _build_scene(SceneId.MENU, ctx)
+        running = True
+        fullscreen = False
+        transition_alpha = 0 if config.graphics.reduced_motion else 255
 
-    scene: Scene = _build_scene(SceneId.MENU, ctx)
-    running = True
-    fullscreen = False
-    transition_alpha = 0 if config.graphics.reduced_motion else 255
+        while running:
+            delta_seconds = clock.tick(config.render_fps) / 1000.0
 
-    while running:
-        delta_seconds = clock.tick(config.render_fps) / 1000.0
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                    break
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_F11:
+                    fullscreen = not fullscreen
+                    screen = _create_display(config, fullscreen=fullscreen)
+                    continue
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_m:
+                    _toggle_mute(ctx)
+                    continue
+                scene.handle_event(event)
 
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
+            if not running:
                 break
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_F11:
-                fullscreen = not fullscreen
-                screen = _create_display(config, fullscreen=fullscreen)
-                continue
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_m:
-                _toggle_mute(ctx)
-                continue
-            scene.handle_event(event)
 
-        if not running:
-            break
+            next_scene = scene.consume_next_scene()
+            if next_scene is not None:
+                scene = _build_scene(next_scene, ctx)
+                if not config.graphics.reduced_motion:
+                    transition_alpha = 180
 
-        next_scene = scene.consume_next_scene()
-        if next_scene is not None:
-            scene = _build_scene(next_scene, ctx)
-            if not config.graphics.reduced_motion:
-                transition_alpha = 180
+            if scene.quit_requested:
+                break
 
-        if scene.quit_requested:
-            break
+            scene.update(delta_seconds)
+            if scene.quit_requested:
+                break
 
-        scene.update(delta_seconds)
-        if scene.quit_requested:
-            break
+            post_update_scene = scene.consume_next_scene()
+            if post_update_scene is not None:
+                scene = _build_scene(post_update_scene, ctx)
+                if not config.graphics.reduced_motion:
+                    transition_alpha = 180
 
-        post_update_scene = scene.consume_next_scene()
-        if post_update_scene is not None:
-            scene = _build_scene(post_update_scene, ctx)
-            if not config.graphics.reduced_motion:
-                transition_alpha = 180
-
-        scene.render(screen)
-        if transition_alpha > 0:
-            draw_fade_overlay(screen, transition_alpha)
-            transition_alpha = max(0, transition_alpha - int(420 * delta_seconds))
-        pygame.display.flip()
-
-    save_persistent_data(ctx.persistent_data, data_path)
-    pygame.quit()
+            scene.render(screen)
+            if transition_alpha > 0:
+                draw_fade_overlay(screen, transition_alpha)
+                transition_alpha = max(0, transition_alpha - int(420 * delta_seconds))
+            pygame.display.flip()
+    finally:
+        try:
+            if ctx is not None:
+                save_persistent_data(ctx.persistent_data, ctx.data_path)
+        finally:
+            pygame.quit()

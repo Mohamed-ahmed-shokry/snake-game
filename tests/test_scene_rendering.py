@@ -314,6 +314,18 @@ def test_reduced_motion_keeps_floating_score_stationary(app_context: AppContext)
     assert scene.floating_scores[0].y == original_y
 
 
+def test_control_dock_renders_grouped_key_hints(app_context: AppContext) -> None:
+    scene = PlayScene(app_context)
+    screen = pygame.Surface((800, 600), pygame.SRCALPHA)
+
+    dock = scene._draw_control_dock(screen)
+
+    assert dock.bottom == 590
+    assert dock.width < 800
+    assert screen.get_at(dock.center).a > 0
+    assert screen.get_bounding_rect().contains(dock)
+
+
 def test_movement_trail_particles_fade_without_gravity(app_context: AppContext) -> None:
     scene = PlayScene(app_context)
     scene._spawn_movement_trail(10, 10)

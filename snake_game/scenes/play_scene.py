@@ -209,6 +209,72 @@ class PlayScene(Scene):
             screen.blit(shadow, shadow.get_rect(center=(center[0] + 2, center[1] + 3)))
             screen.blit(text, text.get_rect(center=center))
 
+    def _draw_control_dock(self, screen: pygame.Surface) -> pygame.Rect:
+        theme = resolve_theme(
+            self.ctx.config.graphics.theme_id,
+            self.ctx.config.graphics.colorblind_mode,
+        )
+        controls = (
+            ("WASD / CLICK", "MOVE"),
+            ("P", "PAUSE"),
+            ("H", "HELP"),
+            ("ESC", "MENU"),
+        )
+        rendered: list[tuple[pygame.Surface, pygame.Surface, int]] = []
+        for key, action in controls:
+            key_surface = self.ctx.small_font.render(key, True, theme.palette.selected_text)
+            action_surface = self.ctx.small_font.render(action, True, theme.palette.text)
+            rendered.append(
+                (
+                    key_surface,
+                    action_surface,
+                    key_surface.get_width() + action_surface.get_width() + 24,
+                )
+            )
+
+        group_gap = 22
+        content_width = sum(width for _, _, width in rendered) + group_gap * (len(rendered) - 1)
+        dock_width = min(self.ctx.config.window_width - 28, content_width + 42)
+        dock = pygame.Rect(0, 0, dock_width, 52)
+        dock.midbottom = (self.ctx.config.window_width // 2, self.ctx.config.window_height - 10)
+        draw_panel(
+            screen=screen,
+            rect=dock,
+            fill=(6, 10, 16),
+            border=tuple(max(28, channel // 2) for channel in theme.palette.grid),
+            alpha=226,
+            radius=16,
+        )
+
+        cursor_x = dock.centerx - content_width // 2
+        for index, (key_surface, action_surface, group_width) in enumerate(rendered):
+            key_rect = key_surface.get_rect(midleft=(cursor_x + 8, dock.centery)).inflate(16, 8)
+            draw_panel(
+                screen=screen,
+                rect=key_rect,
+                fill=(12, 20, 28),
+                border=theme.palette.accent,
+                alpha=235,
+                radius=7,
+            )
+            screen.blit(key_surface, key_surface.get_rect(center=key_rect.center))
+            action_rect = action_surface.get_rect(
+                midleft=(key_rect.right + 8, dock.centery)
+            )
+            screen.blit(action_surface, action_rect)
+            cursor_x += group_width
+            if index < len(rendered) - 1:
+                separator_x = cursor_x + group_gap // 2
+                pygame.draw.line(
+                    screen,
+                    tuple(max(32, channel // 2) for channel in theme.palette.grid),
+                    (separator_x, dock.top + 14),
+                    (separator_x, dock.bottom - 14),
+                    1,
+                )
+                cursor_x += group_gap
+        return dock
+
     def _record_and_transition(self) -> None:
         if self.score_recorded:
             return
@@ -515,18 +581,19 @@ class PlayScene(Scene):
         )
         self._draw_floating_scores(screen)
         if self.countdown_remaining <= 0 and not self.onboarding_visible:
-            draw_centered_text(
-                screen,
-                "Arrows/WASD/Click: Move   P/Space: Pause   H: Help   Esc: Menu",
-                self.ctx.small_font,
-                theme.palette.text,
-                (self.ctx.config.window_width // 2, self.ctx.config.window_height - 24),
+            control_dock = self._draw_control_dock(screen)
+        else:
+            control_dock = pygame.Rect(
+                0,
+                self.ctx.config.window_height,
+                self.ctx.config.window_width,
+                0,
             )
 
         if self.toast_text is not None and self.toast_timer > 0:
             toast_surface = self.ctx.small_font.render(self.toast_text, True, self.toast_color)
             toast_rect = toast_surface.get_rect(
-                center=(self.ctx.config.window_width // 2, self.ctx.config.window_height - 70)
+                center=(self.ctx.config.window_width // 2, control_dock.top - 25)
             ).inflate(32, 16)
             draw_panel(
                 screen=screen,

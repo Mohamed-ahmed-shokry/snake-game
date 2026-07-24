@@ -959,6 +959,7 @@ class PlayfieldRenderer:
         hud_font: pygame.font.Font,
         small_font: pygame.font.Font,
         countdown_remaining: float,
+        go_cue_timer: float,
         stage_banner_text: str | None,
         stage_banner_alpha: int,
         flash_alpha: int,
@@ -966,21 +967,107 @@ class PlayfieldRenderer:
         if countdown_remaining > 0 and state.status == GameStatus.RUNNING:
             count_value = max(1, int(countdown_remaining) + 1)
             shade = pygame.Surface(target.get_size(), pygame.SRCALPHA)
-            shade.fill((5, 8, 14, 105))
+            shade.fill((5, 8, 14, 138))
             target.blit(shade, (0, 0))
+            center = (self.config.window_width // 2, self.config.window_height // 2)
+            ring_layer = pygame.Surface(target.get_size(), pygame.SRCALPHA)
+            ring_radius = max(76, self.config.cell_size * 4)
+            ring_rect = pygame.Rect(0, 0, ring_radius * 2, ring_radius * 2)
+            ring_rect.center = center
             pygame.draw.circle(
+                ring_layer,
+                (*self.theme.palette.accent, 42),
+                center,
+                ring_radius + 18,
+                2,
+            )
+            pygame.draw.circle(
+                ring_layer,
+                (*self.theme.palette.selected_text, 35),
+                center,
+                ring_radius - 12,
+                1,
+            )
+            second_fraction = countdown_remaining % 1.0
+            if second_fraction == 0:
+                second_fraction = 1.0
+            sweep = 1.0 if self.config.graphics.reduced_motion else second_fraction
+            pygame.draw.arc(
+                ring_layer,
+                (*self.theme.palette.accent, 235),
+                ring_rect,
+                -math.pi / 2,
+                -math.pi / 2 + math.pi * 2 * sweep,
+                max(4, self.config.cell_size // 5),
+            )
+            for index in range(12):
+                angle = index * math.pi * 2 / 12
+                inner = ring_radius + 27
+                outer = inner + (9 if index % 3 == 0 else 5)
+                pygame.draw.line(
+                    ring_layer,
+                    (*self.theme.palette.accent, 165 if index % 3 == 0 else 78),
+                    (
+                        round(center[0] + math.cos(angle) * inner),
+                        round(center[1] + math.sin(angle) * inner),
+                    ),
+                    (
+                        round(center[0] + math.cos(angle) * outer),
+                        round(center[1] + math.sin(angle) * outer),
+                    ),
+                    2,
+                )
+            target.blit(ring_layer, (0, 0))
+            _draw_centered_text(
                 target,
-                (*self.theme.palette.accent, 55),
-                (self.config.window_width // 2, self.config.window_height // 2),
-                max(54, self.config.cell_size * 4),
+                "GET READY",
+                small_font,
+                self.theme.palette.accent,
+                (center[0], center[1] - ring_radius - 44),
             )
             _draw_centered_text(
                 target,
                 str(count_value),
                 hud_font,
-                self.theme.palette.accent,
-                (self.config.window_width // 2, self.config.window_height // 2),
+                self.theme.palette.text,
+                center,
             )
+            _draw_centered_text(
+                target,
+                "CHOOSE YOUR OPENING",
+                small_font,
+                self.theme.palette.selected_text,
+                (center[0], center[1] + ring_radius + 44),
+            )
+
+        if go_cue_timer > 0 and countdown_remaining <= 0 and state.status == GameStatus.RUNNING:
+            strength = max(0.0, min(1.0, go_cue_timer / 0.55))
+            elapsed = 1.0 - strength
+            center = (self.config.window_width // 2, self.config.window_height // 2)
+            cue_layer = pygame.Surface(target.get_size(), pygame.SRCALPHA)
+            cue_layer.fill((5, 10, 16, round(54 * strength)))
+            radius = round(
+                max(56, self.config.cell_size * 3)
+                + (0 if self.config.graphics.reduced_motion else elapsed * self.config.cell_size * 5)
+            )
+            pygame.draw.circle(
+                cue_layer,
+                (*self.theme.palette.snake_head, round(210 * strength)),
+                center,
+                radius,
+                max(2, self.config.cell_size // 8),
+            )
+            pygame.draw.circle(
+                cue_layer,
+                (*self.theme.palette.accent, round(90 * strength)),
+                center,
+                radius + max(10, self.config.cell_size),
+                2,
+            )
+            go_surface = hud_font.render("GO!", True, self.theme.palette.snake_head)
+            go_surface.set_alpha(round(255 * strength))
+            cue_layer.blit(go_surface, go_surface.get_rect(center=center))
+            target.blit(cue_layer, (0, 0))
 
         if state.status == GameStatus.PAUSED:
             shade = pygame.Surface(target.get_size(), pygame.SRCALPHA)
@@ -1044,6 +1131,7 @@ class PlayfieldRenderer:
         active_powerup_types: set[PowerUpType] | None = None,
         animation_seconds: float = 0.0,
         movement_alpha: float = 1.0,
+        go_cue_timer: float = 0.0,
         stage_banner_text: str | None = None,
         stage_banner_alpha: int = 0,
         flash_alpha: int = 0,
@@ -1073,6 +1161,7 @@ class PlayfieldRenderer:
             hud_font,
             small_font,
             countdown_remaining,
+            go_cue_timer,
             stage_banner_text,
             stage_banner_alpha,
             flash_alpha,

@@ -85,6 +85,7 @@ class PlayScene(Scene):
 
         self.stage_banner_text: str | None = None
         self.stage_banner_timer: float = 0.0
+        self.go_cue_timer: float = 0.0
         self.flash_timer: float = 0.0
         self.shake_timer: float = 0.0
 
@@ -466,6 +467,8 @@ class PlayScene(Scene):
             self.pointer_feedback_timer = max(0.0, self.pointer_feedback_timer - delta_seconds)
             if self.pointer_feedback_timer == 0:
                 self.pointer_feedback_position = None
+        if self.go_cue_timer > 0:
+            self.go_cue_timer = max(0.0, self.go_cue_timer - delta_seconds)
 
         if self.ctx.config.graphics.reduced_motion:
             self.stage_banner_text = None
@@ -481,7 +484,10 @@ class PlayScene(Scene):
             return
 
         if self.countdown_remaining > 0:
+            previous_countdown = self.countdown_remaining
             self.countdown_remaining = max(0.0, self.countdown_remaining - delta_seconds)
+            if previous_countdown > 0 and self.countdown_remaining == 0:
+                self.go_cue_timer = 0.55
             return
 
         self.run_seconds += delta_seconds
@@ -647,6 +653,7 @@ class PlayScene(Scene):
             active_powerup_types=self.powerups.active_types(),
             animation_seconds=self.visual_time,
             movement_alpha=movement_alpha,
+            go_cue_timer=self.go_cue_timer,
             stage_banner_text=self.stage_banner_text,
             stage_banner_alpha=stage_banner_alpha,
             flash_alpha=flash_alpha,

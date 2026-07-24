@@ -390,6 +390,24 @@ def test_stage_banner_has_cinematic_layers_and_fades(app_context: AppContext) ->
     assert opening.get_at((400, 300)).a > 0
 
 
+def test_countdown_completion_triggers_go_cue(app_context: AppContext) -> None:
+    scene = PlayScene(app_context)
+    scene.onboarding_visible = False
+    scene.countdown_remaining = 0.1
+
+    scene.update(0.2)
+
+    assert scene.countdown_remaining == 0
+    assert scene.go_cue_timer == 0.55
+
+    screen = pygame.Surface((800, 600), pygame.SRCALPHA)
+    scene.render(screen)
+    assert screen.get_at((400, 300)).a > 0
+
+    scene.update(0.6)
+    assert scene.go_cue_timer == 0
+
+
 def test_cached_glow_is_brightest_near_center() -> None:
     assets = RenderAssets()
     glow = assets.glow_surface(30, (90, 200, 240), peak_alpha=80)

@@ -1,3 +1,4 @@
+import math
 from dataclasses import dataclass, field
 
 from snake_game.types import Difficulty, MapMode, ThemeId
@@ -127,15 +128,15 @@ class GameConfig:
             raise ValueError("render_fps must be >= 1")
         if self.max_steps_per_frame < 1:
             raise ValueError("max_steps_per_frame must be >= 1")
-        if self.countdown_seconds < 0:
-            raise ValueError("countdown_seconds must be >= 0")
+        if not math.isfinite(self.countdown_seconds) or self.countdown_seconds < 0:
+            raise ValueError("countdown_seconds must be finite and >= 0")
         if self.obstacle_count < 0:
             raise ValueError("obstacle_count must be >= 0")
         if self.leaderboard_limit < 1:
             raise ValueError("leaderboard_limit must be >= 1")
         if self.stage_points_interval < 1:
             raise ValueError("stage_points_interval must be >= 1")
-        if self.graphics.ui_scale <= 0:
-            raise ValueError("graphics.ui_scale must be > 0")
+        if not math.isfinite(self.graphics.ui_scale) or self.graphics.ui_scale <= 0:
+            raise ValueError("graphics.ui_scale must be finite and > 0")
         if self.graphics.colorblind_mode not in COLORBLIND_MODES:
             raise ValueError("graphics.colorblind_mode must be a supported mode")

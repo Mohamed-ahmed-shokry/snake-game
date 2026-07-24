@@ -26,10 +26,16 @@ def test_resolve_theme_applies_colorblind_mode_variant() -> None:
     assert adjusted.palette.snake_head != normal.palette.snake_head
 
 
-def test_game_config_rejects_invalid_ui_scale() -> None:
-    config = GameConfig(graphics=GraphicsSettings(ui_scale=0.0))
-    with pytest.raises(ValueError):
-        config.validate()
+@pytest.mark.parametrize("ui_scale", [0.0, float("nan"), float("inf")])
+def test_game_config_rejects_invalid_ui_scale(ui_scale: float) -> None:
+    with pytest.raises(ValueError, match="ui_scale"):
+        GameConfig(graphics=GraphicsSettings(ui_scale=ui_scale)).validate()
+
+
+@pytest.mark.parametrize("countdown_seconds", [-1.0, float("nan"), float("inf")])
+def test_game_config_rejects_invalid_countdown(countdown_seconds: float) -> None:
+    with pytest.raises(ValueError, match="countdown_seconds"):
+        GameConfig(countdown_seconds=countdown_seconds).validate()
 
 
 def test_game_config_rejects_non_positive_dimensions() -> None:

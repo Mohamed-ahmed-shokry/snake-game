@@ -125,6 +125,23 @@ def test_powerup_types_have_distinct_visual_glyphs(app_context: AppContext) -> N
     assert len(set(images)) == len(PowerUpType)
 
 
+def test_obstacle_facets_render_differently_by_cell(app_context: AppContext) -> None:
+    renderer = PlayfieldRenderer(
+        config=app_context.config,
+        theme=resolve_theme(app_context.config.graphics.theme_id),
+        assets=RenderAssets(),
+    )
+    first = pygame.Surface((40, 40), pygame.SRCALPHA)
+    second = pygame.Surface((40, 40), pygame.SRCALPHA)
+
+    renderer._draw_obstacle(first, (0, 0))
+    renderer._draw_obstacle(second, (1, 0))
+
+    first_cell = pygame.image.tobytes(first.subsurface(pygame.Rect(0, 0, 20, 20)), "RGBA")
+    second_cell = pygame.image.tobytes(second.subsurface(pygame.Rect(20, 0, 20, 20)), "RGBA")
+    assert first_cell != second_cell
+
+
 def test_hud_renders_multiple_active_effects_without_error(app_context: AppContext) -> None:
     play_scene = PlayScene(app_context)
     renderer = PlayfieldRenderer(

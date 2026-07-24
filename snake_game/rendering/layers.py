@@ -131,27 +131,72 @@ class PlayfieldRenderer:
         cell_rect = self._cell_rect(*cell)
         inset = max(1, self.config.cell_size // 10)
         shape = cell_rect.inflate(-inset * 2, -inset * 2)
-        shadow = shape.move(max(1, inset), max(1, inset))
-        pygame.draw.rect(target, (8, 10, 14), shadow, border_radius=max(2, self.config.cell_size // 4))
-        pygame.draw.rect(
-            target,
-            self.theme.palette.obstacle,
-            shape,
-            border_radius=max(2, self.config.cell_size // 4),
-        )
+        cut = max(2, shape.width // 5)
+        points = [
+            (shape.left + cut, shape.top),
+            (shape.right - cut, shape.top),
+            (shape.right, shape.top + cut),
+            (shape.right, shape.bottom - cut),
+            (shape.right - cut, shape.bottom),
+            (shape.left + cut, shape.bottom),
+            (shape.left, shape.bottom - cut),
+            (shape.left, shape.top + cut),
+        ]
+        shadow_offset = max(2, inset)
+        shadow_points = [(x + shadow_offset, y + shadow_offset) for x, y in points]
+        pygame.draw.polygon(target, (7, 9, 13), shadow_points)
+        pygame.draw.polygon(target, self.theme.palette.obstacle, points)
+
         highlight = tuple(min(255, channel + 28) for channel in self.theme.palette.obstacle)
-        pygame.draw.line(
+        dark_facet = tuple(max(8, channel - 28) for channel in self.theme.palette.obstacle)
+        top_facet = [
+            points[0],
+            points[1],
+            points[2],
+            (shape.centerx, shape.centery),
+            points[7],
+        ]
+        side_facet = [
+            points[2],
+            points[3],
+            points[4],
+            (shape.centerx, shape.centery),
+        ]
+        pygame.draw.polygon(target, highlight, top_facet)
+        pygame.draw.polygon(target, dark_facet, side_facet)
+        pygame.draw.polygon(
             target,
-            highlight,
-            (shape.left + 3, shape.top + 3),
-            (shape.right - 4, shape.top + 3),
-            max(1, self.config.cell_size // 12),
+            tuple(max(5, channel // 2) for channel in self.theme.palette.obstacle),
+            points,
+            max(1, self.config.cell_size // 16),
+        )
+
+        crack_sign = -1 if (cell[0] * 7 + cell[1] * 11) % 2 else 1
+        crack_color = tuple(max(5, channel // 3) for channel in self.theme.palette.obstacle)
+        crack_start = (shape.centerx - crack_sign * shape.width // 5, shape.top + shape.height // 4)
+        crack_mid = (shape.centerx + crack_sign * shape.width // 10, shape.centery)
+        crack_end = (shape.centerx - crack_sign * shape.width // 8, shape.bottom - shape.height // 5)
+        pygame.draw.lines(
+            target,
+            crack_color,
+            False,
+            [crack_start, crack_mid, crack_end],
+            max(1, self.config.cell_size // 18),
         )
 
     def _draw_food(self, target: pygame.Surface, animation_seconds: float, position: Point) -> None:
         cell_rect = self._cell_rect(*position)
         pulse = 0 if self.config.graphics.reduced_motion else int(math.sin(animation_seconds * 5.0))
         radius = max(3, self.config.cell_size // 2 - 3 + pulse)
+        glow_radius = radius + max(4, self.config.cell_size // 4)
+        glow = pygame.Surface((glow_radius * 2 + 2, glow_radius * 2 + 2), pygame.SRCALPHA)
+        pygame.draw.circle(
+            glow,
+            (*self.theme.palette.food, 46),
+            (glow_radius + 1, glow_radius + 1),
+            glow_radius,
+        )
+        target.blit(glow, (cell_rect.centerx - glow_radius - 1, cell_rect.centery - glow_radius - 1))
         shadow_center = (cell_rect.centerx + 2, cell_rect.centery + 2)
         pygame.draw.circle(target, (18, 8, 10), shadow_center, radius)
         pygame.draw.circle(target, self.theme.palette.food, cell_rect.center, radius)
@@ -179,17 +224,34 @@ class PlayfieldRenderer:
         cell_rect = self._cell_rect(*position)
         pulse = 0.0 if self.config.graphics.reduced_motion else (math.sin(animation_seconds * 6.0) + 1.0) * 0.5
         radius = max(4, self.config.cell_size // 2 - 2)
+        type_colors = {
+            PowerUpType.SHIELD: self.theme.palette.accent,
+            PowerUpType.SLOW_TIME: (112, 184, 255),
+            PowerUpType.DOUBLE_SCORE: self.theme.palette.powerup,
+            PowerUpType.PHASE: (194, 127, 255),
+        }
+        ring_color = type_colors[powerup_type]
         glow_radius = radius + 2 + int(pulse * 2)
         glow = pygame.Surface((glow_radius * 2 + 2, glow_radius * 2 + 2), pygame.SRCALPHA)
         pygame.draw.circle(
             glow,
-            (*self.theme.palette.powerup, 55),
+            (*ring_color, 62),
             (glow_radius + 1, glow_radius + 1),
             glow_radius,
         )
         target.blit(glow, (cell_rect.centerx - glow_radius - 1, cell_rect.centery - glow_radius - 1))
         pygame.draw.circle(target, (18, 22, 30), cell_rect.center, radius)
-        pygame.draw.circle(target, self.theme.palette.powerup, cell_rect.center, radius, max(2, radius // 3))
+        pygame.draw.circle(target, ring_color, cell_rect.center, radius, max(2, radius // 3))
+
+        if not self.config.graphics.reduced_motion:
+            orbit_radius = radius + max(3, self.config.cell_size // 6)
+            for orbit_index in range(3):
+                angle = animation_seconds * 2.4 + orbit_index * (math.pi * 2 / 3)
+                orbit_position = (
+                    round(cell_rect.centerx + math.cos(angle) * orbit_radius),
+                    round(cell_rect.centery + math.sin(angle) * orbit_radius),
+                )
+                pygame.draw.circle(target, ring_color, orbit_position, max(1, self.config.cell_size // 14))
 
         center_x, center_y = cell_rect.center
         glyph_color = self.theme.palette.text

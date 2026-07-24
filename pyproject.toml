@@ -17,6 +17,9 @@ package = true
 [tool.setuptools.packages.find]
 include = ["snake_game*"]
 
+[tool.setuptools.package-data]
+snake_game = ["assets/*.png"]
+
 [dependency-groups]
 dev = [
     "pytest>=8.0.0",

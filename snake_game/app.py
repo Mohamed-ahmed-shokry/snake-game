@@ -1,4 +1,5 @@
 import random
+from importlib.resources import as_file, files
 from pathlib import Path
 
 import pygame
@@ -15,6 +16,16 @@ from snake_game.scenes.play_scene import PlayScene
 from snake_game.scenes.progress_scene import ProgressScene
 from snake_game.scenes.settings_scene import SettingsScene
 from snake_game.types import SceneId
+
+
+def _load_window_icon(size: int = 64) -> pygame.Surface | None:
+    try:
+        icon_resource = files("snake_game").joinpath("assets", "snake_arcade_icon.png")
+        with as_file(icon_resource) as icon_path:
+            icon = pygame.image.load(str(icon_path))
+        return pygame.transform.smoothscale(icon, (size, size))
+    except (FileNotFoundError, OSError, pygame.error):
+        return None
 
 
 def _build_scene(scene_id: SceneId, ctx: AppContext) -> Scene:
@@ -42,6 +53,9 @@ def run(config: GameConfig | None = None, seed: int | None = None) -> None:
 
     screen = pygame.display.set_mode((config.window_width, config.window_height))
     pygame.display.set_caption("Snake Arcade")
+    window_icon = _load_window_icon()
+    if window_icon is not None:
+        pygame.display.set_icon(window_icon)
     clock = pygame.time.Clock()
 
     title_font = pygame.font.Font(None, 76)

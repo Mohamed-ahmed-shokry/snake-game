@@ -6,6 +6,7 @@ from pathlib import Path
 import pygame
 import pytest
 
+from snake_game.app import _load_window_icon
 from snake_game.config import GameConfig
 from snake_game.events import EventBus
 from snake_game.persistence import PersistentData
@@ -73,6 +74,13 @@ def test_every_scene_renders_at_default_viewport(app_context: AppContext) -> Non
         screen.fill((0, 0, 0))
         scene.render(screen)
         assert screen.get_at((0, 0))[:3] != (0, 0, 0)
+
+
+def test_packaged_window_icon_loads_at_requested_size() -> None:
+    icon = _load_window_icon(size=48)
+
+    assert icon is not None
+    assert icon.get_size() == (48, 48)
 
 
 def test_powerup_types_have_distinct_visual_glyphs(app_context: AppContext) -> None:

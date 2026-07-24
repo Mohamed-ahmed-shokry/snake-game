@@ -1,5 +1,9 @@
 # Snake Arcade
 
+<p align="center">
+  <img src="snake_game/assets/snake_arcade_icon.png" alt="Snake Arcade icon" width="160">
+</p>
+
 A complete, modern Snake game focused on responsive controls, readable visuals, meaningful progression, and replayable arcade runs.
 
 Version **1.0.0** is a self-contained desktop game with persistent settings, career progress, achievements, and per-mode leaderboards.

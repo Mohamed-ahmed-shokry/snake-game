@@ -754,6 +754,97 @@ class PlayfieldRenderer:
             progress_fill.width = max(2, round(progress_track.width * stage_progress))
             pygame.draw.rect(target, self.theme.palette.accent, progress_fill, border_radius=2)
 
+    def _draw_stage_banner(
+        self,
+        target: pygame.Surface,
+        text: str,
+        hud_font: pygame.font.Font,
+        small_font: pygame.font.Font,
+        alpha: int,
+    ) -> None:
+        safe_alpha = max(0, min(alpha, 210))
+        if safe_alpha <= 0:
+            return
+
+        center = (self.config.window_width // 2, self.config.window_height // 2)
+        elapsed = 1.0 - safe_alpha / 210
+        reveal = min(1.0, 0.18 + elapsed * 5.0)
+        layer = pygame.Surface(target.get_size(), pygame.SRCALPHA)
+        layer.fill((3, 7, 12, round(68 * safe_alpha / 210)))
+
+        ring_base = max(70, self.config.cell_size * 4)
+        ring_radius = round(ring_base + elapsed * self.config.cell_size * 8)
+        pygame.draw.circle(
+            layer,
+            (*self.theme.palette.accent, round(safe_alpha * 0.28)),
+            center,
+            ring_radius,
+            2,
+        )
+        pygame.draw.circle(
+            layer,
+            (*self.theme.palette.selected_text, round(safe_alpha * 0.16)),
+            center,
+            ring_radius + max(10, self.config.cell_size),
+            1,
+        )
+
+        panel_width = min(650, self.config.window_width - 80)
+        panel = pygame.Rect(0, 0, round(panel_width * reveal), 174)
+        panel.center = center
+        draw_panel(
+            screen=layer,
+            rect=panel,
+            fill=(8, 15, 24),
+            border=self.theme.palette.accent,
+            alpha=round(225 * safe_alpha / 210),
+            radius=18,
+        )
+
+        accent_half_width = round((panel_width // 2 - 42) * reveal)
+        line_y = center[1] - 46
+        pygame.draw.line(
+            layer,
+            (*self.theme.palette.accent, safe_alpha),
+            (center[0] - accent_half_width, line_y),
+            (center[0] - 56, line_y),
+            2,
+        )
+        pygame.draw.line(
+            layer,
+            (*self.theme.palette.accent, safe_alpha),
+            (center[0] + 56, line_y),
+            (center[0] + accent_half_width, line_y),
+            2,
+        )
+        pygame.draw.polygon(
+            layer,
+            (*self.theme.palette.selected_text, safe_alpha),
+            [
+                (center[0], line_y - 6),
+                (center[0] + 6, line_y),
+                (center[0], line_y + 6),
+                (center[0] - 6, line_y),
+            ],
+        )
+
+        eyebrow = small_font.render("SYSTEM  //  STAGE ADVANCE", True, self.theme.palette.accent)
+        title = hud_font.render(text.upper(), True, self.theme.palette.text)
+        subtitle = small_font.render(
+            "SPEED UP  //  ARENA EVOLVED",
+            True,
+            self.theme.palette.selected_text,
+        )
+        for surface, y in (
+            (eyebrow, center[1] - 65),
+            (title, center[1] - 8),
+            (subtitle, center[1] + 58),
+        ):
+            surface.set_alpha(round(255 * safe_alpha / 210))
+            layer.blit(surface, surface.get_rect(center=(center[0], y)))
+
+        target.blit(layer, (0, 0))
+
     def _draw_overlays(
         self,
         target: pygame.Surface,
@@ -818,15 +909,12 @@ class PlayfieldRenderer:
             )
 
         if stage_banner_text and stage_banner_alpha > 0:
-            banner = pygame.Surface((self.config.window_width, 56), pygame.SRCALPHA)
-            banner.fill((*self.theme.palette.accent, max(0, min(stage_banner_alpha, 255))))
-            target.blit(banner, (0, self.config.window_height // 2 - 28))
-            _draw_centered_text(
+            self._draw_stage_banner(
                 target,
                 stage_banner_text,
+                hud_font,
                 small_font,
-                self.theme.palette.background_top,
-                (self.config.window_width // 2, self.config.window_height // 2),
+                stage_banner_alpha,
             )
 
         if flash_alpha > 0:

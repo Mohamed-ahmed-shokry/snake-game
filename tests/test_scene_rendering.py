@@ -299,6 +299,35 @@ def test_movement_trail_particles_fade_without_gravity(app_context: AppContext) 
     assert scene.particles[0].vy == initial_vy
 
 
+def test_stage_banner_has_cinematic_layers_and_fades(app_context: AppContext) -> None:
+    renderer = PlayfieldRenderer(
+        config=app_context.config,
+        theme=resolve_theme(app_context.config.graphics.theme_id),
+        assets=RenderAssets(),
+    )
+    opening = pygame.Surface((800, 600), pygame.SRCALPHA)
+    fading = pygame.Surface((800, 600), pygame.SRCALPHA)
+
+    renderer._draw_stage_banner(
+        opening,
+        "Stage 4",
+        app_context.title_font,
+        app_context.small_font,
+        210,
+    )
+    renderer._draw_stage_banner(
+        fading,
+        "Stage 4",
+        app_context.title_font,
+        app_context.small_font,
+        80,
+    )
+
+    assert opening.get_bounding_rect().width == 800
+    assert pygame.image.tobytes(opening, "RGBA") != pygame.image.tobytes(fading, "RGBA")
+    assert opening.get_at((400, 300)).a > 0
+
+
 def test_cached_glow_is_brightest_near_center() -> None:
     assets = RenderAssets()
     glow = assets.glow_surface(30, (90, 200, 240), peak_alpha=80)

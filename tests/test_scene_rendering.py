@@ -256,6 +256,34 @@ def test_arena_energy_animates_unless_reduced_motion(app_context: AppContext) ->
     assert pygame.image.tobytes(still_first, "RGBA") == pygame.image.tobytes(still_second, "RGBA")
 
 
+def test_floating_score_rises_fades_and_expires(app_context: AppContext) -> None:
+    scene = PlayScene(app_context)
+    scene._spawn_floating_score(8, 12, 4)
+    original_y = scene.floating_scores[0].y
+
+    scene._update_floating_scores(0.2)
+    assert scene.floating_scores[0].y < original_y
+
+    screen = pygame.Surface((800, 600))
+    before = pygame.image.tobytes(screen, "RGB")
+    scene._draw_floating_scores(screen)
+    assert pygame.image.tobytes(screen, "RGB") != before
+
+    scene._update_floating_scores(1.0)
+    assert scene.floating_scores == []
+
+
+def test_reduced_motion_keeps_floating_score_stationary(app_context: AppContext) -> None:
+    app_context.config.graphics.reduced_motion = True
+    scene = PlayScene(app_context)
+    scene._spawn_floating_score(8, 12, 2)
+    original_y = scene.floating_scores[0].y
+
+    scene._update_floating_scores(0.2)
+
+    assert scene.floating_scores[0].y == original_y
+
+
 def test_cached_glow_is_brightest_near_center() -> None:
     assets = RenderAssets()
     glow = assets.glow_surface(30, (90, 200, 240), peak_alpha=80)

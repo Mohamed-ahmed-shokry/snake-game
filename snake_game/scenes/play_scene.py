@@ -59,6 +59,15 @@ class FxParticle:
     color: tuple[int, int, int]
 
 
+@dataclass(slots=True)
+class FloatingScore:
+    x: float
+    y: float
+    points: int
+    life: float = 0.9
+    max_life: float = 0.9
+
+
 class PlayScene(Scene):
     scene_id = SceneId.PLAY
 
@@ -82,6 +91,7 @@ class PlayScene(Scene):
 
         self.onboarding_visible = not ctx.persistent_data.onboarding_seen
         self.particles: list[FxParticle] = []
+        self.floating_scores: list[FloatingScore] = []
         self.visual_time = 0.0
         self.toast_text: str | None = None
         self.toast_timer = 0.0
@@ -122,6 +132,50 @@ class PlayScene(Scene):
             particle.vy += 240 * delta_seconds
             alive.append(particle)
         self.particles = alive
+
+    def _spawn_floating_score(self, cell_x: int, cell_y: int, points: int) -> None:
+        self.floating_scores.append(
+            FloatingScore(
+                x=cell_x * self.ctx.config.cell_size + self.ctx.config.cell_size / 2,
+                y=max(
+                    96.0,
+                    cell_y * self.ctx.config.cell_size - self.ctx.config.cell_size * 0.25,
+                ),
+                points=points,
+            )
+        )
+
+    def _update_floating_scores(self, delta_seconds: float) -> None:
+        alive: list[FloatingScore] = []
+        for score in self.floating_scores:
+            score.life -= delta_seconds
+            if score.life <= 0:
+                continue
+            if not self.ctx.config.graphics.reduced_motion:
+                score.y -= 34 * delta_seconds
+            alive.append(score)
+        self.floating_scores = alive
+
+    def _draw_floating_scores(self, screen: pygame.Surface) -> None:
+        theme = resolve_theme(
+            self.ctx.config.graphics.theme_id,
+            self.ctx.config.graphics.colorblind_mode,
+        )
+        for score in self.floating_scores:
+            progress = max(0.0, min(1.0, score.life / score.max_life))
+            fade_in = min(1.0, (1.0 - progress) * 7.0)
+            alpha = round(255 * min(progress, fade_in))
+            label = f"+{score.points}"
+            if score.points > self.state.score_per_food:
+                label = f"2X  +{score.points}"
+
+            shadow = self.ctx.body_font.render(label, True, (4, 8, 12))
+            shadow.set_alpha(alpha)
+            text = self.ctx.body_font.render(label, True, theme.palette.selected_text)
+            text.set_alpha(alpha)
+            center = (round(score.x), round(score.y))
+            screen.blit(shadow, shadow.get_rect(center=(center[0] + 2, center[1] + 3)))
+            screen.blit(text, text.get_rect(center=center))
 
     def _record_and_transition(self) -> None:
         if self.score_recorded:
@@ -226,6 +280,7 @@ class PlayScene(Scene):
     def update(self, delta_seconds: float) -> None:
         self.visual_time += max(0.0, delta_seconds)
         self._update_particles(delta_seconds)
+        self._update_floating_scores(delta_seconds)
 
         if self.stage_banner_timer > 0:
             self.stage_banner_timer = max(0.0, self.stage_banner_timer - delta_seconds)
@@ -278,6 +333,12 @@ class PlayScene(Scene):
                 self.food_eaten_count += 1
                 head_x = int(event.payload.get("head_x", self.state.snake[0][0]))
                 head_y = int(event.payload.get("head_y", self.state.snake[0][1]))
+                multiplier = max(1, int(event.payload.get("score_multiplier", 1)))
+                self._spawn_floating_score(
+                    head_x,
+                    head_y,
+                    self.state.score_per_food * multiplier,
+                )
                 self._spawn_burst(head_x, head_y, (245, 165, 95), count=10)
 
                 occupied_cells = set(self.state.snake) | set(self.state.obstacles) | {self.state.food}
@@ -410,6 +471,7 @@ class PlayScene(Scene):
             camera_offset=self._camera_offset(),
             particles=particle_primitives,
         )
+        self._draw_floating_scores(screen)
         if self.countdown_remaining <= 0 and not self.onboarding_visible:
             draw_centered_text(
                 screen,

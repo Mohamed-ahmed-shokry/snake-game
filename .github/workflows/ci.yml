@@ -43,3 +43,6 @@ jobs:
 
       - name: Build package
         run: uv build
+
+      - name: Smoke test wheel
+        run: uv run --isolated --no-project --with ./dist/*.whl snake-game --version

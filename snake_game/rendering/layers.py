@@ -209,6 +209,118 @@ class PlayfieldRenderer:
                 1,
             )
 
+        stage_intensity = min(max(stage, 1), 10)
+        circuit_alpha = 16 + stage_intensity * 3
+        center = (self.config.window_width // 2, self.config.window_height // 2)
+        ring_width = max(self.config.cell_size * 8, self.config.window_width // 3)
+        ring_height = max(self.config.cell_size * 6, self.config.window_height // 3)
+        ring_rect = pygame.Rect(0, 0, ring_width, ring_height)
+        ring_rect.center = center
+        ring_rotation = 0.0 if self.config.graphics.reduced_motion else motion_time * 0.12
+        for quarter in range(4):
+            start_angle = ring_rotation + quarter * math.pi / 2 + 0.12
+            pygame.draw.arc(
+                atmosphere,
+                (*accent, circuit_alpha),
+                ring_rect,
+                start_angle,
+                start_angle + math.pi / 3,
+                1,
+            )
+
+        corner_inset = max(14, self.config.cell_size // 2)
+        bracket_length = max(42, self.config.cell_size * 3)
+        corner_specs = (
+            (
+                (corner_inset + bracket_length, corner_inset),
+                (corner_inset, corner_inset),
+                (corner_inset, corner_inset + bracket_length),
+            ),
+            (
+                (self.config.window_width - corner_inset - bracket_length, corner_inset),
+                (self.config.window_width - corner_inset, corner_inset),
+                (self.config.window_width - corner_inset, corner_inset + bracket_length),
+            ),
+            (
+                (corner_inset, self.config.window_height - corner_inset - bracket_length),
+                (corner_inset, self.config.window_height - corner_inset),
+                (corner_inset + bracket_length, self.config.window_height - corner_inset),
+            ),
+            (
+                (
+                    self.config.window_width - corner_inset,
+                    self.config.window_height - corner_inset - bracket_length,
+                ),
+                (
+                    self.config.window_width - corner_inset,
+                    self.config.window_height - corner_inset,
+                ),
+                (
+                    self.config.window_width - corner_inset - bracket_length,
+                    self.config.window_height - corner_inset,
+                ),
+            ),
+        )
+        for points in corner_specs:
+            pygame.draw.lines(
+                atmosphere,
+                (*accent, circuit_alpha + 18),
+                False,
+                points,
+                2,
+            )
+            pygame.draw.circle(
+                atmosphere,
+                (*self.theme.palette.selected_text, circuit_alpha + 32),
+                points[1],
+                3,
+            )
+
+        circuit_count = min(3 + stage_intensity // 2, 8)
+        for index in range(circuit_count):
+            grid_x = 2 + (index * 7 + stage_intensity * 3) % max(3, self.config.grid_width - 5)
+            grid_y = 4 + (index * 5 + stage_intensity) % max(3, self.config.grid_height - 8)
+            start = (
+                grid_x * self.config.cell_size,
+                grid_y * self.config.cell_size,
+            )
+            length = self.config.cell_size * (2 + index % 3)
+            bend = self.config.cell_size * (1 if index % 2 == 0 else -1)
+            points = [
+                start,
+                (start[0] + length, start[1]),
+                (start[0] + length, start[1] + bend),
+            ]
+            pygame.draw.lines(
+                atmosphere,
+                (*accent, circuit_alpha),
+                False,
+                points,
+                1,
+            )
+            pygame.draw.circle(
+                atmosphere,
+                (*accent, circuit_alpha + 36),
+                points[-1],
+                2 + (index % 4 == 0),
+            )
+
+            signal_progress = (
+                0.5
+                if self.config.graphics.reduced_motion
+                else (motion_time * (0.28 + stage_intensity * 0.015) + index * 0.23) % 1.0
+            )
+            signal_position = (
+                round(start[0] + length * min(1.0, signal_progress * 1.45)),
+                start[1],
+            )
+            pygame.draw.circle(
+                atmosphere,
+                (*self.theme.palette.selected_text, circuit_alpha + 58),
+                signal_position,
+                2,
+            )
+
         danger = calculate_danger_level(state, self.config)
         if danger > 0:
             interpolated_head = interpolate_snake_positions(state, movement_alpha)[0]

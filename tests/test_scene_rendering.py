@@ -306,6 +306,30 @@ def test_arena_energy_animates_unless_reduced_motion(app_context: AppContext) ->
     assert pygame.image.tobytes(still_first, "RGBA") == pygame.image.tobytes(still_second, "RGBA")
 
 
+def test_arena_circuitry_intensifies_with_stage(app_context: AppContext) -> None:
+    app_context.config.graphics.particles_enabled = False
+    renderer = PlayfieldRenderer(
+        config=app_context.config,
+        theme=resolve_theme(app_context.config.graphics.theme_id),
+        assets=RenderAssets(),
+    )
+    state = PlayScene(app_context).state
+    state.obstacles.clear()
+    state.snake = [(10, 10)]
+    stage_one = pygame.Surface((800, 600), pygame.SRCALPHA)
+    stage_eight = pygame.Surface((800, 600), pygame.SRCALPHA)
+
+    renderer._draw_arena_energy(stage_one, state, 1, 0.5, 1.0)
+    renderer._draw_arena_energy(stage_eight, state, 8, 0.5, 1.0)
+
+    stage_one_pixels = pygame.image.tobytes(stage_one, "RGBA")
+    stage_eight_pixels = pygame.image.tobytes(stage_eight, "RGBA")
+    assert stage_one_pixels != stage_eight_pixels
+    assert sum(alpha > 0 for alpha in stage_eight_pixels[3::4]) > sum(
+        alpha > 0 for alpha in stage_one_pixels[3::4]
+    )
+
+
 def test_floating_score_rises_fades_and_expires(app_context: AppContext) -> None:
     scene = PlayScene(app_context)
     scene._spawn_floating_score(8, 12, 4)

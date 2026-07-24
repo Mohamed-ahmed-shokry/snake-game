@@ -47,6 +47,20 @@ uv sync --group dev
 uv run python main.py
 ```
 
+You can also launch the package entry point:
+
+```bash
+uv run snake-game
+uv run python -m snake_game
+```
+
+Useful runtime options:
+
+```bash
+uv run snake-game --data-file data/dev-save.json --seed 42 --no-countdown
+uv run snake-game --width 1000 --height 700 --cell-size 20 --obstacle-count 20
+```
+
 ### Test
 
 ```bash

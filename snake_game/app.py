@@ -28,10 +28,10 @@ def _build_scene(scene_id: SceneId, ctx: AppContext) -> Scene:
     raise ValueError(f"Unsupported scene id: {scene_id}")
 
 
-def run() -> None:
+def run(config: GameConfig | None = None, seed: int | None = None) -> None:
     pygame.init()
 
-    config = GameConfig()
+    config = config or GameConfig()
     data_path = Path(config.data_file)
     persistent_data = load_persistent_data(data_path)
     config.graphics = persistent_data.graphics
@@ -53,7 +53,7 @@ def run() -> None:
         persistent_data=persistent_data,
         audio=audio,
         event_bus=EventBus(),
-        rng=random.Random(),
+        rng=random.Random(seed),
         title_font=title_font,
         body_font=body_font,
         small_font=small_font,

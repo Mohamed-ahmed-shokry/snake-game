@@ -8,6 +8,9 @@ dependencies = [
     "pygame>=2.6.0",
 ]
 
+[project.scripts]
+snake-game = "snake_game.cli:main"
+
 [dependency-groups]
 dev = [
     "pytest>=8.0.0",

@@ -55,6 +55,31 @@ def interpolate_snake_positions(state: GameState, movement_alpha: float) -> list
     return positions
 
 
+def calculate_danger_level(state: GameState, config: GameConfig) -> float:
+    """Return a 0..1 proximity warning for nearby hazards and arena walls."""
+    head_x, head_y = state.snake[0]
+    nearest_hazard = min(
+        (
+            abs(head_x - hazard_x) + abs(head_y - hazard_y)
+            for hazard_x, hazard_y in state.obstacles | set(state.snake[2:])
+        ),
+        default=99,
+    )
+    hazard_level = max(0.0, min(1.0, (3 - nearest_hazard) / 2))
+
+    wall_level = 0.0
+    if state.map_mode.value == "bounded":
+        wall_distance = min(
+            head_x,
+            head_y,
+            config.grid_width - 1 - head_x,
+            config.grid_height - 1 - head_y,
+        )
+        wall_level = max(0.0, min(1.0, (2 - wall_distance) / 2))
+
+    return max(hazard_level, wall_level)
+
+
 class PlayfieldRenderer:
     def __init__(self, config: GameConfig, theme: UiTheme, assets: RenderAssets) -> None:
         self.config = config
@@ -137,6 +162,99 @@ class PlayfieldRenderer:
                 (width - 5, min(height - 4, y + dash_length)),
                 3,
             )
+
+    def _draw_arena_energy(
+        self,
+        target: pygame.Surface,
+        state: GameState,
+        stage: int,
+        animation_seconds: float,
+        movement_alpha: float,
+    ) -> None:
+        atmosphere = pygame.Surface(target.get_size(), pygame.SRCALPHA)
+        accent = self.theme.palette.accent
+        motion_time = 0.0 if self.config.graphics.reduced_motion else animation_seconds
+
+        if self.config.graphics.particles_enabled:
+            mote_count = max(14, (self.config.window_width * self.config.window_height) // 26000)
+            stage_speed = 10.0 + min(stage, 8) * 1.4
+            for index in range(mote_count):
+                x = (index * 137 + 61) % self.config.window_width
+                base_y = (index * 211 + 89) % self.config.window_height
+                y = round(
+                    (base_y - motion_time * stage_speed * (1.0 + index % 3 * 0.18))
+                    % self.config.window_height
+                )
+                shimmer = 0.5 + 0.5 * math.sin(motion_time * 2.0 + index * 1.7)
+                alpha = 22 + round(shimmer * 32)
+                radius = 1 + (index % 7 == 0)
+                pygame.draw.circle(atmosphere, (*accent, alpha), (x, y), radius)
+
+            scan_progress = 0.52 if self.config.graphics.reduced_motion else (motion_time * 0.075) % 1.0
+            scan_y = round(self.config.window_height * scan_progress)
+            scan_glow = max(14, self.config.cell_size)
+            for offset in range(-scan_glow, scan_glow + 1, 2):
+                strength = 1.0 - abs(offset) / (scan_glow + 1)
+                pygame.draw.line(
+                    atmosphere,
+                    (*accent, round(26 * strength * strength)),
+                    (0, scan_y + offset),
+                    (self.config.window_width, scan_y + offset),
+                )
+            pygame.draw.line(
+                atmosphere,
+                (*accent, 78),
+                (0, scan_y),
+                (self.config.window_width, scan_y),
+                1,
+            )
+
+        danger = calculate_danger_level(state, self.config)
+        if danger > 0:
+            interpolated_head = interpolate_snake_positions(state, movement_alpha)[0]
+            head_center = (
+                round((interpolated_head[0] + 0.5) * self.config.cell_size),
+                round((interpolated_head[1] + 0.5) * self.config.cell_size),
+            )
+            pulse = (
+                0.55
+                if self.config.graphics.reduced_motion
+                else 0.55 + 0.45 * (math.sin(animation_seconds * 9.0) + 1.0) / 2
+            )
+            warning_color = (255, 82, 92)
+            warning_radius = round(self.config.cell_size * (0.8 + danger * 0.55 + pulse * 0.12))
+            self._blit_glow(
+                atmosphere,
+                head_center,
+                warning_color,
+                warning_radius * 2,
+                round(58 * danger * pulse),
+            )
+            pygame.draw.circle(
+                atmosphere,
+                (*warning_color, round(80 + danger * 120)),
+                head_center,
+                warning_radius,
+                max(1, round(2 * danger)),
+            )
+
+            if danger >= 0.75:
+                edge_depth = max(12, self.config.cell_size)
+                for offset in range(edge_depth):
+                    alpha = round(28 * danger * pulse * (1.0 - offset / edge_depth) ** 2)
+                    pygame.draw.rect(
+                        atmosphere,
+                        (*warning_color, alpha),
+                        pygame.Rect(
+                            offset,
+                            offset,
+                            self.config.window_width - offset * 2,
+                            self.config.window_height - offset * 2,
+                        ),
+                        1,
+                    )
+
+        target.blit(atmosphere, (0, 0))
 
     def _draw_obstacle(self, target: pygame.Surface, cell: Point) -> None:
         cell_rect = self._cell_rect(*cell)
@@ -734,6 +852,7 @@ class PlayfieldRenderer:
         self._draw_background(world)
         self._draw_grid(world)
         self._draw_arena_border(world, state, animation_seconds)
+        self._draw_arena_energy(world, state, stage, animation_seconds, movement_alpha)
         self._draw_entities(
             world,
             state,

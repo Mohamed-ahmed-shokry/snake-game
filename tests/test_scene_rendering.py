@@ -11,7 +11,11 @@ from snake_game.config import GameConfig
 from snake_game.events import EventBus
 from snake_game.persistence import PersistentData
 from snake_game.rendering.assets import RenderAssets
-from snake_game.rendering.layers import PlayfieldRenderer, interpolate_snake_positions
+from snake_game.rendering.layers import (
+    PlayfieldRenderer,
+    calculate_danger_level,
+    interpolate_snake_positions,
+)
 from snake_game.scenes.base import AppContext, SessionResult, build_ui_fonts
 from snake_game.scenes.game_over_scene import GameOverScene
 from snake_game.scenes.menu_scene import MenuScene
@@ -210,6 +214,46 @@ def test_arena_border_distinguishes_bounded_and_wrap_modes(app_context: AppConte
         wrapped.subsurface(pygame.Rect(0, 0, 20, 600)),
         "RGB",
     )
+
+
+def test_danger_level_tracks_obstacles_and_bounded_walls(app_context: AppContext) -> None:
+    state = PlayScene(app_context).state
+    head_x, head_y = state.snake[0]
+    state.obstacles = {(head_x + 1, head_y)}
+
+    assert calculate_danger_level(state, app_context.config) == 1.0
+
+    state.obstacles.clear()
+    state.snake = [(0, head_y)]
+    state.map_mode = MapMode.BOUNDED
+    assert calculate_danger_level(state, app_context.config) == 1.0
+
+    state.map_mode = MapMode.WRAP
+    assert calculate_danger_level(state, app_context.config) == 0.0
+
+
+def test_arena_energy_animates_unless_reduced_motion(app_context: AppContext) -> None:
+    renderer = PlayfieldRenderer(
+        config=app_context.config,
+        theme=resolve_theme(app_context.config.graphics.theme_id),
+        assets=RenderAssets(),
+    )
+    state = PlayScene(app_context).state
+    state.obstacles.clear()
+    state.snake = [(10, 10)]
+
+    first = pygame.Surface((800, 600), pygame.SRCALPHA)
+    second = pygame.Surface((800, 600), pygame.SRCALPHA)
+    renderer._draw_arena_energy(first, state, 3, 0.0, 1.0)
+    renderer._draw_arena_energy(second, state, 3, 2.0, 1.0)
+    assert pygame.image.tobytes(first, "RGBA") != pygame.image.tobytes(second, "RGBA")
+
+    app_context.config.graphics.reduced_motion = True
+    still_first = pygame.Surface((800, 600), pygame.SRCALPHA)
+    still_second = pygame.Surface((800, 600), pygame.SRCALPHA)
+    renderer._draw_arena_energy(still_first, state, 3, 0.0, 1.0)
+    renderer._draw_arena_energy(still_second, state, 3, 2.0, 1.0)
+    assert pygame.image.tobytes(still_first, "RGBA") == pygame.image.tobytes(still_second, "RGBA")
 
 
 def test_cached_glow_is_brightest_near_center() -> None:

@@ -97,3 +97,4 @@ def test_phase_active_flag_reflects_effect_state() -> None:
     system.collect_at((3, 1))
 
     assert system.phase_active() is True
+    assert system.active_types() == {PowerUpType.PHASE}

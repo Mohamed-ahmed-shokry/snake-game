@@ -165,8 +165,67 @@ class PlayfieldRenderer:
             )
             pygame.draw.circle(target, glyph_color, (center_x, center_y), max(1, glyph_radius // 3))
 
-    def _draw_snake(self, target: pygame.Surface, state: GameState) -> None:
+    def _draw_snake(
+        self,
+        target: pygame.Surface,
+        state: GameState,
+        active_powerup_types: set[PowerUpType],
+        animation_seconds: float,
+    ) -> None:
         inset = max(1, self.config.cell_size // 10)
+        head_rect = self._cell_rect(*state.snake[0])
+        head_center = head_rect.center
+        motion_pulse = 0.0 if self.config.graphics.reduced_motion else (math.sin(animation_seconds * 7.0) + 1.0) * 0.5
+
+        if PowerUpType.SHIELD in active_powerup_types:
+            shield_layer = pygame.Surface(target.get_size(), pygame.SRCALPHA)
+            shield_radius = self.config.cell_size // 2 + 4 + int(motion_pulse * 2)
+            pygame.draw.circle(shield_layer, (120, 210, 255, 42), head_center, shield_radius)
+            pygame.draw.circle(shield_layer, (120, 210, 255, 210), head_center, shield_radius, 2)
+            target.blit(shield_layer, (0, 0))
+        if PowerUpType.SLOW_TIME in active_powerup_types:
+            slow_radius = self.config.cell_size // 2 + 2
+            pygame.draw.arc(
+                target,
+                (112, 184, 255),
+                pygame.Rect(
+                    head_center[0] - slow_radius,
+                    head_center[1] - slow_radius,
+                    slow_radius * 2,
+                    slow_radius * 2,
+                ),
+                animation_seconds % (math.pi * 2),
+                animation_seconds % (math.pi * 2) + math.pi * 1.4,
+                2,
+            )
+        if PowerUpType.DOUBLE_SCORE in active_powerup_types:
+            sparkle_offset = self.config.cell_size // 2 + 3
+            for offset_x, offset_y in ((-sparkle_offset, 0), (sparkle_offset, 0), (0, -sparkle_offset)):
+                pygame.draw.circle(
+                    target,
+                    self.theme.palette.powerup,
+                    (head_center[0] + offset_x, head_center[1] + offset_y),
+                    max(1, self.config.cell_size // 12 + int(motion_pulse)),
+                )
+        if PowerUpType.PHASE in active_powerup_types:
+            phase_layer = pygame.Surface(target.get_size(), pygame.SRCALPHA)
+            phase_radius = self.config.cell_size // 2 + 5
+            pygame.draw.circle(
+                phase_layer,
+                (*self.theme.palette.accent, 90),
+                (head_center[0] - 3, head_center[1]),
+                phase_radius,
+                2,
+            )
+            pygame.draw.circle(
+                phase_layer,
+                (*self.theme.palette.powerup, 90),
+                (head_center[0] + 3, head_center[1]),
+                phase_radius,
+                2,
+            )
+            target.blit(phase_layer, (0, 0))
+
         for index in range(len(state.snake) - 1):
             start = self._cell_rect(*state.snake[index]).center
             end = self._cell_rect(*state.snake[index + 1]).center
@@ -196,7 +255,6 @@ class PlayfieldRenderer:
                     1,
                 )
 
-        head_rect = self._cell_rect(*state.snake[0])
         direction_x, direction_y = state.direction.vector
         perpendicular_x, perpendicular_y = -direction_y, direction_x
         forward = max(2, self.config.cell_size // 5)
@@ -219,6 +277,7 @@ class PlayfieldRenderer:
         state: GameState,
         powerup_position: Point | None,
         powerup_type: PowerUpType | None,
+        active_powerup_types: set[PowerUpType],
         animation_seconds: float,
     ) -> None:
         for obstacle_x, obstacle_y in state.obstacles:
@@ -229,7 +288,7 @@ class PlayfieldRenderer:
         if powerup_position is not None and powerup_type is not None:
             self._draw_powerup(target, animation_seconds, powerup_position, powerup_type)
 
-        self._draw_snake(target, state)
+        self._draw_snake(target, state, active_powerup_types, animation_seconds)
 
     def _draw_particles(
         self,
@@ -397,6 +456,7 @@ class PlayfieldRenderer:
         powerup_position: Point | None,
         powerup_type: PowerUpType | None,
         active_effect_labels: list[str],
+        active_powerup_types: set[PowerUpType] | None = None,
         animation_seconds: float = 0.0,
         stage_banner_text: str | None = None,
         stage_banner_alpha: int = 0,
@@ -407,7 +467,14 @@ class PlayfieldRenderer:
         world = pygame.Surface((self.config.window_width, self.config.window_height), pygame.SRCALPHA)
         self._draw_background(world)
         self._draw_grid(world)
-        self._draw_entities(world, state, powerup_position, powerup_type, animation_seconds)
+        self._draw_entities(
+            world,
+            state,
+            powerup_position,
+            powerup_type,
+            active_powerup_types or set(),
+            animation_seconds,
+        )
         if particles:
             self._draw_particles(world, particles)
         self._draw_hud(world, state, small_font, best_score, stage, active_effect_labels)

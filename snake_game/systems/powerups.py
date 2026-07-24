@@ -143,6 +143,9 @@ class PowerUpSystem:
             labels.append(f"{effect.type.label} {effect.remaining_seconds:0.1f}s")
         return labels
 
+    def active_types(self) -> set[PowerUpType]:
+        return {effect.type for effect in self.active_effects}
+
     def update(self, delta_seconds: float) -> None:
         elapsed = max(0.0, delta_seconds)
         if self.spawned is not None:

@@ -396,6 +396,7 @@ class PlayScene(Scene):
             powerup_position=spawned_powerup_position,
             powerup_type=spawned_powerup_type,
             active_effect_labels=self.powerups.active_effect_labels(),
+            active_powerup_types=self.powerups.active_types(),
             animation_seconds=self.visual_time,
             stage_banner_text=self.stage_banner_text,
             stage_banner_alpha=stage_banner_alpha,

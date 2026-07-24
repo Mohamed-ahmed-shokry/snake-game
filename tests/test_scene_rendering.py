@@ -151,6 +151,42 @@ def test_hud_renders_multiple_active_effects_without_error(app_context: AppConte
     assert screen.get_at((0, app_context.config.window_height - 1))[:3] != (0, 0, 0)
 
 
+def test_active_powerup_changes_head_visual_effect(app_context: AppContext) -> None:
+    play_scene = PlayScene(app_context)
+    renderer = PlayfieldRenderer(
+        config=app_context.config,
+        theme=resolve_theme(app_context.config.graphics.theme_id),
+        assets=RenderAssets(),
+    )
+
+    def render_head(active_types: set[PowerUpType]) -> bytes:
+        screen = pygame.Surface((app_context.config.window_width, app_context.config.window_height))
+        renderer.render(
+            screen=screen,
+            state=play_scene.state,
+            hud_font=app_context.title_font,
+            small_font=app_context.small_font,
+            countdown_remaining=0.0,
+            best_score=0,
+            stage=1,
+            powerup_position=None,
+            powerup_type=None,
+            active_effect_labels=[],
+            active_powerup_types=active_types,
+            animation_seconds=0.5,
+        )
+        head_x, head_y = play_scene.state.snake[0]
+        sample = pygame.Rect(
+            head_x * app_context.config.cell_size - 8,
+            head_y * app_context.config.cell_size - 8,
+            app_context.config.cell_size + 16,
+            app_context.config.cell_size + 16,
+        )
+        return pygame.image.tobytes(screen.subsurface(sample), "RGB")
+
+    assert render_head(set()) != render_head({PowerUpType.SHIELD})
+
+
 def test_menu_supports_mouse_hover_and_click(app_context: AppContext) -> None:
     scene = MenuScene(app_context)
     scene.handle_event(pygame.event.Event(pygame.MOUSEMOTION, pos=(400, 262)))

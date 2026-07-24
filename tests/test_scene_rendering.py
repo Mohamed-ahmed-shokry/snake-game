@@ -19,7 +19,7 @@ from snake_game.scenes.play_scene import PlayScene, direction_for_pointer
 from snake_game.scenes.progress_scene import ProgressScene
 from snake_game.scenes.settings_scene import SettingsScene
 from snake_game.systems.powerups import PowerUpType
-from snake_game.types import Direction, GameStatus, SceneId
+from snake_game.types import Direction, GameStatus, MapMode, SceneId
 from snake_game.ui.theme import resolve_theme
 
 
@@ -149,6 +149,50 @@ def test_hud_renders_multiple_active_effects_without_error(app_context: AppConte
     )
 
     assert screen.get_at((0, app_context.config.window_height - 1))[:3] != (0, 0, 0)
+
+
+def test_arena_border_distinguishes_bounded_and_wrap_modes(app_context: AppContext) -> None:
+    renderer = PlayfieldRenderer(
+        config=app_context.config,
+        theme=resolve_theme(app_context.config.graphics.theme_id),
+        assets=RenderAssets(),
+    )
+    play_scene = PlayScene(app_context)
+
+    bounded = pygame.Surface((800, 600))
+    renderer.render(
+        screen=bounded,
+        state=play_scene.state,
+        hud_font=app_context.title_font,
+        small_font=app_context.small_font,
+        countdown_remaining=0.0,
+        best_score=0,
+        stage=1,
+        powerup_position=None,
+        powerup_type=None,
+        active_effect_labels=[],
+        animation_seconds=0.5,
+    )
+    play_scene.state.map_mode = MapMode.WRAP
+    wrapped = pygame.Surface((800, 600))
+    renderer.render(
+        screen=wrapped,
+        state=play_scene.state,
+        hud_font=app_context.title_font,
+        small_font=app_context.small_font,
+        countdown_remaining=0.0,
+        best_score=0,
+        stage=1,
+        powerup_position=None,
+        powerup_type=None,
+        active_effect_labels=[],
+        animation_seconds=0.5,
+    )
+
+    assert pygame.image.tobytes(bounded.subsurface(pygame.Rect(0, 0, 20, 600)), "RGB") != pygame.image.tobytes(
+        wrapped.subsurface(pygame.Rect(0, 0, 20, 600)),
+        "RGB",
+    )
 
 
 def test_active_powerup_changes_head_visual_effect(app_context: AppContext) -> None:

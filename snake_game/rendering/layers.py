@@ -50,19 +50,62 @@ class PlayfieldRenderer:
         )
 
     def _draw_background(self, target: pygame.Surface) -> None:
-        gradient = self.assets.background_gradient(
-            self.config.window_width,
-            self.config.window_height,
+        arena = self.assets.arena_surface(
+            self.config,
             self.theme.palette.background_top,
             self.theme.palette.background_bottom,
+            self.theme.palette.accent,
         )
-        target.blit(gradient, (0, 0))
+        target.blit(arena, (0, 0))
 
     def _draw_grid(self, target: pygame.Surface) -> None:
         if not self.config.graphics.show_grid:
             return
         grid = self.assets.grid_surface(self.config, self.theme.palette.grid)
         target.blit(grid, (0, 0))
+
+    def _draw_arena_border(self, target: pygame.Surface, state: GameState, animation_seconds: float) -> None:
+        width = self.config.window_width
+        height = self.config.window_height
+        if state.map_mode.value == "bounded":
+            rail_color = tuple(max(18, channel // 2) for channel in self.theme.palette.obstacle)
+            pygame.draw.rect(target, rail_color, pygame.Rect(1, 1, width - 2, height - 2), 5)
+            pygame.draw.rect(
+                target,
+                self.theme.palette.obstacle,
+                pygame.Rect(5, 5, width - 10, height - 10),
+                2,
+            )
+            pygame.draw.rect(
+                target,
+                (*self.theme.palette.text, 65),
+                pygame.Rect(7, 7, width - 14, height - 14),
+                1,
+            )
+            return
+
+        dash_length = max(10, self.config.cell_size)
+        gap = max(6, self.config.cell_size // 2)
+        pulse = 0 if self.config.graphics.reduced_motion else int((math.sin(animation_seconds * 4.0) + 1.0) * 35)
+        portal_color = (*self.theme.palette.accent, 135 + pulse)
+        for x in range(4, width - 4, dash_length + gap):
+            pygame.draw.line(target, portal_color, (x, 4), (min(width - 4, x + dash_length), 4), 3)
+            pygame.draw.line(
+                target,
+                portal_color,
+                (x, height - 5),
+                (min(width - 4, x + dash_length), height - 5),
+                3,
+            )
+        for y in range(4, height - 4, dash_length + gap):
+            pygame.draw.line(target, portal_color, (4, y), (4, min(height - 4, y + dash_length)), 3)
+            pygame.draw.line(
+                target,
+                portal_color,
+                (width - 5, y),
+                (width - 5, min(height - 4, y + dash_length)),
+                3,
+            )
 
     def _draw_obstacle(self, target: pygame.Surface, cell: Point) -> None:
         cell_rect = self._cell_rect(*cell)
@@ -467,6 +510,7 @@ class PlayfieldRenderer:
         world = pygame.Surface((self.config.window_width, self.config.window_height), pygame.SRCALPHA)
         self._draw_background(world)
         self._draw_grid(world)
+        self._draw_arena_border(world, state, animation_seconds)
         self._draw_entities(
             world,
             state,

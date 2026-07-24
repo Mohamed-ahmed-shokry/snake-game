@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import math
+from contextlib import suppress
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -227,10 +228,8 @@ def _normalize_achievements(data: object) -> list[str]:
 def _backup_file(path: Path, reason: str) -> None:
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S%f")
     backup_path = path.with_suffix(f"{path.suffix}.{reason}-{timestamp}")
-    try:
+    with suppress(OSError):
         path.replace(backup_path)
-    except OSError:
-        pass
 
 
 def _best_global_from_leaderboard(leaderboard: dict[str, list[int]]) -> int:
@@ -336,10 +335,8 @@ def save_persistent_data(data: PersistentData, path: Path) -> None:
         temporary_path.replace(path)
     finally:
         if temporary_path is not None and temporary_path.exists():
-            try:
+            with suppress(OSError):
                 temporary_path.unlink()
-            except OSError:
-                pass
 
 
 def record_score(data: PersistentData, settings: UserSettings, score: int, limit: int) -> list[int]:

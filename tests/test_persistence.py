@@ -4,8 +4,8 @@ from pathlib import Path
 from snake_game.config import GraphicsSettings, UserSettings
 from snake_game.persistence import (
     SAVE_SCHEMA_VERSION,
-    best_score_for_settings,
     PersistentData,
+    best_score_for_settings,
     is_new_high_score,
     leaderboard_key,
     load_persistent_data,

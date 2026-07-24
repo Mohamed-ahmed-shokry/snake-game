@@ -14,10 +14,10 @@ from snake_game.persistence import (
 )
 from snake_game.render import draw_centered_text, draw_playfield
 from snake_game.scenes.base import AppContext, Scene, SessionResult
+from snake_game.systems.achievements import unlock_run_achievements
 from snake_game.systems.hazards import HazardSystem
 from snake_game.systems.powerups import PowerUpSystem
 from snake_game.systems.progression import StageProgression
-from snake_game.systems.achievements import unlock_run_achievements
 from snake_game.types import Direction, GameStatus, SceneId
 from snake_game.ui.components import draw_panel
 from snake_game.ui.theme import resolve_theme

@@ -3,7 +3,7 @@ from __future__ import annotations
 import pygame
 
 from snake_game.persistence import PersistentData, best_score_for_settings
-from snake_game.scenes.base import AppContext, Scene
+from snake_game.scenes.base import Scene
 from snake_game.systems.achievements import ACHIEVEMENTS
 from snake_game.types import SceneId
 from snake_game.ui.components import (

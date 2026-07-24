@@ -69,6 +69,17 @@ class PlayfieldRenderer:
             self.config.cell_size,
         )
 
+    def _blit_glow(
+        self,
+        target: pygame.Surface,
+        center: tuple[int, int],
+        color: Color,
+        radius: int,
+        peak_alpha: int,
+    ) -> None:
+        glow = self.assets.glow_surface(radius, color, peak_alpha)
+        target.blit(glow, glow.get_rect(center=center))
+
     def _draw_background(self, target: pygame.Surface) -> None:
         arena = self.assets.arena_surface(
             self.config,
@@ -492,6 +503,34 @@ class PlayfieldRenderer:
         animation_seconds: float,
         movement_alpha: float,
     ) -> None:
+        interpolated_head = interpolate_snake_positions(state, movement_alpha)[0]
+        head_center = (
+            round((interpolated_head[0] + 0.5) * self.config.cell_size),
+            round((interpolated_head[1] + 0.5) * self.config.cell_size),
+        )
+        self._blit_glow(
+            target,
+            head_center,
+            self.theme.palette.snake_head,
+            self.config.cell_size * 2,
+            34,
+        )
+        self._blit_glow(
+            target,
+            self._cell_rect(*state.food).center,
+            self.theme.palette.food,
+            self.config.cell_size * 2,
+            48,
+        )
+        if powerup_position is not None:
+            self._blit_glow(
+                target,
+                self._cell_rect(*powerup_position).center,
+                self.theme.palette.powerup,
+                self.config.cell_size * 2,
+                54,
+            )
+
         for obstacle_x, obstacle_y in state.obstacles:
             self._draw_obstacle(target, (obstacle_x, obstacle_y))
 
@@ -525,7 +564,7 @@ class PlayfieldRenderer:
         stage: int,
         active_effect_labels: list[str],
     ) -> None:
-        top_panel = pygame.Rect(8, 6, self.config.window_width - 16, 64)
+        top_panel = pygame.Rect(8, 6, self.config.window_width - 16, 70)
         draw_panel(
             screen=target,
             rect=top_panel,
@@ -581,6 +620,14 @@ class PlayfieldRenderer:
                 )
                 target.blit(effect_surface, effect_surface.get_rect(center=effect_rect.center))
                 effect_x = effect_rect.right + 6
+
+        stage_progress = (state.score % self.config.stage_points_interval) / self.config.stage_points_interval
+        progress_track = pygame.Rect(18, top_panel.bottom - 8, self.config.window_width - 36, 3)
+        pygame.draw.rect(target, (8, 12, 18), progress_track, border_radius=2)
+        if stage_progress > 0:
+            progress_fill = progress_track.copy()
+            progress_fill.width = max(2, round(progress_track.width * stage_progress))
+            pygame.draw.rect(target, self.theme.palette.accent, progress_fill, border_radius=2)
 
     def _draw_overlays(
         self,

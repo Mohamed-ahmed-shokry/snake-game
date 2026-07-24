@@ -212,6 +212,14 @@ def test_arena_border_distinguishes_bounded_and_wrap_modes(app_context: AppConte
     )
 
 
+def test_cached_glow_is_brightest_near_center() -> None:
+    assets = RenderAssets()
+    glow = assets.glow_surface(30, (90, 200, 240), peak_alpha=80)
+
+    assert glow.get_at((31, 31)).a > glow.get_at((5, 31)).a
+    assert assets.glow_surface(30, (90, 200, 240), peak_alpha=80) is glow
+
+
 def test_active_powerup_changes_head_visual_effect(app_context: AppContext) -> None:
     play_scene = PlayScene(app_context)
     renderer = PlayfieldRenderer(

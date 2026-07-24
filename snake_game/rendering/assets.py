@@ -13,6 +13,7 @@ class RenderAssets:
     _grid_cache: dict[tuple[int, int, int, Color], pygame.Surface] = field(default_factory=dict)
     _gradient_cache: dict[tuple[int, int, Color, Color], pygame.Surface] = field(default_factory=dict)
     _arena_cache: dict[tuple[int, int, int, Color, Color, Color], pygame.Surface] = field(default_factory=dict)
+    _glow_cache: dict[tuple[int, Color, int], pygame.Surface] = field(default_factory=dict)
 
     def grid_surface(self, config: GameConfig, grid_color: Color) -> pygame.Surface:
         key = (config.window_width, config.window_height, config.cell_size, grid_color)
@@ -114,4 +115,23 @@ class RenderAssets:
 
         surface.blit(atmosphere, (0, 0))
         self._arena_cache[key] = surface
+        return surface
+
+    def glow_surface(self, radius: int, color: Color, peak_alpha: int = 70) -> pygame.Surface:
+        safe_radius = max(1, radius)
+        safe_alpha = max(0, min(peak_alpha, 255))
+        key = (safe_radius, color, safe_alpha)
+        cached = self._glow_cache.get(key)
+        if cached is not None:
+            return cached
+
+        diameter = safe_radius * 2 + 2
+        surface = pygame.Surface((diameter, diameter), pygame.SRCALPHA)
+        center = (safe_radius + 1, safe_radius + 1)
+        step = max(1, safe_radius // 12)
+        for current_radius in range(safe_radius, 0, -step):
+            strength = 1.0 - current_radius / safe_radius
+            alpha = round(safe_alpha * strength * strength)
+            pygame.draw.circle(surface, (*color, alpha), center, current_radius)
+        self._glow_cache[key] = surface
         return surface

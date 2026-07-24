@@ -668,10 +668,17 @@ class PlayfieldRenderer:
     def _draw_particles(
         self,
         target: pygame.Surface,
-        particles: list[tuple[float, float, int, Color]],
+        particles: list[tuple[float, float, int, Color, int]],
     ) -> None:
-        for x, y, radius, color in particles:
-            pygame.draw.circle(target, color, (int(x), int(y)), max(1, int(radius)))
+        particle_layer = pygame.Surface(target.get_size(), pygame.SRCALPHA)
+        for x, y, radius, color, alpha in particles:
+            pygame.draw.circle(
+                particle_layer,
+                (*color, max(0, min(255, alpha))),
+                (int(x), int(y)),
+                max(1, int(radius)),
+            )
+        target.blit(particle_layer, (0, 0))
 
     def _draw_hud(
         self,
@@ -846,7 +853,7 @@ class PlayfieldRenderer:
         stage_banner_alpha: int = 0,
         flash_alpha: int = 0,
         camera_offset: tuple[int, int] = (0, 0),
-        particles: list[tuple[float, float, int, Color]] | None = None,
+        particles: list[tuple[float, float, int, Color, int]] | None = None,
     ) -> None:
         world = pygame.Surface((self.config.window_width, self.config.window_height), pygame.SRCALPHA)
         self._draw_background(world)

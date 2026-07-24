@@ -268,6 +268,7 @@ def advance_simulation(
         if state.accumulator_seconds < step_interval:
             break
         state.accumulator_seconds -= step_interval
+        previous_head_x, previous_head_y = state.snake[0]
         advance_one_step(
             state,
             config,
@@ -286,6 +287,8 @@ def advance_simulation(
             status=state.status.value,
             head_x=head_x,
             head_y=head_y,
+            previous_head_x=previous_head_x,
+            previous_head_y=previous_head_y,
         )
         if state.status != GameStatus.RUNNING:
             break

@@ -90,3 +90,5 @@ def test_advance_simulation_emits_step_head_position() -> None:
     assert step_events
     assert "head_x" in step_events[0].payload
     assert "head_y" in step_events[0].payload
+    assert "previous_head_x" in step_events[0].payload
+    assert "previous_head_y" in step_events[0].payload

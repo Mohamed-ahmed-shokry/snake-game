@@ -55,8 +55,10 @@ class FxParticle:
     vx: float
     vy: float
     life: float
+    max_life: float
     size: int
     color: tuple[int, int, int]
+    gravity: float = 240.0
 
 
 @dataclass(slots=True)
@@ -107,15 +109,45 @@ class PlayScene(Scene):
         center_x = cell_x * self.ctx.config.cell_size + self.ctx.config.cell_size / 2
         center_y = cell_y * self.ctx.config.cell_size + self.ctx.config.cell_size / 2
         for _ in range(count):
+            life = self.ctx.rng.uniform(0.20, 0.45)
             self.particles.append(
                 FxParticle(
                     x=center_x,
                     y=center_y,
                     vx=self.ctx.rng.uniform(-80, 80),
                     vy=self.ctx.rng.uniform(-80, 80),
-                    life=self.ctx.rng.uniform(0.20, 0.45),
+                    life=life,
+                    max_life=life,
                     size=self.ctx.rng.randint(2, 4),
                     color=color,
+                )
+            )
+
+    def _spawn_movement_trail(self, cell_x: int, cell_y: int) -> None:
+        if not self.ctx.config.graphics.particles_enabled:
+            return
+        if self.ctx.config.graphics.reduced_motion:
+            return
+
+        theme = resolve_theme(
+            self.ctx.config.graphics.theme_id,
+            self.ctx.config.graphics.colorblind_mode,
+        )
+        center_x = cell_x * self.ctx.config.cell_size + self.ctx.config.cell_size / 2
+        center_y = cell_y * self.ctx.config.cell_size + self.ctx.config.cell_size / 2
+        for _ in range(2):
+            life = self.ctx.rng.uniform(0.18, 0.30)
+            self.particles.append(
+                FxParticle(
+                    x=center_x + self.ctx.rng.uniform(-3, 3),
+                    y=center_y + self.ctx.rng.uniform(-3, 3),
+                    vx=self.ctx.rng.uniform(-8, 8),
+                    vy=self.ctx.rng.uniform(-8, 8),
+                    life=life,
+                    max_life=life,
+                    size=max(2, self.ctx.config.cell_size // 7),
+                    color=theme.palette.snake_body,
+                    gravity=0.0,
                 )
             )
 
@@ -129,7 +161,7 @@ class PlayScene(Scene):
                 continue
             particle.x += particle.vx * delta_seconds
             particle.y += particle.vy * delta_seconds
-            particle.vy += 240 * delta_seconds
+            particle.vy += particle.gravity * delta_seconds
             alive.append(particle)
         self.particles = alive
 
@@ -351,6 +383,9 @@ class PlayScene(Scene):
             elif event.type == GameEventType.STEP_ADVANCED:
                 head_x = int(event.payload.get("head_x", self.state.snake[0][0]))
                 head_y = int(event.payload.get("head_y", self.state.snake[0][1]))
+                previous_head_x = int(event.payload.get("previous_head_x", head_x))
+                previous_head_y = int(event.payload.get("previous_head_y", head_y))
+                self._spawn_movement_trail(previous_head_x, previous_head_y)
                 collected = self.powerups.collect_at((head_x, head_y))
                 if collected is not None:
                     self.ctx.event_bus.emit(
@@ -440,7 +475,14 @@ class PlayScene(Scene):
         )
 
         particle_primitives = [
-            (particle.x, particle.y, particle.size, particle.color) for particle in self.particles
+            (
+                particle.x,
+                particle.y,
+                particle.size,
+                particle.color,
+                round(210 * max(0.0, min(1.0, particle.life / particle.max_life))),
+            )
+            for particle in self.particles
         ]
         effective_step_rate = max(0.1, self.state.steps_per_second * self.powerups.speed_multiplier())
         if self.ctx.config.graphics.reduced_motion:

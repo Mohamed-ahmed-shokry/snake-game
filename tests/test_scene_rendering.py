@@ -284,6 +284,21 @@ def test_reduced_motion_keeps_floating_score_stationary(app_context: AppContext)
     assert scene.floating_scores[0].y == original_y
 
 
+def test_movement_trail_particles_fade_without_gravity(app_context: AppContext) -> None:
+    scene = PlayScene(app_context)
+    scene._spawn_movement_trail(10, 10)
+
+    assert len(scene.particles) == 2
+    assert all(particle.gravity == 0 for particle in scene.particles)
+    initial_life = scene.particles[0].life
+    initial_vy = scene.particles[0].vy
+
+    scene._update_particles(0.05)
+
+    assert scene.particles[0].life < initial_life
+    assert scene.particles[0].vy == initial_vy
+
+
 def test_cached_glow_is_brightest_near_center() -> None:
     assets = RenderAssets()
     glow = assets.glow_surface(30, (90, 200, 240), peak_alpha=80)

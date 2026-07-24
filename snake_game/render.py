@@ -75,7 +75,7 @@ def draw_playfield(
     stage_banner_alpha: int = 0,
     flash_alpha: int = 0,
     camera_offset: tuple[int, int] = (0, 0),
-    particles: list[tuple[float, float, int, tuple[int, int, int]]] | None = None,
+    particles: list[tuple[float, float, int, tuple[int, int, int], int]] | None = None,
 ) -> None:
     renderer = _playfield_renderer(config)
     renderer.render(

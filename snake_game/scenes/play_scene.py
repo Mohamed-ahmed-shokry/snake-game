@@ -34,6 +34,20 @@ KEY_TO_DIRECTION = {
 }
 
 
+def direction_for_pointer(
+    position: tuple[int, int],
+    head_center: tuple[int, int],
+    dead_zone: int = 4,
+) -> Direction | None:
+    delta_x = position[0] - head_center[0]
+    delta_y = position[1] - head_center[1]
+    if abs(delta_x) <= dead_zone and abs(delta_y) <= dead_zone:
+        return None
+    if abs(delta_x) >= abs(delta_y):
+        return Direction.RIGHT if delta_x > 0 else Direction.LEFT
+    return Direction.DOWN if delta_y > 0 else Direction.UP
+
+
 @dataclass(slots=True)
 class FxParticle:
     x: float
@@ -69,6 +83,10 @@ class PlayScene(Scene):
         self.onboarding_visible = not ctx.persistent_data.onboarding_seen
         self.particles: list[FxParticle] = []
         self.visual_time = 0.0
+        self.toast_text: str | None = None
+        self.toast_timer = 0.0
+        self.toast_color: tuple[int, int, int] = (255, 255, 255)
+        self.end_reason = "collision"
 
     def _spawn_burst(self, cell_x: int, cell_y: int, color: tuple[int, int, int], count: int = 8) -> None:
         if not self.ctx.config.graphics.particles_enabled:
@@ -136,6 +154,7 @@ class PlayScene(Scene):
             food_eaten=self.food_eaten_count,
             run_seconds=self.run_seconds,
             new_achievements=new_achievements,
+            end_reason=self.end_reason,
         )
         save_persistent_data(self.ctx.persistent_data, self.ctx.data_path)
         self.score_recorded = True
@@ -148,14 +167,39 @@ class PlayScene(Scene):
             self.ctx.persistent_data.onboarding_seen = True
             save_persistent_data(self.ctx.persistent_data, self.ctx.data_path)
 
+    def _show_toast(self, text: str, color: tuple[int, int, int], duration: float = 1.8) -> None:
+        self.toast_text = text
+        self.toast_color = color
+        self.toast_timer = duration
+
     def handle_event(self, event: pygame.event.Event) -> None:
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if self.onboarding_visible:
+                self._dismiss_onboarding()
+                self.ctx.audio.play("confirm")
+                return
+            head_x, head_y = self.state.snake[0]
+            head_center = (
+                head_x * self.ctx.config.cell_size + self.ctx.config.cell_size // 2,
+                head_y * self.ctx.config.cell_size + self.ctx.config.cell_size // 2,
+            )
+            next_direction = direction_for_pointer(event.pos, head_center)
+            if next_direction is not None:
+                queue_direction_change(self.state, next_direction)
+            return
+
         if event.type != pygame.KEYDOWN:
             return
 
         if self.onboarding_visible:
-            if event.key in (pygame.K_RETURN, pygame.K_SPACE, pygame.K_h):
+            if event.key in (pygame.K_RETURN, pygame.K_SPACE, pygame.K_h, pygame.K_ESCAPE):
                 self._dismiss_onboarding()
                 self.ctx.audio.play("confirm")
+            return
+
+        if event.key == pygame.K_h:
+            self.onboarding_visible = True
+            self.ctx.audio.play("confirm")
             return
 
         if event.key == pygame.K_ESCAPE:
@@ -185,6 +229,10 @@ class PlayScene(Scene):
             self.flash_timer = max(0.0, self.flash_timer - delta_seconds)
         if self.shake_timer > 0:
             self.shake_timer = max(0.0, self.shake_timer - delta_seconds)
+        if self.toast_timer > 0:
+            self.toast_timer = max(0.0, self.toast_timer - delta_seconds)
+            if self.toast_timer == 0:
+                self.toast_text = None
 
         if self.ctx.config.graphics.reduced_motion:
             self.stage_banner_text = None
@@ -249,7 +297,8 @@ class PlayScene(Scene):
                     )
             elif event.type == GameEventType.STAGE_ADVANCED:
                 self.ctx.audio.play("confirm")
-                self.stage_banner_text = f"Stage {self.progression.current_stage}"
+                stage = int(event.payload.get("stage", self.progression.current_stage))
+                self.stage_banner_text = f"Stage {stage}"
                 self.stage_banner_timer = 1.2
                 self.flash_timer = max(self.flash_timer, 0.12)
                 head_x, head_y = self.state.snake[0]
@@ -261,8 +310,7 @@ class PlayScene(Scene):
                 forbidden_cells = set(self.state.snake) | {self.state.food} | safe_cells
                 if self.powerups.spawned is not None:
                     forbidden_cells.add(self.powerups.spawned.position)
-                stage = int(event.payload.get("stage", self.progression.current_stage))
-                self.hazards.advance_to_stage(
+                added_hazards = self.hazards.advance_to_stage(
                     stage=stage,
                     obstacles=self.state.obstacles,
                     forbidden_cells=forbidden_cells,
@@ -270,6 +318,14 @@ class PlayScene(Scene):
                     grid_height=self.ctx.config.grid_height,
                     rng=self.ctx.rng,
                 )
+                if added_hazards:
+                    self._show_toast(
+                        f"STAGE {stage}  |  +{len(added_hazards)} HAZARDS",
+                        resolve_theme(
+                            self.ctx.config.graphics.theme_id,
+                            self.ctx.config.graphics.colorblind_mode,
+                        ).palette.obstacle,
+                    )
             elif event.type == GameEventType.PLAYER_DIED:
                 reason = str(event.payload.get("reason", ""))
                 if self.powerups.absorb_fatal_collision(reason):
@@ -277,6 +333,9 @@ class PlayScene(Scene):
                     self.ctx.audio.play("confirm")
                     self.flash_timer = max(self.flash_timer, 0.18)
                     self.shake_timer = max(self.shake_timer, 0.12)
+                    self._show_toast("SHIELD SAVED THE RUN", (120, 210, 255), duration=2.2)
+                else:
+                    self.end_reason = reason or "collision"
 
         for event in self.ctx.event_bus.drain():
             if event.type == GameEventType.POWERUP_COLLECTED:
@@ -285,6 +344,8 @@ class PlayScene(Scene):
                 self.shake_timer = max(self.shake_timer, 0.08)
                 head = self.state.snake[0]
                 self._spawn_burst(head[0], head[1], (120, 210, 255), count=14)
+                powerup_name = str(event.payload.get("powerup", "powerup")).replace("_", " ").upper()
+                self._show_toast(f"{powerup_name} ACTIVATED", (247, 198, 85))
 
         if self.state.status == GameStatus.GAME_OVER:
             self._record_and_transition()
@@ -339,18 +400,33 @@ class PlayScene(Scene):
         if self.countdown_remaining <= 0 and not self.onboarding_visible:
             draw_centered_text(
                 screen,
-                "P/Space: Pause   Esc: Menu",
+                "Arrows/WASD/Click: Move   P/Space: Pause   H: Help   Esc: Menu",
                 self.ctx.small_font,
                 theme.palette.text,
                 (self.ctx.config.window_width // 2, self.ctx.config.window_height - 24),
             )
 
+        if self.toast_text is not None and self.toast_timer > 0:
+            toast_surface = self.ctx.small_font.render(self.toast_text, True, self.toast_color)
+            toast_rect = toast_surface.get_rect(
+                center=(self.ctx.config.window_width // 2, self.ctx.config.window_height - 70)
+            ).inflate(32, 16)
+            draw_panel(
+                screen=screen,
+                rect=toast_rect,
+                fill=(8, 12, 18),
+                border=self.toast_color,
+                alpha=220,
+                radius=toast_rect.height // 2,
+            )
+            screen.blit(toast_surface, toast_surface.get_rect(center=toast_rect.center))
+
         if self.onboarding_visible:
             panel = pygame.Rect(
                 self.ctx.config.window_width // 2 - 275,
-                self.ctx.config.window_height // 2 - 110,
+                self.ctx.config.window_height // 2 - 150,
                 550,
-                220,
+                300,
             )
             draw_panel(
                 screen=screen,
@@ -372,19 +448,40 @@ class PlayScene(Scene):
                 "Move: Arrow Keys / WASD    Pause: P or Space",
                 self.ctx.small_font,
                 theme.palette.text,
-                (self.ctx.config.window_width // 2, panel.top + 84),
+                (self.ctx.config.window_width // 2, panel.top + 78),
             )
             draw_centered_text(
                 screen,
-                "Goal: Eat food, survive hazards, use power-ups.",
+                "Mouse: Click where you want the snake to turn",
                 self.ctx.small_font,
                 theme.palette.text,
-                (self.ctx.config.window_width // 2, panel.top + 116),
+                (self.ctx.config.window_width // 2, panel.top + 108),
             )
             draw_centered_text(
                 screen,
-                "Press Enter to Start",
+                "Shield: saves one hit   Slow: reduces speed",
+                self.ctx.small_font,
+                theme.palette.powerup,
+                (self.ctx.config.window_width // 2, panel.top + 150),
+            )
+            draw_centered_text(
+                screen,
+                "Double: 2x score   Phase: crosses walls and hazards",
+                self.ctx.small_font,
+                theme.palette.powerup,
+                (self.ctx.config.window_width // 2, panel.top + 180),
+            )
+            draw_centered_text(
+                screen,
+                "Eat food, climb stages, and chase your best score.",
+                self.ctx.small_font,
+                theme.palette.text,
+                (self.ctx.config.window_width // 2, panel.top + 220),
+            )
+            draw_centered_text(
+                screen,
+                "Press Enter, H, Esc, or Click to Continue",
                 self.ctx.small_font,
                 theme.palette.selected_text,
-                (self.ctx.config.window_width // 2, panel.top + 162),
+                (self.ctx.config.window_width // 2, panel.top + 262),
             )

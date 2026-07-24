@@ -76,7 +76,7 @@ class SettingsScene(Scene):
             "Applies small camera shake on key events.",
             "Changes base speed and score pace.",
             "Bounded walls or wrap-around movement.",
-            "Adds static obstacle cells to the arena.",
+            "Adds hazards at the start and as each stage advances.",
             "Toggle all gameplay/menu sound effects.",
             "Return to main menu.",
         ]

@@ -1,4 +1,9 @@
-from snake_game.scenes.game_over_scene import achievement_unlock_lines, format_run_time, top_scores_text
+from snake_game.scenes.game_over_scene import (
+    achievement_unlock_lines,
+    end_reason_text,
+    format_run_time,
+    top_scores_text,
+)
 
 
 def test_format_run_time_uses_minutes_and_seconds() -> None:
@@ -17,3 +22,9 @@ def test_achievement_unlock_lines_wrap_every_two_labels() -> None:
         "Unlocked: First Run, Quarter Century",
         "Unlocked: Stage Climber",
     ]
+
+
+def test_end_reason_text_explains_known_and_unknown_endings() -> None:
+    assert end_reason_text("obstacle") == "Hit a stage hazard"
+    assert end_reason_text("board_full") == "Board cleared - perfect run!"
+    assert end_reason_text("unknown") == "Run complete"

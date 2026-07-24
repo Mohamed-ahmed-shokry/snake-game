@@ -288,6 +288,15 @@ class PlayfieldRenderer:
     ) -> None:
         if countdown_remaining > 0 and state.status == GameStatus.RUNNING:
             count_value = max(1, int(countdown_remaining) + 1)
+            shade = pygame.Surface(target.get_size(), pygame.SRCALPHA)
+            shade.fill((5, 8, 14, 105))
+            target.blit(shade, (0, 0))
+            pygame.draw.circle(
+                target,
+                (*self.theme.palette.accent, 55),
+                (self.config.window_width // 2, self.config.window_height // 2),
+                max(54, self.config.cell_size * 4),
+            )
             _draw_centered_text(
                 target,
                 str(count_value),
@@ -297,12 +306,36 @@ class PlayfieldRenderer:
             )
 
         if state.status == GameStatus.PAUSED:
+            shade = pygame.Surface(target.get_size(), pygame.SRCALPHA)
+            shade.fill((4, 7, 12, 175))
+            target.blit(shade, (0, 0))
+            panel = pygame.Rect(
+                self.config.window_width // 2 - 230,
+                self.config.window_height // 2 - 78,
+                460,
+                156,
+            )
+            draw_panel(
+                screen=target,
+                rect=panel,
+                fill=(12, 18, 26),
+                border=self.theme.palette.accent,
+                alpha=235,
+                radius=18,
+            )
             _draw_centered_text(
                 target,
-                "Paused - Press P/Space to resume",
+                "PAUSED",
+                hud_font,
+                self.theme.palette.accent,
+                (self.config.window_width // 2, self.config.window_height // 2 - 24),
+            )
+            _draw_centered_text(
+                target,
+                "Press P or Space to resume  |  Esc for menu",
                 small_font,
                 self.theme.palette.text,
-                (self.config.window_width // 2, self.config.window_height // 2),
+                (self.config.window_width // 2, self.config.window_height // 2 + 30),
             )
 
         if stage_banner_text and stage_banner_alpha > 0:

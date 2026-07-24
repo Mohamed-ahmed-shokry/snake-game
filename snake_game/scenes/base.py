@@ -23,6 +23,7 @@ class SessionResult:
     food_eaten: int = 0
     run_seconds: float = 0.0
     new_achievements: list[str] = field(default_factory=list)
+    end_reason: str = "collision"
 
 
 @dataclass(slots=True)

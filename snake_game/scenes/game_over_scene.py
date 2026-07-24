@@ -30,9 +30,20 @@ def achievement_unlock_lines(achievement_ids: list[str]) -> list[str]:
     return [f"Unlocked: {', '.join(labels[index:index + 2])}" for index in range(0, len(labels), 2)]
 
 
+def end_reason_text(reason: str) -> str:
+    labels = {
+        "wall": "Hit the arena wall",
+        "obstacle": "Hit a stage hazard",
+        "self_collision": "Ran into your own trail",
+        "board_full": "Board cleared - perfect run!",
+        "collision": "Run complete",
+    }
+    return labels.get(reason, "Run complete")
+
+
 class GameOverScene(Scene):
     scene_id = SceneId.GAME_OVER
-    option_start_y = 300
+    option_start_y = 318
     option_gap = 42
     option_width = 460
     option_height = 34
@@ -139,6 +150,7 @@ class GameOverScene(Scene):
         food_eaten = result.food_eaten if result else 0
         run_seconds = result.run_seconds if result else 0.0
         new_achievements = result.new_achievements if result else []
+        end_reason = result.end_reason if result else "collision"
 
         summary_text = (
             f"Score {score_value}  |  Stage {stage_reached}  |  "
@@ -152,12 +164,20 @@ class GameOverScene(Scene):
             font=self.ctx.small_font,
             color=palette.text,
         )
+        draw_hint_footer(
+            screen=screen,
+            text=end_reason_text(end_reason),
+            width=self.ctx.config.window_width,
+            y=210,
+            font=self.ctx.small_font,
+            color=palette.food if end_reason != "board_full" else palette.powerup,
+        )
         if new_best:
             draw_hint_footer(
                 screen=screen,
                 text="New High Score!",
                 width=self.ctx.config.window_width,
-                y=208,
+                y=238,
                 font=self.ctx.small_font,
                 color=palette.selected_text,
             )
@@ -167,7 +187,7 @@ class GameOverScene(Scene):
                 screen=screen,
                 text=line,
                 width=self.ctx.config.window_width,
-                y=232 + index * 24,
+                y=264 + index * 22,
                 font=self.ctx.small_font,
                 color=palette.powerup,
             )
@@ -190,7 +210,7 @@ class GameOverScene(Scene):
             screen=screen,
             text=top_scores_text(leaderboard),
             width=self.ctx.config.window_width,
-            y=450,
+            y=468,
             font=self.ctx.small_font,
             color=palette.accent,
         )
@@ -198,7 +218,7 @@ class GameOverScene(Scene):
             screen=screen,
             text="Enter / Click: Select   Esc: Main Menu",
             width=self.ctx.config.window_width,
-            y=490,
+            y=508,
             font=self.ctx.small_font,
             color=palette.text,
         )

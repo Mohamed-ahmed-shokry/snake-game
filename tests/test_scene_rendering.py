@@ -14,11 +14,11 @@ from snake_game.rendering.layers import PlayfieldRenderer
 from snake_game.scenes.base import AppContext, SessionResult
 from snake_game.scenes.game_over_scene import GameOverScene
 from snake_game.scenes.menu_scene import MenuScene
-from snake_game.scenes.play_scene import PlayScene
+from snake_game.scenes.play_scene import PlayScene, direction_for_pointer
 from snake_game.scenes.progress_scene import ProgressScene
 from snake_game.scenes.settings_scene import SettingsScene
 from snake_game.systems.powerups import PowerUpType
-from snake_game.types import SceneId
+from snake_game.types import Direction, SceneId
 from snake_game.ui.theme import resolve_theme
 
 
@@ -121,3 +121,11 @@ def test_settings_supports_forward_and_reverse_mouse_changes(app_context: AppCon
 
     scene.handle_event(pygame.event.Event(pygame.MOUSEBUTTONDOWN, pos=(400, 178), button=3))
     assert app_context.persistent_data.graphics.theme_id == original_theme
+
+
+def test_pointer_direction_uses_dominant_axis_and_dead_zone() -> None:
+    assert direction_for_pointer((150, 100), (100, 100)) == Direction.RIGHT
+    assert direction_for_pointer((70, 100), (100, 100)) == Direction.LEFT
+    assert direction_for_pointer((100, 140), (100, 100)) == Direction.DOWN
+    assert direction_for_pointer((100, 60), (100, 100)) == Direction.UP
+    assert direction_for_pointer((102, 103), (100, 100)) is None

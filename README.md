@@ -87,6 +87,18 @@ uv run snake-game --width 1000 --height 700 --cell-size 20 --obstacle-count 20
 uv run python -m pytest
 ```
 
+### Quality and Release Checks
+
+Run the same checks used by continuous integration:
+
+```bash
+uv run ruff check .
+uv run python -m pytest --cov=snake_game --cov-report=term-missing
+uv build
+```
+
+The test suite enforces at least 75% branch coverage. `uv build` creates an installable wheel and source archive in `dist/`.
+
 ## Controls
 
 | Context | Keys | Action |
@@ -114,5 +126,16 @@ The game also supports mouse navigation in menus and click-to-steer during a run
 ## Persistence Notes
 
 - Save path: `data/save.json`
-- Save schema migration is supported across versions.
-- If save data is corrupt, the game falls back to safe defaults and attempts backup.
+- Writes use an atomic temporary-file replacement so an interrupted save cannot leave a partially written file.
+- Older save schemas migrate automatically.
+- Corrupt saves are moved beside the original with a `.corrupt-<timestamp>` suffix before safe defaults are loaded.
+- Saves from a newer, unsupported game version are preserved with an `.unsupported-<timestamp>` suffix instead of being overwritten.
+- If a write fails because the folder is unavailable or read-only, the game keeps running and displays a persistent warning.
+
+## Troubleshooting
+
+- **The game rejects a custom window size:** both dimensions must be at least `800x600` and divisible by `--cell-size`.
+- **Audio is unavailable:** the game continues silently when no compatible audio device is present.
+- **Settings or progress will not save:** confirm that the parent folder passed through `--data-file` is writable.
+- **You want a fresh profile:** close the game, then rename or remove `data/save.json`. A new profile is created on the next launch.
+- **A headless machine cannot open a window:** use the dummy SDL video and audio drivers, as configured in `.github/workflows/ci.yml`.

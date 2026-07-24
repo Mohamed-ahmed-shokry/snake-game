@@ -248,7 +248,7 @@ class PlayfieldRenderer:
         stage: int,
         active_effect_labels: list[str],
     ) -> None:
-        top_panel = pygame.Rect(8, 6, self.config.window_width - 16, 54)
+        top_panel = pygame.Rect(8, 6, self.config.window_width - 16, 64)
         draw_panel(
             screen=target,
             rect=top_panel,
@@ -258,22 +258,52 @@ class PlayfieldRenderer:
             radius=12,
         )
 
-        hud_parts = [
-            f"Score {state.score}",
-            f"Best {best_score}",
-            f"Stage {stage}",
-            state.difficulty.label,
-            state.map_mode.label,
-            "Obs On" if state.obstacles else "Obs Off",
+        stats = [
+            ("SCORE", state.score, self.theme.palette.snake_head),
+            ("BEST", best_score, self.theme.palette.selected_text),
+            ("STAGE", stage, self.theme.palette.accent),
         ]
-        hud_text = "  |  ".join(hud_parts)
-        score_surface = small_font.render(hud_text, True, self.theme.palette.text)
-        target.blit(score_surface, (18, 14))
+        chip_x = 16
+        for label, value, color in stats:
+            text_surface = small_font.render(f"{label}  {value}", True, color)
+            chip_rect = text_surface.get_rect(topleft=(chip_x + 10, 14)).inflate(20, 8)
+            draw_panel(
+                screen=target,
+                rect=chip_rect,
+                fill=(8, 12, 18),
+                border=tuple(max(24, channel // 3) for channel in color),
+                alpha=175,
+                radius=chip_rect.height // 2,
+            )
+            target.blit(text_surface, text_surface.get_rect(center=chip_rect.center))
+            chip_x = chip_rect.right + 8
+
+        context_text = (
+            f"{state.difficulty.label.upper()}  |  {state.map_mode.label.upper()}  |  "
+            f"{'HAZARDS' if state.obstacles else 'CLEAR'}"
+        )
+        context_surface = small_font.render(context_text, True, self.theme.palette.text)
+        context_rect = context_surface.get_rect(topright=(self.config.window_width - 18, 17))
+        if context_rect.left > chip_x:
+            target.blit(context_surface, context_rect)
 
         if active_effect_labels:
-            effects_text = "Effects: " + "   ".join(active_effect_labels)
-            effects_surface = small_font.render(effects_text, True, self.theme.palette.accent)
-            target.blit(effects_surface, (18, 36))
+            effect_x = 18
+            for label in active_effect_labels:
+                effect_surface = small_font.render(label, True, self.theme.palette.accent)
+                effect_rect = effect_surface.get_rect(topleft=(effect_x + 8, 43)).inflate(16, 4)
+                if effect_rect.right > self.config.window_width - 16:
+                    break
+                draw_panel(
+                    screen=target,
+                    rect=effect_rect,
+                    fill=(8, 16, 22),
+                    border=self.theme.palette.accent,
+                    alpha=150,
+                    radius=effect_rect.height // 2,
+                )
+                target.blit(effect_surface, effect_surface.get_rect(center=effect_rect.center))
+                effect_x = effect_rect.right + 6
 
     def _draw_overlays(
         self,
@@ -391,4 +421,5 @@ class PlayfieldRenderer:
             stage_banner_alpha,
             flash_alpha,
         )
+        screen.fill(self.theme.palette.background_top)
         screen.blit(world, camera_offset)

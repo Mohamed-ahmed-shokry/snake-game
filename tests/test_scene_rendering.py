@@ -111,6 +111,32 @@ def test_powerup_types_have_distinct_visual_glyphs(app_context: AppContext) -> N
     assert len(set(images)) == len(PowerUpType)
 
 
+def test_hud_renders_multiple_active_effects_without_error(app_context: AppContext) -> None:
+    play_scene = PlayScene(app_context)
+    renderer = PlayfieldRenderer(
+        config=app_context.config,
+        theme=resolve_theme(app_context.config.graphics.theme_id),
+        assets=RenderAssets(),
+    )
+    screen = pygame.Surface((app_context.config.window_width, app_context.config.window_height))
+
+    renderer.render(
+        screen=screen,
+        state=play_scene.state,
+        hud_font=app_context.title_font,
+        small_font=app_context.small_font,
+        countdown_remaining=0.0,
+        best_score=24,
+        stage=3,
+        powerup_position=None,
+        powerup_type=None,
+        active_effect_labels=["Shield 8.0s", "Double 5.2s", "Phase 3.1s"],
+        camera_offset=(3, -2),
+    )
+
+    assert screen.get_at((0, app_context.config.window_height - 1))[:3] != (0, 0, 0)
+
+
 def test_menu_supports_mouse_hover_and_click(app_context: AppContext) -> None:
     scene = MenuScene(app_context)
     scene.handle_event(pygame.event.Event(pygame.MOUSEMOTION, pos=(400, 262)))

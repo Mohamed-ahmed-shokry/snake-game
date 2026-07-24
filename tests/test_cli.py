@@ -10,9 +10,9 @@ def test_cli_builds_config_from_runtime_options() -> None:
             "--data-file",
             "custom-save.json",
             "--width",
-            "400",
+            "1000",
             "--height",
-            "300",
+            "700",
             "--cell-size",
             "10",
             "--obstacle-count",
@@ -24,11 +24,11 @@ def test_cli_builds_config_from_runtime_options() -> None:
     config = config_from_args(args)
 
     assert config.data_file == "custom-save.json"
-    assert config.window_width == 400
-    assert config.window_height == 300
+    assert config.window_width == 1000
+    assert config.window_height == 700
     assert config.cell_size == 10
-    assert config.grid_width == 40
-    assert config.grid_height == 30
+    assert config.grid_width == 100
+    assert config.grid_height == 70
     assert config.obstacle_count == 8
     assert config.countdown_seconds == 0.0
 

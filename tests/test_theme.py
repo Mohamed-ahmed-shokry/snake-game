@@ -1,6 +1,11 @@
 import pytest
 
-from snake_game.config import GameConfig, GraphicsSettings
+from snake_game.config import (
+    MIN_WINDOW_HEIGHT,
+    MIN_WINDOW_WIDTH,
+    GameConfig,
+    GraphicsSettings,
+)
 from snake_game.types import ThemeId
 from snake_game.ui.theme import resolve_theme
 
@@ -35,6 +40,13 @@ def test_game_config_rejects_non_positive_dimensions() -> None:
     ]:
         with pytest.raises(ValueError):
             config.validate()
+
+
+def test_game_config_rejects_viewports_too_small_for_the_ui() -> None:
+    with pytest.raises(ValueError, match="window_width"):
+        GameConfig(window_width=MIN_WINDOW_WIDTH - 20).validate()
+    with pytest.raises(ValueError, match="window_height"):
+        GameConfig(window_height=MIN_WINDOW_HEIGHT - 20).validate()
 
 
 def test_game_config_rejects_invalid_render_fps() -> None:

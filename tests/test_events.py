@@ -11,8 +11,8 @@ from snake_game.types import Direction
 
 def make_config() -> GameConfig:
     config = GameConfig(
-        window_width=200,
-        window_height=200,
+        window_width=800,
+        window_height=600,
         cell_size=20,
         max_steps_per_frame=3,
         obstacle_count=4,

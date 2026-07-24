@@ -14,8 +14,8 @@ from snake_game.types import Difficulty, Direction, GameStatus, MapMode
 
 def make_config() -> GameConfig:
     config = GameConfig(
-        window_width=200,
-        window_height=200,
+        window_width=800,
+        window_height=600,
         cell_size=20,
         max_steps_per_frame=3,
         obstacle_count=6,
@@ -221,11 +221,12 @@ def test_advance_simulation_uses_accumulated_delta() -> None:
     settings = UserSettings(difficulty=Difficulty.EASY)
     state = create_initial_state(config, settings, random.Random(10))
     state.food = (0, 0)
+    start_head = state.snake[0]
 
     steps = advance_simulation(state, config, delta_seconds=0.45, rng=random.Random(10))
 
     assert steps == 2
-    assert state.snake[0] == (7, 5)
+    assert state.snake[0] == (start_head[0] + 2, start_head[1])
     assert 0.0 < state.accumulator_seconds < 0.2
 
 

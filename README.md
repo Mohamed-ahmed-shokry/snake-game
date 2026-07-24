@@ -53,6 +53,7 @@ Version **1.5.0** is a self-contained desktop game with persistent settings, car
 
 - Python `3.12+`
 - `uv`
+- A display resolution of at least `800x600`
 
 ### Install
 

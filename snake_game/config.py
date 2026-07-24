@@ -4,6 +4,8 @@ from snake_game.types import Difficulty, MapMode, ThemeId
 
 COLORBLIND_MODES: tuple[str, ...] = ("off", "deuteranopia", "tritanopia", "high_contrast")
 DEFAULT_COLORBLIND_MODE = "off"
+MIN_WINDOW_WIDTH = 800
+MIN_WINDOW_HEIGHT = 600
 
 
 def normalize_colorblind_mode(value: object, default: str = DEFAULT_COLORBLIND_MODE) -> str:
@@ -109,6 +111,10 @@ class GameConfig:
             raise ValueError("window_width must be > 0")
         if self.window_height <= 0:
             raise ValueError("window_height must be > 0")
+        if self.window_width < MIN_WINDOW_WIDTH:
+            raise ValueError(f"window_width must be >= {MIN_WINDOW_WIDTH}")
+        if self.window_height < MIN_WINDOW_HEIGHT:
+            raise ValueError(f"window_height must be >= {MIN_WINDOW_HEIGHT}")
         if self.cell_size <= 0:
             raise ValueError("cell_size must be > 0")
         if self.window_width % self.cell_size != 0:

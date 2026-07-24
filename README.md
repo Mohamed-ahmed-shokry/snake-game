@@ -10,7 +10,7 @@ A complete, modern Snake game focused on responsive controls, readable visuals, 
   <img src="docs/screenshots/gameplay.png" alt="Snake Arcade gameplay with the neon arena theme" width="900">
 </p>
 
-Version **1.1.0** is a self-contained desktop game with persistent settings, career progress, achievements, per-mode leaderboards, mouse controls, and a polished audiovisual presentation.
+Version **1.2.0** is a self-contained desktop game with persistent settings, career progress, achievements, per-mode leaderboards, mouse controls, and a polished audiovisual presentation.
 
 ## What You Get
 
@@ -34,6 +34,9 @@ Version **1.1.0** is a self-contained desktop game with persistent settings, car
   - Color modes (`off`, `deuteranopia`, `tritanopia`, `high_contrast`)
   - Adjustable text size, grid, particles, reduced motion, and screen shake
   - Distinct power-up symbols and visible active-effect auras
+  - Smooth interpolated snake motion with rounded, tapered segments
+  - Atmospheric checkerboard arenas, colored lighting, and mode-specific boundaries
+  - Faceted rock hazards, glowing food, orbiting pickups, and stage-progress lighting
   - Layered scene backgrounds, redesigned HUD, branded window icon, and fullscreen mode
   - Reusable help overlay, click-to-steer, auto-pause, and richer arcade sound cues
   - Progress screen and enhanced game-over summary

@@ -954,6 +954,8 @@ class PlayfieldRenderer:
         best_score: int,
         stage: int,
         active_effect_labels: list[str],
+        score_pulse: float,
+        new_best: bool,
     ) -> None:
         top_panel = pygame.Rect(8, 6, self.config.window_width - 16, 70)
         draw_panel(
@@ -974,6 +976,21 @@ class PlayfieldRenderer:
         for label, value, color in stats:
             text_surface = small_font.render(f"{label}  {value}", True, color)
             chip_rect = text_surface.get_rect(topleft=(chip_x + 10, 14)).inflate(20, 8)
+            if label == "SCORE" and score_pulse > 0:
+                pulse_strength = max(0.0, min(1.0, score_pulse))
+                halo_growth = (
+                    5
+                    if self.config.graphics.reduced_motion
+                    else round(4 + pulse_strength * 8)
+                )
+                draw_panel(
+                    screen=target,
+                    rect=chip_rect.inflate(halo_growth, halo_growth),
+                    fill=(8, 18, 14),
+                    border=self.theme.palette.snake_head,
+                    alpha=round(92 * pulse_strength),
+                    radius=chip_rect.height // 2 + halo_growth,
+                )
             draw_panel(
                 screen=target,
                 rect=chip_rect,
@@ -996,6 +1013,8 @@ class PlayfieldRenderer:
 
         effect_x = 18
         effect_specs = [(label, self.theme.palette.accent) for label in active_effect_labels]
+        if new_best:
+            effect_specs.insert(0, ("NEW BEST", self.theme.palette.selected_text))
         danger = calculate_danger_level(state, self.config)
         if danger >= 0.5:
             warning_label = "DANGER" if danger >= 0.75 else "CAUTION"
@@ -1319,6 +1338,8 @@ class PlayfieldRenderer:
         animation_seconds: float = 0.0,
         movement_alpha: float = 1.0,
         go_cue_timer: float = 0.0,
+        score_pulse: float = 0.0,
+        new_best: bool = False,
         stage_banner_text: str | None = None,
         stage_banner_alpha: int = 0,
         flash_alpha: int = 0,
@@ -1341,7 +1362,16 @@ class PlayfieldRenderer:
         )
         if particles:
             self._draw_particles(world, particles)
-        self._draw_hud(world, state, small_font, best_score, stage, active_effect_labels)
+        self._draw_hud(
+            world,
+            state,
+            small_font,
+            best_score,
+            stage,
+            active_effect_labels,
+            score_pulse,
+            new_best,
+        )
         self._draw_overlays(
             world,
             state,

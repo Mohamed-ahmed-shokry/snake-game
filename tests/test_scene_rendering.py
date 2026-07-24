@@ -203,15 +203,38 @@ def test_hud_telemetry_changes_with_speed_and_danger(app_context: AppContext) ->
     danger = pygame.Surface((800, 600), pygame.SRCALPHA)
 
     scene.state.obstacles.clear()
-    renderer._draw_hud(normal, scene.state, app_context.small_font, 24, 1, [])
+    renderer._draw_hud(normal, scene.state, app_context.small_font, 24, 1, [], 0.0, False)
 
     head_x, head_y = scene.state.snake[0]
     scene.state.obstacles = {(head_x + 1, head_y)}
     scene.state.steps_per_second = 12.5
-    renderer._draw_hud(danger, scene.state, app_context.small_font, 24, 1, [])
+    renderer._draw_hud(danger, scene.state, app_context.small_font, 24, 1, [], 0.0, False)
 
     assert pygame.image.tobytes(normal, "RGBA") != pygame.image.tobytes(danger, "RGBA")
     assert danger.get_bounding_rect().height >= 70
+
+
+def test_score_pulse_and_new_best_change_hud_feedback(app_context: AppContext) -> None:
+    scene = PlayScene(app_context)
+    renderer = PlayfieldRenderer(
+        config=app_context.config,
+        theme=resolve_theme(app_context.config.graphics.theme_id),
+        assets=RenderAssets(),
+    )
+    normal = pygame.Surface((800, 600), pygame.SRCALPHA)
+    celebrated = pygame.Surface((800, 600), pygame.SRCALPHA)
+
+    renderer._draw_hud(normal, scene.state, app_context.small_font, 24, 1, [], 0.0, False)
+    renderer._draw_hud(celebrated, scene.state, app_context.small_font, 24, 1, [], 1.0, True)
+
+    assert pygame.image.tobytes(normal, "RGBA") != pygame.image.tobytes(celebrated, "RGBA")
+
+    scene.best_score_at_start = 2
+    scene.state.score = 4
+    scene._register_score_feedback()
+    assert scene.score_pulse_timer == 0.45
+    assert scene.new_best_announced is True
+    assert scene.toast_text == "NEW PERSONAL BEST"
 
 
 def test_arena_border_distinguishes_bounded_and_wrap_modes(app_context: AppContext) -> None:

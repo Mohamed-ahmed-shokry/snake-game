@@ -86,6 +86,8 @@ class PlayScene(Scene):
         self.stage_banner_text: str | None = None
         self.stage_banner_timer: float = 0.0
         self.go_cue_timer: float = 0.0
+        self.score_pulse_timer: float = 0.0
+        self.new_best_announced = False
         self.flash_timer: float = 0.0
         self.shake_timer: float = 0.0
 
@@ -393,6 +395,21 @@ class PlayScene(Scene):
         self.toast_color = color
         self.toast_timer = duration
 
+    def _register_score_feedback(self) -> None:
+        self.score_pulse_timer = 0.45
+        if self.state.score <= self.best_score_at_start or self.new_best_announced:
+            return
+        self.new_best_announced = True
+        self.flash_timer = max(self.flash_timer, 0.10)
+        self._show_toast(
+            "NEW PERSONAL BEST",
+            resolve_theme(
+                self.ctx.config.graphics.theme_id,
+                self.ctx.config.graphics.colorblind_mode,
+            ).palette.selected_text,
+            duration=2.2,
+        )
+
     def handle_event(self, event: pygame.event.Event) -> None:
         if event.type == pygame.WINDOWFOCUSLOST:
             if self.state.status == GameStatus.RUNNING and not self.onboarding_visible:
@@ -469,6 +486,8 @@ class PlayScene(Scene):
                 self.pointer_feedback_position = None
         if self.go_cue_timer > 0:
             self.go_cue_timer = max(0.0, self.go_cue_timer - delta_seconds)
+        if self.score_pulse_timer > 0:
+            self.score_pulse_timer = max(0.0, self.score_pulse_timer - delta_seconds)
 
         if self.ctx.config.graphics.reduced_motion:
             self.stage_banner_text = None
@@ -509,6 +528,7 @@ class PlayScene(Scene):
             if event.type == GameEventType.FOOD_EATEN:
                 self.ctx.audio.play("eat")
                 self.food_eaten_count += 1
+                self._register_score_feedback()
                 head_x = int(event.payload.get("head_x", self.state.snake[0][0]))
                 head_y = int(event.payload.get("head_y", self.state.snake[0][1]))
                 multiplier = max(1, int(event.payload.get("score_multiplier", 1)))
@@ -654,6 +674,8 @@ class PlayScene(Scene):
             animation_seconds=self.visual_time,
             movement_alpha=movement_alpha,
             go_cue_timer=self.go_cue_timer,
+            score_pulse=self.score_pulse_timer / 0.45,
+            new_best=self.state.score > self.best_score_at_start,
             stage_banner_text=self.stage_banner_text,
             stage_banner_alpha=stage_banner_alpha,
             flash_alpha=flash_alpha,

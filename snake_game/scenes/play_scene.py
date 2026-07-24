@@ -17,6 +17,7 @@ from snake_game.scenes.base import AppContext, Scene, SessionResult
 from snake_game.systems.hazards import HazardSystem
 from snake_game.systems.powerups import PowerUpSystem
 from snake_game.systems.progression import StageProgression
+from snake_game.systems.achievements import unlock_run_achievements
 from snake_game.types import Direction, GameStatus, SceneId
 from snake_game.ui.components import draw_panel
 from snake_game.ui.theme import resolve_theme
@@ -118,7 +119,13 @@ class PlayScene(Scene):
             self.ctx.config.leaderboard_limit,
         )
         update_run_stats(self.ctx.persistent_data, self.state.score)
-        save_persistent_data(self.ctx.persistent_data, self.ctx.data_path)
+        new_achievements = unlock_run_achievements(
+            self.ctx.persistent_data,
+            score=self.state.score,
+            stage_reached=self.progression.current_stage,
+            food_eaten=self.food_eaten_count,
+            run_seconds=self.run_seconds,
+        )
         self.ctx.last_result = SessionResult(
             score=self.state.score,
             leaderboard_key=score_key,
@@ -127,7 +134,9 @@ class PlayScene(Scene):
             stage_reached=self.progression.current_stage,
             food_eaten=self.food_eaten_count,
             run_seconds=self.run_seconds,
+            new_achievements=new_achievements,
         )
+        save_persistent_data(self.ctx.persistent_data, self.ctx.data_path)
         self.score_recorded = True
         self.ctx.audio.play("death")
         self.next_scene = SceneId.GAME_OVER

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import random
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import pygame
@@ -22,6 +22,7 @@ class SessionResult:
     stage_reached: int = 1
     food_eaten: int = 0
     run_seconds: float = 0.0
+    new_achievements: list[str] = field(default_factory=list)
 
 
 @dataclass(slots=True)

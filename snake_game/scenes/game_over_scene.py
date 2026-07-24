@@ -1,6 +1,7 @@
 import pygame
 
 from snake_game.scenes.base import AppContext, Scene
+from snake_game.systems.achievements import achievement_label
 from snake_game.types import SceneId
 from snake_game.ui.components import draw_hint_footer, draw_option_rows, draw_scene_header
 from snake_game.ui.theme import resolve_theme
@@ -16,6 +17,11 @@ def top_scores_text(leaderboard: list[int]) -> str:
     if not leaderboard:
         return "Top Scores (Current Setup): None yet"
     return "Top Scores (Current Setup): " + ", ".join(str(value) for value in leaderboard[:5])
+
+
+def achievement_unlock_lines(achievement_ids: list[str]) -> list[str]:
+    labels = [achievement_label(achievement_id) for achievement_id in achievement_ids]
+    return [f"Unlocked: {', '.join(labels[index:index + 2])}" for index in range(0, len(labels), 2)]
 
 
 class GameOverScene(Scene):
@@ -83,6 +89,7 @@ class GameOverScene(Scene):
         stage_reached = result.stage_reached if result else 1
         food_eaten = result.food_eaten if result else 0
         run_seconds = result.run_seconds if result else 0.0
+        new_achievements = result.new_achievements if result else []
 
         summary_text = (
             f"Score {score_value}  |  Stage {stage_reached}  |  "
@@ -106,12 +113,22 @@ class GameOverScene(Scene):
                 color=palette.selected_text,
             )
 
+        for index, line in enumerate(achievement_unlock_lines(new_achievements)[:2]):
+            draw_hint_footer(
+                screen=screen,
+                text=line,
+                width=self.ctx.config.window_width,
+                y=232 + index * 24,
+                font=self.ctx.small_font,
+                color=palette.powerup,
+            )
+
         draw_option_rows(
             screen=screen,
             options=self.options,
             selected_index=self.selected_index,
             center_x=self.ctx.config.window_width // 2,
-            start_y=280,
+            start_y=300,
             row_gap=42,
             font=self.ctx.body_font,
             text_color=palette.text,
@@ -124,7 +141,7 @@ class GameOverScene(Scene):
             screen=screen,
             text=top_scores_text(leaderboard),
             width=self.ctx.config.window_width,
-            y=430,
+            y=450,
             font=self.ctx.small_font,
             color=palette.accent,
         )
@@ -132,7 +149,7 @@ class GameOverScene(Scene):
             screen=screen,
             text="Enter: Select   Esc: Main Menu",
             width=self.ctx.config.window_width,
-            y=470,
+            y=490,
             font=self.ctx.small_font,
             color=palette.text,
         )

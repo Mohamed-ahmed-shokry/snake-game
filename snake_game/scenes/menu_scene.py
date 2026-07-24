@@ -2,6 +2,7 @@ import pygame
 
 from snake_game.persistence import best_score_for_settings
 from snake_game.scenes.base import AppContext, Scene
+from snake_game.systems.achievements import ACHIEVEMENTS
 from snake_game.types import SceneId
 from snake_game.ui.components import draw_hint_footer, draw_option_rows, draw_scene_header
 from snake_game.ui.theme import resolve_theme
@@ -92,7 +93,10 @@ class MenuScene(Scene):
         best_score = best_score_for_settings(self.ctx.persistent_data, settings)
         draw_hint_footer(
             screen=screen,
-            text=f"Best Score (Current Setup): {best_score}",
+            text=(
+                f"Best {best_score}  |  Runs {self.ctx.persistent_data.stats.total_runs}  |  "
+                f"Achievements {len(self.ctx.persistent_data.achievements)}/{len(ACHIEVEMENTS)}"
+            ),
             width=self.ctx.config.window_width,
             y=420,
             font=self.ctx.small_font,
@@ -102,7 +106,7 @@ class MenuScene(Scene):
             screen=screen,
             text="Enter: Select   Up/Down: Navigate",
             width=self.ctx.config.window_width,
-            y=470,
+            y=475,
             font=self.ctx.small_font,
             color=palette.text,
         )

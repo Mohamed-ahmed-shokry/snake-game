@@ -9,5 +9,12 @@ wheels/
 # Virtual environments
 .venv
 
+# Test and quality-tool output
+.coverage
+coverage.xml
+htmlcov/
+.pytest_cache/
+.ruff_cache/
+
 # Runtime data
 data/

@@ -302,7 +302,7 @@ class PlayScene(Scene):
                         )
                     )
             elif event.type == GameEventType.STAGE_ADVANCED:
-                self.ctx.audio.play("confirm")
+                self.ctx.audio.play("stage")
                 stage = int(event.payload.get("stage", self.progression.current_stage))
                 self.stage_banner_text = f"Stage {stage}"
                 self.stage_banner_timer = 1.2
@@ -336,7 +336,7 @@ class PlayScene(Scene):
                 reason = str(event.payload.get("reason", ""))
                 if self.powerups.absorb_fatal_collision(reason):
                     self.state.status = GameStatus.RUNNING
-                    self.ctx.audio.play("confirm")
+                    self.ctx.audio.play("shield")
                     self.flash_timer = max(self.flash_timer, 0.18)
                     self.shake_timer = max(self.shake_timer, 0.12)
                     self._show_toast("SHIELD SAVED THE RUN", (120, 210, 255), duration=2.2)
@@ -345,7 +345,7 @@ class PlayScene(Scene):
 
         for event in self.ctx.event_bus.drain():
             if event.type == GameEventType.POWERUP_COLLECTED:
-                self.ctx.audio.play("confirm")
+                self.ctx.audio.play("powerup")
                 self.flash_timer = max(self.flash_timer, 0.16)
                 self.shake_timer = max(self.shake_timer, 0.08)
                 head = self.state.snake[0]

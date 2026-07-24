@@ -10,7 +10,7 @@ from snake_game.ui.components import (
     draw_scene_background,
     draw_scene_header,
 )
-from snake_game.ui.layout import option_index_at
+from snake_game.ui.layout import option_index_at, scene_vertical_offset
 from snake_game.ui.theme import resolve_theme
 
 
@@ -53,6 +53,9 @@ class SettingsScene(Scene):
     def __init__(self, ctx: AppContext) -> None:
         super().__init__(ctx)
         self.selected_index = 0
+
+    def _layout_offset(self) -> int:
+        return scene_vertical_offset(self.ctx.config.window_height)
 
     def _rows(self) -> list[str]:
         settings = self.ctx.persistent_data.settings
@@ -139,7 +142,7 @@ class SettingsScene(Scene):
             hovered = option_index_at(
                 event.pos,
                 self.ctx.config.window_width,
-                self.option_start_y,
+                self.option_start_y + self._layout_offset(),
                 len(self._rows()),
                 self.option_gap,
                 self.option_width,
@@ -154,7 +157,7 @@ class SettingsScene(Scene):
             clicked = option_index_at(
                 event.pos,
                 self.ctx.config.window_width,
-                self.option_start_y,
+                self.option_start_y + self._layout_offset(),
                 len(self._rows()),
                 self.option_gap,
                 self.option_width,
@@ -204,6 +207,7 @@ class SettingsScene(Scene):
             self.ctx.config.graphics.colorblind_mode,
         )
         palette = theme.palette
+        offset_y = self._layout_offset()
 
         draw_scene_background(
             screen,
@@ -221,13 +225,14 @@ class SettingsScene(Scene):
             body_font=self.ctx.small_font,
             title_color=palette.accent,
             text_color=palette.text,
+            offset_y=offset_y,
         )
         draw_option_rows(
             screen=screen,
             options=rows,
             selected_index=self.selected_index,
             center_x=self.ctx.config.window_width // 2,
-            start_y=self.option_start_y,
+            start_y=self.option_start_y + offset_y,
             row_gap=self.option_gap,
             font=self.ctx.small_font,
             text_color=palette.text,
@@ -239,7 +244,7 @@ class SettingsScene(Scene):
             screen=screen,
             text=self._description_for(self.selected_index),
             width=self.ctx.config.window_width,
-            y=510,
+            y=510 + offset_y,
             font=self.ctx.small_font,
             color=palette.text,
         )
@@ -247,7 +252,7 @@ class SettingsScene(Scene):
             screen=screen,
             text="Left/Right or Click: Change   Right Click: Previous   Esc: Back",
             width=self.ctx.config.window_width,
-            y=548,
+            y=548 + offset_y,
             font=self.ctx.small_font,
             color=palette.accent,
         )

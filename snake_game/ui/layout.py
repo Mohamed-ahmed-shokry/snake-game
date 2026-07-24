@@ -1,5 +1,11 @@
 import pygame
 
+BASE_SCENE_HEIGHT = 600
+
+
+def scene_vertical_offset(screen_height: int) -> int:
+    return max(0, (screen_height - BASE_SCENE_HEIGHT) // 2)
+
 
 def centered_rect(screen_width: int, top: int, width: int, height: int) -> pygame.Rect:
     left = (screen_width - width) // 2

@@ -9,7 +9,7 @@ from snake_game.ui.components import (
     draw_scene_background,
     draw_scene_header,
 )
-from snake_game.ui.layout import option_index_at
+from snake_game.ui.layout import option_index_at, scene_vertical_offset
 from snake_game.ui.theme import resolve_theme
 
 
@@ -53,12 +53,15 @@ class GameOverScene(Scene):
         self.selected_index = 0
         self.options = ["Play Again", "Main Menu", "Quit"]
 
+    def _layout_offset(self) -> int:
+        return scene_vertical_offset(self.ctx.config.window_height)
+
     def handle_event(self, event: pygame.event.Event) -> None:
         if event.type == pygame.MOUSEMOTION:
             hovered = option_index_at(
                 event.pos,
                 self.ctx.config.window_width,
-                self.option_start_y,
+                self.option_start_y + self._layout_offset(),
                 len(self.options),
                 self.option_gap,
                 self.option_width,
@@ -73,7 +76,7 @@ class GameOverScene(Scene):
             clicked = option_index_at(
                 event.pos,
                 self.ctx.config.window_width,
-                self.option_start_y,
+                self.option_start_y + self._layout_offset(),
                 len(self.options),
                 self.option_gap,
                 self.option_width,
@@ -123,6 +126,7 @@ class GameOverScene(Scene):
             self.ctx.config.graphics.colorblind_mode,
         )
         palette = theme.palette
+        offset_y = self._layout_offset()
 
         draw_scene_background(
             screen,
@@ -140,6 +144,7 @@ class GameOverScene(Scene):
             body_font=self.ctx.small_font,
             title_color=palette.food,
             text_color=palette.text,
+            offset_y=offset_y,
         )
 
         result = self.ctx.last_result
@@ -160,7 +165,7 @@ class GameOverScene(Scene):
             screen=screen,
             text=summary_text,
             width=self.ctx.config.window_width,
-            y=180,
+            y=180 + offset_y,
             font=self.ctx.small_font,
             color=palette.text,
         )
@@ -168,7 +173,7 @@ class GameOverScene(Scene):
             screen=screen,
             text=end_reason_text(end_reason),
             width=self.ctx.config.window_width,
-            y=210,
+            y=210 + offset_y,
             font=self.ctx.small_font,
             color=palette.food if end_reason != "board_full" else palette.powerup,
         )
@@ -177,7 +182,7 @@ class GameOverScene(Scene):
                 screen=screen,
                 text="New High Score!",
                 width=self.ctx.config.window_width,
-                y=238,
+                y=238 + offset_y,
                 font=self.ctx.small_font,
                 color=palette.selected_text,
             )
@@ -187,7 +192,7 @@ class GameOverScene(Scene):
                 screen=screen,
                 text=line,
                 width=self.ctx.config.window_width,
-                y=264 + index * 22,
+                y=264 + index * 22 + offset_y,
                 font=self.ctx.small_font,
                 color=palette.powerup,
             )
@@ -197,7 +202,7 @@ class GameOverScene(Scene):
             options=self.options,
             selected_index=self.selected_index,
             center_x=self.ctx.config.window_width // 2,
-            start_y=self.option_start_y,
+            start_y=self.option_start_y + offset_y,
             row_gap=self.option_gap,
             font=self.ctx.body_font,
             text_color=palette.text,
@@ -210,7 +215,7 @@ class GameOverScene(Scene):
             screen=screen,
             text=top_scores_text(leaderboard),
             width=self.ctx.config.window_width,
-            y=468,
+            y=468 + offset_y,
             font=self.ctx.small_font,
             color=palette.accent,
         )
@@ -218,7 +223,7 @@ class GameOverScene(Scene):
             screen=screen,
             text="Enter / Click: Select   Esc: Main Menu",
             width=self.ctx.config.window_width,
-            y=508,
+            y=508 + offset_y,
             font=self.ctx.small_font,
             color=palette.text,
         )

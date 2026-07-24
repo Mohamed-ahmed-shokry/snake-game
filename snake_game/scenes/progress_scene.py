@@ -13,6 +13,7 @@ from snake_game.ui.components import (
     draw_scene_header,
     draw_text_center,
 )
+from snake_game.ui.layout import scene_vertical_offset
 from snake_game.ui.theme import resolve_theme
 
 
@@ -47,6 +48,7 @@ class ProgressScene(Scene):
             self.ctx.config.graphics.colorblind_mode,
         )
         palette = theme.palette
+        offset_y = scene_vertical_offset(self.ctx.config.window_height)
         draw_scene_background(
             screen,
             palette.background_top,
@@ -63,9 +65,15 @@ class ProgressScene(Scene):
             body_font=self.ctx.small_font,
             title_color=palette.accent,
             text_color=palette.text,
+            offset_y=offset_y,
         )
 
-        stats_panel = pygame.Rect(self.ctx.config.window_width // 2 - 280, 160, 560, 104)
+        stats_panel = pygame.Rect(
+            self.ctx.config.window_width // 2 - 280,
+            160 + offset_y,
+            560,
+            104,
+        )
         draw_panel(
             screen=screen,
             rect=stats_panel,
@@ -83,7 +91,10 @@ class ProgressScene(Scene):
                 line,
                 self.ctx.small_font,
                 palette.text,
-                (self.ctx.config.window_width // 2 - 135 + column * 270, 190 + row * 42),
+                (
+                    self.ctx.config.window_width // 2 - 135 + column * 270,
+                    190 + row * 42 + offset_y,
+                ),
             )
 
         unlocked = set(self.ctx.persistent_data.achievements)
@@ -92,7 +103,7 @@ class ProgressScene(Scene):
             f"Achievements {len(unlocked)}/{len(ACHIEVEMENTS)}",
             self.ctx.body_font,
             palette.selected_text,
-            (self.ctx.config.window_width // 2, 300),
+            (self.ctx.config.window_width // 2, 300 + offset_y),
         )
         for index, achievement in enumerate(ACHIEVEMENTS):
             is_unlocked = achievement.id in unlocked
@@ -103,14 +114,14 @@ class ProgressScene(Scene):
                 f"{status}  |  {achievement.label} - {achievement.description}",
                 self.ctx.small_font,
                 color,
-                (self.ctx.config.window_width // 2, 346 + index * 34),
+                (self.ctx.config.window_width // 2, 346 + index * 34 + offset_y),
             )
 
         draw_hint_footer(
             screen=screen,
             text="Enter, Esc, or Click: Main Menu",
             width=self.ctx.config.window_width,
-            y=548,
+            y=548 + offset_y,
             font=self.ctx.small_font,
             color=palette.accent,
         )

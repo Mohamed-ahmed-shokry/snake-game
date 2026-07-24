@@ -548,6 +548,35 @@ def test_menu_supports_mouse_hover_and_click(app_context: AppContext) -> None:
     assert scene.next_scene == SceneId.PROGRESS
 
 
+def test_menu_and_settings_hit_targets_recenter_on_tall_viewport(
+    app_context: AppContext,
+) -> None:
+    app_context.config.window_width = 1200
+    app_context.config.window_height = 900
+    menu = MenuScene(app_context)
+    settings = SettingsScene(app_context)
+
+    menu.handle_event(
+        pygame.event.Event(
+            pygame.MOUSEMOTION,
+            pos=(600, menu.option_start_y + 150 + menu.option_gap),
+        )
+    )
+    settings.handle_event(
+        pygame.event.Event(
+            pygame.MOUSEMOTION,
+            pos=(600, settings.option_start_y + 150 + settings.option_gap * 3),
+        )
+    )
+
+    assert menu.selected_index == 1
+    assert settings.selected_index == 3
+
+    screen = pygame.Surface((1200, 900))
+    menu.render(screen)
+    assert screen.get_at((600, menu.option_start_y + 150))[:3] != (0, 0, 0)
+
+
 def test_settings_supports_forward_and_reverse_mouse_changes(app_context: AppContext) -> None:
     scene = SettingsScene(app_context)
     original_theme = app_context.persistent_data.graphics.theme_id

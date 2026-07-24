@@ -78,11 +78,12 @@ def draw_scene_header(
     body_font: pygame.font.Font,
     title_color: Color,
     text_color: Color,
+    offset_y: int = 0,
 ) -> None:
-    draw_text_center(screen, title, title_font, title_color, (width // 2, 92))
-    draw_text_center(screen, subtitle, body_font, text_color, (width // 2, 132))
+    draw_text_center(screen, title, title_font, title_color, (width // 2, 92 + offset_y))
+    draw_text_center(screen, subtitle, body_font, text_color, (width // 2, 132 + offset_y))
     rule_width = min(220, max(80, width // 3))
-    rule_y = 151
+    rule_y = 151 + offset_y
     pygame.draw.line(
         screen,
         title_color,

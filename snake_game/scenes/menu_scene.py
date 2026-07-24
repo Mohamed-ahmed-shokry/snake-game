@@ -10,7 +10,7 @@ from snake_game.ui.components import (
     draw_scene_background,
     draw_scene_header,
 )
-from snake_game.ui.layout import option_index_at
+from snake_game.ui.layout import option_index_at, scene_vertical_offset
 from snake_game.ui.theme import resolve_theme
 
 
@@ -26,12 +26,15 @@ class MenuScene(Scene):
         self.options = ["Start Game", "Progress", "Settings", "Quit"]
         self.selected_index = 0
 
+    def _layout_offset(self) -> int:
+        return scene_vertical_offset(self.ctx.config.window_height)
+
     def handle_event(self, event: pygame.event.Event) -> None:
         if event.type == pygame.MOUSEMOTION:
             hovered = option_index_at(
                 event.pos,
                 self.ctx.config.window_width,
-                self.option_start_y,
+                self.option_start_y + self._layout_offset(),
                 len(self.options),
                 self.option_gap,
                 self.option_width,
@@ -46,7 +49,7 @@ class MenuScene(Scene):
             clicked = option_index_at(
                 event.pos,
                 self.ctx.config.window_width,
-                self.option_start_y,
+                self.option_start_y + self._layout_offset(),
                 len(self.options),
                 self.option_gap,
                 self.option_width,
@@ -99,6 +102,7 @@ class MenuScene(Scene):
             self.ctx.config.graphics.colorblind_mode,
         )
         palette = theme.palette
+        offset_y = self._layout_offset()
 
         draw_scene_background(
             screen,
@@ -116,13 +120,14 @@ class MenuScene(Scene):
             body_font=self.ctx.small_font,
             title_color=palette.accent,
             text_color=palette.text,
+            offset_y=offset_y,
         )
         draw_option_rows(
             screen=screen,
             options=self.options,
             selected_index=self.selected_index,
             center_x=self.ctx.config.window_width // 2,
-            start_y=self.option_start_y,
+            start_y=self.option_start_y + offset_y,
             row_gap=self.option_gap,
             font=self.ctx.body_font,
             text_color=palette.text,
@@ -139,7 +144,7 @@ class MenuScene(Scene):
             screen=screen,
             text=settings_line,
             width=self.ctx.config.window_width,
-            y=390,
+            y=390 + offset_y,
             font=self.ctx.small_font,
             color=palette.text,
         )
@@ -151,7 +156,7 @@ class MenuScene(Scene):
                 f"Achievements {len(self.ctx.persistent_data.achievements)}/{len(ACHIEVEMENTS)}"
             ),
             width=self.ctx.config.window_width,
-            y=420,
+            y=420 + offset_y,
             font=self.ctx.small_font,
             color=palette.text,
         )
@@ -159,7 +164,7 @@ class MenuScene(Scene):
             screen=screen,
             text="Enter / Click: Select   Up/Down / Mouse: Navigate",
             width=self.ctx.config.window_width,
-            y=475,
+            y=475 + offset_y,
             font=self.ctx.small_font,
             color=palette.text,
         )

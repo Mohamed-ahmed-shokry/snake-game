@@ -1,8 +1,8 @@
-# Snake Game (Pygame)
+# Snake Arcade
 
-A modern Snake build focused on game feel: clean visuals, responsive controls, progression, and replayable runs with power-ups.
+A complete, modern Snake game focused on responsive controls, readable visuals, meaningful progression, and replayable arcade runs.
 
-This project is currently in the **v4 visual + UX pass**, with ongoing polish to rendering, accessibility, and interface flow.
+Version **1.0.0** is a self-contained desktop game with persistent settings, career progress, achievements, and per-mode leaderboards.
 
 ## What You Get
 
@@ -10,7 +10,7 @@ This project is currently in the **v4 visual + UX pass**, with ongoing polish to
 - Multiple run styles:
   - Difficulty presets (`Easy`, `Normal`, `Hard`)
   - Map modes (`Bounded`, `Wrap`)
-  - Optional obstacles
+  - Optional obstacles that expand as stages advance
 - Power-ups with real gameplay impact:
   - `Shield`: absorbs one fatal collision
   - `Phase`: pass through obstacles and wrap through walls
@@ -19,14 +19,14 @@ This project is currently in the **v4 visual + UX pass**, with ongoing polish to
 - Persistent data in `data/save.json`:
   - Settings
   - Graphics preferences
-  - Leaderboards
-  - Run stats
+  - Leaderboards for every difficulty/map/obstacle combination
+  - Career stats and five achievements
 - UI/graphics features:
   - Theme switching (`Neon`, `Sunset`, `Ocean`)
   - Color modes (`off`, `deuteranopia`, `tritanopia`, `high_contrast`)
   - Grid toggle, particles toggle, reduced motion, screen shake toggle
   - First-run onboarding overlay
-  - Enhanced game-over summary
+  - Progress screen and enhanced game-over summary
 
 ## Quick Start
 
@@ -79,14 +79,13 @@ uv run pytest
 | In game | `P` or `Space` | Pause / Resume |
 | In game | `Esc` | Return to menu |
 
-## Visual and UX Direction
+## How a Run Progresses
 
-v4 focuses on:
-
-- Stronger readability in motion.
-- Better scene hierarchy (menu, settings, play, game-over).
-- Cleaner HUD structure with effect timers and stage feedback.
-- Accessibility-first options for color and motion sensitivity.
+- Eat food to grow, score, and speed up.
+- Every 25 points advances the stage.
+- When obstacles are enabled, each stage adds new hazards away from the snake, food, and active power-ups.
+- Power-ups can absorb a collision, slow time, double score, or phase through walls and obstacles.
+- Each completed run updates the matching leaderboard, career totals, and achievement progress.
 
 ## Persistence Notes
 
@@ -94,8 +93,9 @@ v4 focuses on:
 - Save schema migration is supported across versions.
 - If save data is corrupt, the game falls back to safe defaults and attempts backup.
 
-## Development Snapshot
+## Project Structure
 
 - Rendering is organized around themed, layered playfield drawing.
 - Game systems are modular (`progression`, `powerups`, `hazards`).
-- Core behavior is covered by automated tests.
+- Scene flow separates the menu, progress, settings, play, and game-over screens.
+- Core gameplay, persistence, systems, CLI configuration, and display helpers are covered by automated tests.

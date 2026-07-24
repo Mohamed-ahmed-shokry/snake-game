@@ -61,8 +61,8 @@ class MenuScene(Scene):
         draw_scene_header(
             screen,
             width=self.ctx.config.window_width,
-            title="Snake V4",
-            subtitle="Arcade Run",
+            title="Snake Arcade",
+            subtitle="Classic Rules. Modern Runs.",
             title_font=self.ctx.title_font,
             body_font=self.ctx.small_font,
             title_color=palette.accent,

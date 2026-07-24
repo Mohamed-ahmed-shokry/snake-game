@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 from collections.abc import Sequence
 
+from snake_game import __version__
 from snake_game.app import run
 from snake_game.config import GameConfig
 
@@ -10,6 +11,7 @@ from snake_game.config import GameConfig
 def build_parser() -> argparse.ArgumentParser:
     defaults = GameConfig()
     parser = argparse.ArgumentParser(description="Run the Snake game.")
+    parser.add_argument("--version", action="version", version=f"Snake Arcade {__version__}")
     parser.add_argument("--data-file", default=defaults.data_file, help="Path to the persistent save JSON file.")
     parser.add_argument("--seed", type=int, default=None, help="Seed the game RNG for reproducible runs.")
     parser.add_argument("--width", type=int, default=defaults.window_width, help="Window width in pixels.")

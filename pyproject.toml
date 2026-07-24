@@ -1,7 +1,7 @@
 [project]
 name = "snake-game"
-version = "0.1.0"
-description = "Classic snake game built with pygame"
+version = "1.0.0"
+description = "A polished arcade Snake game built with Pygame"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [

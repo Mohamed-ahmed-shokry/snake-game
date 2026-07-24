@@ -41,7 +41,7 @@ def run(config: GameConfig | None = None, seed: int | None = None) -> None:
     config.validate()
 
     screen = pygame.display.set_mode((config.window_width, config.window_height))
-    pygame.display.set_caption("Snake V4")
+    pygame.display.set_caption("Snake Arcade")
     clock = pygame.time.Clock()
 
     title_font = pygame.font.Font(None, 76)

@@ -39,3 +39,13 @@ def test_cli_rejects_invalid_board_geometry() -> None:
 
     with pytest.raises(ValueError):
         config_from_args(args)
+
+
+def test_cli_reports_release_version(capsys: pytest.CaptureFixture[str]) -> None:
+    parser = build_parser()
+
+    with pytest.raises(SystemExit) as exit_info:
+        parser.parse_args(["--version"])
+
+    assert exit_info.value.code == 0
+    assert capsys.readouterr().out.strip() == "Snake Arcade 1.0.0"

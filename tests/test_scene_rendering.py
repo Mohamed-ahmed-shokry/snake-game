@@ -219,6 +219,14 @@ def test_arena_border_distinguishes_bounded_and_wrap_modes(app_context: AppConte
 def test_danger_level_tracks_obstacles_and_bounded_walls(app_context: AppContext) -> None:
     state = PlayScene(app_context).state
     head_x, head_y = state.snake[0]
+    state.snake = [
+        (head_x, head_y),
+        (head_x - 1, head_y),
+        (head_x - 2, head_y),
+        (head_x - 3, head_y),
+    ]
+    assert calculate_danger_level(state, app_context.config) == 0.0
+
     state.obstacles = {(head_x + 1, head_y)}
 
     assert calculate_danger_level(state, app_context.config) == 1.0

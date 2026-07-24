@@ -61,7 +61,7 @@ def calculate_danger_level(state: GameState, config: GameConfig) -> float:
     nearest_hazard = min(
         (
             abs(head_x - hazard_x) + abs(head_y - hazard_y)
-            for hazard_x, hazard_y in state.obstacles | set(state.snake[2:])
+            for hazard_x, hazard_y in state.obstacles | set(state.snake[3:])
         ),
         default=99,
     )

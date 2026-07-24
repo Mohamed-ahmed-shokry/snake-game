@@ -171,7 +171,7 @@ class PlayScene(Scene):
                 x=cell_x * self.ctx.config.cell_size + self.ctx.config.cell_size / 2,
                 y=max(
                     96.0,
-                    cell_y * self.ctx.config.cell_size - self.ctx.config.cell_size * 0.25,
+                    cell_y * self.ctx.config.cell_size - self.ctx.config.cell_size * 0.6,
                 ),
                 points=points,
             )

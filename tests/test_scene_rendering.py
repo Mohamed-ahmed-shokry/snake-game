@@ -9,6 +9,8 @@ import pytest
 from snake_game.config import GameConfig
 from snake_game.events import EventBus
 from snake_game.persistence import PersistentData
+from snake_game.rendering.assets import RenderAssets
+from snake_game.rendering.layers import PlayfieldRenderer
 from snake_game.scenes.base import AppContext, SessionResult
 from snake_game.scenes.game_over_scene import GameOverScene
 from snake_game.scenes.menu_scene import MenuScene
@@ -16,9 +18,8 @@ from snake_game.scenes.play_scene import PlayScene
 from snake_game.scenes.progress_scene import ProgressScene
 from snake_game.scenes.settings_scene import SettingsScene
 from snake_game.systems.powerups import PowerUpType
+from snake_game.types import SceneId
 from snake_game.ui.theme import resolve_theme
-from snake_game.rendering.assets import RenderAssets
-from snake_game.rendering.layers import PlayfieldRenderer
 
 
 class SilentAudio:
@@ -100,3 +101,23 @@ def test_powerup_types_have_distinct_visual_glyphs(app_context: AppContext) -> N
         images.append(pygame.image.tobytes(screen.subsurface(pygame.Rect(20, 20, 20, 20)), "RGB"))
 
     assert len(set(images)) == len(PowerUpType)
+
+
+def test_menu_supports_mouse_hover_and_click(app_context: AppContext) -> None:
+    scene = MenuScene(app_context)
+    scene.handle_event(pygame.event.Event(pygame.MOUSEMOTION, pos=(400, 262)))
+    assert scene.selected_index == 1
+
+    scene.handle_event(pygame.event.Event(pygame.MOUSEBUTTONDOWN, pos=(400, 262), button=1))
+    assert scene.next_scene == SceneId.PROGRESS
+
+
+def test_settings_supports_forward_and_reverse_mouse_changes(app_context: AppContext) -> None:
+    scene = SettingsScene(app_context)
+    original_theme = app_context.persistent_data.graphics.theme_id
+
+    scene.handle_event(pygame.event.Event(pygame.MOUSEBUTTONDOWN, pos=(400, 178), button=1))
+    assert app_context.persistent_data.graphics.theme_id != original_theme
+
+    scene.handle_event(pygame.event.Event(pygame.MOUSEBUTTONDOWN, pos=(400, 178), button=3))
+    assert app_context.persistent_data.graphics.theme_id == original_theme

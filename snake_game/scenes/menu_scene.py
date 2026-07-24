@@ -4,12 +4,22 @@ from snake_game.persistence import best_score_for_settings
 from snake_game.scenes.base import AppContext, Scene
 from snake_game.systems.achievements import ACHIEVEMENTS
 from snake_game.types import SceneId
-from snake_game.ui.components import draw_hint_footer, draw_option_rows, draw_scene_header
+from snake_game.ui.components import (
+    draw_hint_footer,
+    draw_option_rows,
+    draw_scene_background,
+    draw_scene_header,
+)
+from snake_game.ui.layout import option_index_at
 from snake_game.ui.theme import resolve_theme
 
 
 class MenuScene(Scene):
     scene_id = SceneId.MENU
+    option_start_y = 220
+    option_gap = 42
+    option_width = 520
+    option_height = 34
 
     def __init__(self, ctx: AppContext) -> None:
         super().__init__(ctx)
@@ -17,6 +27,36 @@ class MenuScene(Scene):
         self.selected_index = 0
 
     def handle_event(self, event: pygame.event.Event) -> None:
+        if event.type == pygame.MOUSEMOTION:
+            hovered = option_index_at(
+                event.pos,
+                self.ctx.config.window_width,
+                self.option_start_y,
+                len(self.options),
+                self.option_gap,
+                self.option_width,
+                self.option_height,
+            )
+            if hovered is not None and hovered != self.selected_index:
+                self.selected_index = hovered
+                self.ctx.audio.play("move")
+            return
+
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            clicked = option_index_at(
+                event.pos,
+                self.ctx.config.window_width,
+                self.option_start_y,
+                len(self.options),
+                self.option_gap,
+                self.option_width,
+                self.option_height,
+            )
+            if clicked is not None:
+                self.selected_index = clicked
+                self._activate_selected()
+            return
+
         if event.type != pygame.KEYDOWN:
             return
 
@@ -31,19 +71,22 @@ class MenuScene(Scene):
             return
 
         if event.key in (pygame.K_RETURN, pygame.K_SPACE):
-            self.ctx.audio.play("confirm")
-            selected_option = self.options[self.selected_index]
-            if selected_option == "Start Game":
-                self.next_scene = SceneId.PLAY
-            elif selected_option == "Progress":
-                self.next_scene = SceneId.PROGRESS
-            elif selected_option == "Settings":
-                self.next_scene = SceneId.SETTINGS
-            else:
-                self.quit_requested = True
+            self._activate_selected()
             return
 
         if event.key == pygame.K_ESCAPE:
+            self.quit_requested = True
+
+    def _activate_selected(self) -> None:
+        self.ctx.audio.play("confirm")
+        selected_option = self.options[self.selected_index]
+        if selected_option == "Start Game":
+            self.next_scene = SceneId.PLAY
+        elif selected_option == "Progress":
+            self.next_scene = SceneId.PROGRESS
+        elif selected_option == "Settings":
+            self.next_scene = SceneId.SETTINGS
+        else:
             self.quit_requested = True
 
     def update(self, delta_seconds: float) -> None:
@@ -57,7 +100,13 @@ class MenuScene(Scene):
         )
         palette = theme.palette
 
-        screen.fill(palette.background_top)
+        draw_scene_background(
+            screen,
+            palette.background_top,
+            palette.background_bottom,
+            palette.grid,
+            palette.accent,
+        )
         draw_scene_header(
             screen,
             width=self.ctx.config.window_width,
@@ -73,11 +122,13 @@ class MenuScene(Scene):
             options=self.options,
             selected_index=self.selected_index,
             center_x=self.ctx.config.window_width // 2,
-            start_y=220,
-            row_gap=42,
+            start_y=self.option_start_y,
+            row_gap=self.option_gap,
             font=self.ctx.body_font,
             text_color=palette.text,
             selected_text_color=palette.selected_text,
+            row_width=self.option_width,
+            row_height=self.option_height,
         )
 
         settings_line = (
@@ -106,7 +157,7 @@ class MenuScene(Scene):
         )
         draw_hint_footer(
             screen=screen,
-            text="Enter: Select   Up/Down: Navigate",
+            text="Enter / Click: Select   Up/Down / Mouse: Navigate",
             width=self.ctx.config.window_width,
             y=475,
             font=self.ctx.small_font,

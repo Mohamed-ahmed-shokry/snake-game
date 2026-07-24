@@ -3,7 +3,13 @@ import pygame
 from snake_game.scenes.base import AppContext, Scene
 from snake_game.systems.achievements import achievement_label
 from snake_game.types import SceneId
-from snake_game.ui.components import draw_hint_footer, draw_option_rows, draw_scene_header
+from snake_game.ui.components import (
+    draw_hint_footer,
+    draw_option_rows,
+    draw_scene_background,
+    draw_scene_header,
+)
+from snake_game.ui.layout import option_index_at
 from snake_game.ui.theme import resolve_theme
 
 
@@ -26,6 +32,10 @@ def achievement_unlock_lines(achievement_ids: list[str]) -> list[str]:
 
 class GameOverScene(Scene):
     scene_id = SceneId.GAME_OVER
+    option_start_y = 300
+    option_gap = 42
+    option_width = 460
+    option_height = 34
 
     def __init__(self, ctx: AppContext) -> None:
         super().__init__(ctx)
@@ -33,6 +43,36 @@ class GameOverScene(Scene):
         self.options = ["Play Again", "Main Menu", "Quit"]
 
     def handle_event(self, event: pygame.event.Event) -> None:
+        if event.type == pygame.MOUSEMOTION:
+            hovered = option_index_at(
+                event.pos,
+                self.ctx.config.window_width,
+                self.option_start_y,
+                len(self.options),
+                self.option_gap,
+                self.option_width,
+                self.option_height,
+            )
+            if hovered is not None and hovered != self.selected_index:
+                self.selected_index = hovered
+                self.ctx.audio.play("move")
+            return
+
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            clicked = option_index_at(
+                event.pos,
+                self.ctx.config.window_width,
+                self.option_start_y,
+                len(self.options),
+                self.option_gap,
+                self.option_width,
+                self.option_height,
+            )
+            if clicked is not None:
+                self.selected_index = clicked
+                self._activate_selected()
+            return
+
         if event.type != pygame.KEYDOWN:
             return
 
@@ -47,18 +87,21 @@ class GameOverScene(Scene):
             return
 
         if event.key in (pygame.K_RETURN, pygame.K_SPACE):
-            self.ctx.audio.play("confirm")
-            selected = self.options[self.selected_index]
-            if selected == "Play Again":
-                self.next_scene = SceneId.PLAY
-            elif selected == "Main Menu":
-                self.next_scene = SceneId.MENU
-            else:
-                self.quit_requested = True
+            self._activate_selected()
             return
 
         if event.key == pygame.K_ESCAPE:
             self.next_scene = SceneId.MENU
+
+    def _activate_selected(self) -> None:
+        self.ctx.audio.play("confirm")
+        selected = self.options[self.selected_index]
+        if selected == "Play Again":
+            self.next_scene = SceneId.PLAY
+        elif selected == "Main Menu":
+            self.next_scene = SceneId.MENU
+        else:
+            self.quit_requested = True
 
     def update(self, delta_seconds: float) -> None:
         _ = delta_seconds
@@ -70,7 +113,13 @@ class GameOverScene(Scene):
         )
         palette = theme.palette
 
-        screen.fill(palette.background_top)
+        draw_scene_background(
+            screen,
+            palette.background_top,
+            palette.background_bottom,
+            palette.grid,
+            palette.food,
+        )
         draw_scene_header(
             screen=screen,
             width=self.ctx.config.window_width,
@@ -128,13 +177,13 @@ class GameOverScene(Scene):
             options=self.options,
             selected_index=self.selected_index,
             center_x=self.ctx.config.window_width // 2,
-            start_y=300,
-            row_gap=42,
+            start_y=self.option_start_y,
+            row_gap=self.option_gap,
             font=self.ctx.body_font,
             text_color=palette.text,
             selected_text_color=palette.selected_text,
-            row_width=460,
-            row_height=34,
+            row_width=self.option_width,
+            row_height=self.option_height,
         )
 
         draw_hint_footer(
@@ -147,7 +196,7 @@ class GameOverScene(Scene):
         )
         draw_hint_footer(
             screen=screen,
-            text="Enter: Select   Esc: Main Menu",
+            text="Enter / Click: Select   Esc: Main Menu",
             width=self.ctx.config.window_width,
             y=490,
             font=self.ctx.small_font,

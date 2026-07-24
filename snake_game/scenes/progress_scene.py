@@ -6,7 +6,13 @@ from snake_game.persistence import PersistentData, best_score_for_settings
 from snake_game.scenes.base import AppContext, Scene
 from snake_game.systems.achievements import ACHIEVEMENTS
 from snake_game.types import SceneId
-from snake_game.ui.components import draw_hint_footer, draw_panel, draw_scene_header, draw_text_center
+from snake_game.ui.components import (
+    draw_hint_footer,
+    draw_panel,
+    draw_scene_background,
+    draw_scene_header,
+    draw_text_center,
+)
 from snake_game.ui.theme import resolve_theme
 
 
@@ -24,9 +30,11 @@ class ProgressScene(Scene):
     scene_id = SceneId.PROGRESS
 
     def handle_event(self, event: pygame.event.Event) -> None:
-        if event.type != pygame.KEYDOWN:
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            self.ctx.audio.play("confirm")
+            self.next_scene = SceneId.MENU
             return
-        if event.key in (pygame.K_ESCAPE, pygame.K_RETURN, pygame.K_SPACE):
+        if event.type == pygame.KEYDOWN and event.key in (pygame.K_ESCAPE, pygame.K_RETURN, pygame.K_SPACE):
             self.ctx.audio.play("confirm")
             self.next_scene = SceneId.MENU
 
@@ -39,7 +47,13 @@ class ProgressScene(Scene):
             self.ctx.config.graphics.colorblind_mode,
         )
         palette = theme.palette
-        screen.fill(palette.background_top)
+        draw_scene_background(
+            screen,
+            palette.background_top,
+            palette.background_bottom,
+            palette.grid,
+            palette.accent,
+        )
         draw_scene_header(
             screen=screen,
             width=self.ctx.config.window_width,
@@ -94,7 +108,7 @@ class ProgressScene(Scene):
 
         draw_hint_footer(
             screen=screen,
-            text="Enter or Esc: Main Menu",
+            text="Enter, Esc, or Click: Main Menu",
             width=self.ctx.config.window_width,
             y=548,
             font=self.ctx.small_font,

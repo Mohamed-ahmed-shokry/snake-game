@@ -4,7 +4,13 @@ from snake_game.config import COLORBLIND_MODES, normalize_colorblind_mode
 from snake_game.persistence import save_persistent_data
 from snake_game.scenes.base import AppContext, Scene
 from snake_game.types import Difficulty, MapMode, SceneId, ThemeId
-from snake_game.ui.components import draw_hint_footer, draw_option_rows, draw_scene_header
+from snake_game.ui.components import (
+    draw_hint_footer,
+    draw_option_rows,
+    draw_scene_background,
+    draw_scene_header,
+)
+from snake_game.ui.layout import option_index_at
 from snake_game.ui.theme import resolve_theme
 
 
@@ -34,6 +40,10 @@ def _cycle_map_mode(current: MapMode, step: int) -> MapMode:
 
 class SettingsScene(Scene):
     scene_id = SceneId.SETTINGS
+    option_start_y = 178
+    option_gap = 30
+    option_width = 560
+    option_height = 28
 
     def __init__(self, ctx: AppContext) -> None:
         super().__init__(ctx)
@@ -115,6 +125,36 @@ class SettingsScene(Scene):
         self._persist()
 
     def handle_event(self, event: pygame.event.Event) -> None:
+        if event.type == pygame.MOUSEMOTION:
+            hovered = option_index_at(
+                event.pos,
+                self.ctx.config.window_width,
+                self.option_start_y,
+                len(self._rows()),
+                self.option_gap,
+                self.option_width,
+                self.option_height,
+            )
+            if hovered is not None and hovered != self.selected_index:
+                self.selected_index = hovered
+                self.ctx.audio.play("move")
+            return
+
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button in (1, 3):
+            clicked = option_index_at(
+                event.pos,
+                self.ctx.config.window_width,
+                self.option_start_y,
+                len(self._rows()),
+                self.option_gap,
+                self.option_width,
+                self.option_height,
+            )
+            if clicked is not None:
+                self.selected_index = clicked
+                self._change_value(-1 if event.button == 3 else 1)
+            return
+
         if event.type != pygame.KEYDOWN:
             return
 
@@ -155,7 +195,13 @@ class SettingsScene(Scene):
         )
         palette = theme.palette
 
-        screen.fill(palette.background_top)
+        draw_scene_background(
+            screen,
+            palette.background_top,
+            palette.background_bottom,
+            palette.grid,
+            palette.accent,
+        )
         draw_scene_header(
             screen=screen,
             width=self.ctx.config.window_width,
@@ -171,13 +217,13 @@ class SettingsScene(Scene):
             options=rows,
             selected_index=self.selected_index,
             center_x=self.ctx.config.window_width // 2,
-            start_y=178,
-            row_gap=30,
+            start_y=self.option_start_y,
+            row_gap=self.option_gap,
             font=self.ctx.small_font,
             text_color=palette.text,
             selected_text_color=palette.selected_text,
-            row_width=560,
-            row_height=28,
+            row_width=self.option_width,
+            row_height=self.option_height,
         )
         draw_hint_footer(
             screen=screen,
@@ -189,7 +235,7 @@ class SettingsScene(Scene):
         )
         draw_hint_footer(
             screen=screen,
-            text="Left/Right or Enter: Change   Esc: Back",
+            text="Left/Right or Click: Change   Right Click: Previous   Esc: Back",
             width=self.ctx.config.window_width,
             y=532,
             font=self.ctx.small_font,

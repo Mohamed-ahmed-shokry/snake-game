@@ -13,7 +13,7 @@ class MenuScene(Scene):
 
     def __init__(self, ctx: AppContext) -> None:
         super().__init__(ctx)
-        self.options = ["Start Game", "Settings", "Quit"]
+        self.options = ["Start Game", "Progress", "Settings", "Quit"]
         self.selected_index = 0
 
     def handle_event(self, event: pygame.event.Event) -> None:
@@ -35,6 +35,8 @@ class MenuScene(Scene):
             selected_option = self.options[self.selected_index]
             if selected_option == "Start Game":
                 self.next_scene = SceneId.PLAY
+            elif selected_option == "Progress":
+                self.next_scene = SceneId.PROGRESS
             elif selected_option == "Settings":
                 self.next_scene = SceneId.SETTINGS
             else:

@@ -41,6 +41,7 @@ class MapMode(Enum):
 
 class SceneId(Enum):
     MENU = "menu"
+    PROGRESS = "progress"
     SETTINGS = "settings"
     PLAY = "play"
     GAME_OVER = "game_over"

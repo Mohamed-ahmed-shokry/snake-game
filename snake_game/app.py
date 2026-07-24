@@ -12,6 +12,7 @@ from snake_game.scenes.base import AppContext, Scene
 from snake_game.scenes.game_over_scene import GameOverScene
 from snake_game.scenes.menu_scene import MenuScene
 from snake_game.scenes.play_scene import PlayScene
+from snake_game.scenes.progress_scene import ProgressScene
 from snake_game.scenes.settings_scene import SettingsScene
 from snake_game.types import SceneId
 
@@ -19,6 +20,8 @@ from snake_game.types import SceneId
 def _build_scene(scene_id: SceneId, ctx: AppContext) -> Scene:
     if scene_id == SceneId.MENU:
         return MenuScene(ctx)
+    if scene_id == SceneId.PROGRESS:
+        return ProgressScene(ctx)
     if scene_id == SceneId.SETTINGS:
         return SettingsScene(ctx)
     if scene_id == SceneId.PLAY:

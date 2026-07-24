@@ -331,43 +331,48 @@ class PlayfieldRenderer:
         )
         target.blit(glow, (cell_rect.centerx - glow_radius - 1, cell_rect.centery - glow_radius - 1))
 
-        beacon = pygame.Surface(target.get_size(), pygame.SRCALPHA)
         beacon_radius = round(
             self.config.cell_size * (0.72 + (0.0 if self.config.graphics.reduced_motion else pulse * 0.34))
         )
+        outer_radius = beacon_radius + max(5, self.config.cell_size // 3)
+        bracket_gap = outer_radius + 3
+        beacon_extent = bracket_gap + max(4, self.config.cell_size // 5)
+        beacon = pygame.Surface(
+            (beacon_extent * 2 + 1, beacon_extent * 2 + 1),
+            pygame.SRCALPHA,
+        )
+        beacon_center = (beacon_extent, beacon_extent)
         pygame.draw.circle(
             beacon,
             (*self.theme.palette.food, round(82 - pulse * 34)),
-            cell_rect.center,
+            beacon_center,
             beacon_radius,
             max(1, self.config.cell_size // 15),
         )
-        outer_radius = beacon_radius + max(5, self.config.cell_size // 3)
         pygame.draw.circle(
             beacon,
             (*self.theme.palette.selected_text, round(34 + pulse * 20)),
-            cell_rect.center,
+            beacon_center,
             outer_radius,
             1,
         )
-        bracket_gap = outer_radius + 3
         bracket_length = max(3, self.config.cell_size // 5)
         for start, end in (
             (
-                (cell_rect.centerx - bracket_gap, cell_rect.centery),
-                (cell_rect.centerx - bracket_gap + bracket_length, cell_rect.centery),
+                (beacon_center[0] - bracket_gap, beacon_center[1]),
+                (beacon_center[0] - bracket_gap + bracket_length, beacon_center[1]),
             ),
             (
-                (cell_rect.centerx + bracket_gap, cell_rect.centery),
-                (cell_rect.centerx + bracket_gap - bracket_length, cell_rect.centery),
+                (beacon_center[0] + bracket_gap, beacon_center[1]),
+                (beacon_center[0] + bracket_gap - bracket_length, beacon_center[1]),
             ),
             (
-                (cell_rect.centerx, cell_rect.centery - bracket_gap),
-                (cell_rect.centerx, cell_rect.centery - bracket_gap + bracket_length),
+                (beacon_center[0], beacon_center[1] - bracket_gap),
+                (beacon_center[0], beacon_center[1] - bracket_gap + bracket_length),
             ),
             (
-                (cell_rect.centerx, cell_rect.centery + bracket_gap),
-                (cell_rect.centerx, cell_rect.centery + bracket_gap - bracket_length),
+                (beacon_center[0], beacon_center[1] + bracket_gap),
+                (beacon_center[0], beacon_center[1] + bracket_gap - bracket_length),
             ),
         ):
             pygame.draw.line(
@@ -377,7 +382,7 @@ class PlayfieldRenderer:
                 end,
                 max(1, self.config.cell_size // 18),
             )
-        target.blit(beacon, (0, 0))
+        target.blit(beacon, beacon.get_rect(center=cell_rect.center))
 
         shadow_center = (cell_rect.centerx + 2, cell_rect.centery + 2)
         pygame.draw.circle(target, (18, 8, 10), shadow_center, radius)

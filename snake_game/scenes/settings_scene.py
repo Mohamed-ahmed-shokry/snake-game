@@ -1,7 +1,6 @@
 import pygame
 
 from snake_game.config import COLORBLIND_MODES, normalize_colorblind_mode
-from snake_game.persistence import save_persistent_data
 from snake_game.scenes.base import UI_SCALE_OPTIONS, AppContext, Scene
 from snake_game.types import Difficulty, MapMode, SceneId, ThemeId
 from snake_game.ui.components import (
@@ -95,7 +94,7 @@ class SettingsScene(Scene):
         return ""
 
     def _persist(self) -> None:
-        save_persistent_data(self.ctx.persistent_data, self.ctx.data_path)
+        self.ctx.persist()
 
     def _change_value(self, step: int) -> None:
         settings = self.ctx.persistent_data.settings

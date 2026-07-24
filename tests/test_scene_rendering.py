@@ -102,6 +102,24 @@ def test_global_mute_shortcut_persists_setting(app_context: AppContext) -> None:
     assert app_context.data_path.exists()
 
 
+def test_context_tracks_interactive_save_failures(
+    app_context: AppContext,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    def fail_save(*_args: object, **_kwargs: object) -> None:
+        raise OSError("read-only save folder")
+
+    monkeypatch.setattr("snake_game.scenes.base.save_persistent_data", fail_save)
+
+    with caplog.at_level("WARNING"):
+        saved = app_context.persist()
+
+    assert saved is False
+    assert app_context.save_error_message == "Save failed - progress may be lost"
+    assert "read-only save folder" in caplog.text
+
+
 def test_powerup_types_have_distinct_visual_glyphs(app_context: AppContext) -> None:
     play_scene = PlayScene(app_context)
     renderer = PlayfieldRenderer(

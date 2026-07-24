@@ -9,7 +9,6 @@ from snake_game.persistence import (
     is_new_high_score,
     leaderboard_key,
     record_score,
-    save_persistent_data,
     update_run_stats,
 )
 from snake_game.render import draw_centered_text, draw_playfield
@@ -379,7 +378,7 @@ class PlayScene(Scene):
             new_achievements=new_achievements,
             end_reason=self.end_reason,
         )
-        save_persistent_data(self.ctx.persistent_data, self.ctx.data_path)
+        self.ctx.persist()
         self.score_recorded = True
         self.ctx.audio.play("death")
         self.next_scene = SceneId.GAME_OVER
@@ -388,7 +387,7 @@ class PlayScene(Scene):
         self.onboarding_visible = False
         if not self.ctx.persistent_data.onboarding_seen:
             self.ctx.persistent_data.onboarding_seen = True
-            save_persistent_data(self.ctx.persistent_data, self.ctx.data_path)
+            self.ctx.persist()
 
     def _show_toast(self, text: str, color: tuple[int, int, int], duration: float = 1.8) -> None:
         self.toast_text = text

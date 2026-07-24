@@ -7,7 +7,7 @@ import pygame
 from snake_game.audio import AudioManager
 from snake_game.config import GameConfig
 from snake_game.events import EventBus
-from snake_game.persistence import load_persistent_data, save_persistent_data
+from snake_game.persistence import load_persistent_data
 from snake_game.rendering.effects import draw_fade_overlay
 from snake_game.scenes.base import AppContext, Scene, build_ui_fonts
 from snake_game.scenes.game_over_scene import GameOverScene
@@ -42,7 +42,7 @@ def _toggle_mute(ctx: AppContext) -> None:
     settings = ctx.persistent_data.settings
     settings.muted = not settings.muted
     ctx.audio.set_muted(settings.muted)
-    save_persistent_data(ctx.persistent_data, ctx.data_path)
+    ctx.persist()
     if not settings.muted:
         ctx.audio.play("confirm")
 
@@ -141,6 +141,6 @@ def run(config: GameConfig | None = None, seed: int | None = None) -> None:
     finally:
         try:
             if ctx is not None:
-                save_persistent_data(ctx.persistent_data, ctx.data_path)
+                ctx.persist()
         finally:
             pygame.quit()

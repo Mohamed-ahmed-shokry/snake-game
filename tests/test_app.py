@@ -17,9 +17,10 @@ def test_run_quits_pygame_when_configuration_is_invalid(tmp_path: Path) -> None:
     assert pygame.get_init() is False
 
 
-def test_run_quits_pygame_when_final_save_fails(
+def test_run_logs_final_save_failure_and_quits_cleanly(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
     pygame.quit()
     config = GameConfig(data_file=str(tmp_path / "save.json"))
@@ -39,9 +40,10 @@ def test_run_quits_pygame_when_final_save_fails(
     def fail_save(*_args: object, **_kwargs: object) -> None:
         raise OSError("disk unavailable")
 
-    monkeypatch.setattr(app, "save_persistent_data", fail_save)
+    monkeypatch.setattr("snake_game.scenes.base.save_persistent_data", fail_save)
 
-    with pytest.raises(OSError, match="disk unavailable"):
+    with caplog.at_level("WARNING"):
         app.run(config)
 
     assert pygame.get_init() is False
+    assert "disk unavailable" in caplog.text

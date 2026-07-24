@@ -315,8 +315,12 @@ class PlayfieldRenderer:
 
     def _draw_food(self, target: pygame.Surface, animation_seconds: float, position: Point) -> None:
         cell_rect = self._cell_rect(*position)
-        pulse = 0 if self.config.graphics.reduced_motion else int(math.sin(animation_seconds * 5.0))
-        radius = max(3, self.config.cell_size // 2 - 3 + pulse)
+        pulse = (
+            0.45
+            if self.config.graphics.reduced_motion
+            else (math.sin(animation_seconds * 5.0) + 1.0) * 0.5
+        )
+        radius = max(3, round(self.config.cell_size / 2 - 3 + pulse * 1.5))
         glow_radius = radius + max(4, self.config.cell_size // 4)
         glow = pygame.Surface((glow_radius * 2 + 2, glow_radius * 2 + 2), pygame.SRCALPHA)
         pygame.draw.circle(
@@ -326,9 +330,72 @@ class PlayfieldRenderer:
             glow_radius,
         )
         target.blit(glow, (cell_rect.centerx - glow_radius - 1, cell_rect.centery - glow_radius - 1))
+
+        beacon = pygame.Surface(target.get_size(), pygame.SRCALPHA)
+        beacon_radius = round(
+            self.config.cell_size * (0.72 + (0.0 if self.config.graphics.reduced_motion else pulse * 0.34))
+        )
+        pygame.draw.circle(
+            beacon,
+            (*self.theme.palette.food, round(82 - pulse * 34)),
+            cell_rect.center,
+            beacon_radius,
+            max(1, self.config.cell_size // 15),
+        )
+        outer_radius = beacon_radius + max(5, self.config.cell_size // 3)
+        pygame.draw.circle(
+            beacon,
+            (*self.theme.palette.selected_text, round(34 + pulse * 20)),
+            cell_rect.center,
+            outer_radius,
+            1,
+        )
+        bracket_gap = outer_radius + 3
+        bracket_length = max(3, self.config.cell_size // 5)
+        for start, end in (
+            (
+                (cell_rect.centerx - bracket_gap, cell_rect.centery),
+                (cell_rect.centerx - bracket_gap + bracket_length, cell_rect.centery),
+            ),
+            (
+                (cell_rect.centerx + bracket_gap, cell_rect.centery),
+                (cell_rect.centerx + bracket_gap - bracket_length, cell_rect.centery),
+            ),
+            (
+                (cell_rect.centerx, cell_rect.centery - bracket_gap),
+                (cell_rect.centerx, cell_rect.centery - bracket_gap + bracket_length),
+            ),
+            (
+                (cell_rect.centerx, cell_rect.centery + bracket_gap),
+                (cell_rect.centerx, cell_rect.centery + bracket_gap - bracket_length),
+            ),
+        ):
+            pygame.draw.line(
+                beacon,
+                (*self.theme.palette.food, 92),
+                start,
+                end,
+                max(1, self.config.cell_size // 18),
+            )
+        target.blit(beacon, (0, 0))
+
         shadow_center = (cell_rect.centerx + 2, cell_rect.centery + 2)
         pygame.draw.circle(target, (18, 8, 10), shadow_center, radius)
-        pygame.draw.circle(target, self.theme.palette.food, cell_rect.center, radius)
+        lobe_radius = max(3, round(radius * 0.78))
+        left_lobe = (cell_rect.centerx - max(1, radius // 4), cell_rect.centery)
+        right_lobe = (cell_rect.centerx + max(1, radius // 4), cell_rect.centery)
+        pygame.draw.circle(target, self.theme.palette.food, left_lobe, lobe_radius)
+        pygame.draw.circle(target, self.theme.palette.food, right_lobe, lobe_radius)
+        pygame.draw.ellipse(
+            target,
+            self.theme.palette.food,
+            pygame.Rect(
+                cell_rect.centerx - radius,
+                cell_rect.centery - radius // 3,
+                radius * 2,
+                radius + radius // 2,
+            ),
+        )
         highlight_radius = max(1, radius // 4)
         pygame.draw.circle(
             target,
@@ -337,6 +404,13 @@ class PlayfieldRenderer:
             highlight_radius,
         )
         leaf_color = self.theme.palette.snake_head
+        pygame.draw.line(
+            target,
+            (92, 60, 34),
+            (cell_rect.centerx, cell_rect.centery - radius + 2),
+            (cell_rect.centerx + max(1, radius // 5), cell_rect.top + 1),
+            max(1, self.config.cell_size // 14),
+        )
         pygame.draw.ellipse(
             target,
             leaf_color,

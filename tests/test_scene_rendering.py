@@ -129,6 +129,26 @@ def test_powerup_types_have_distinct_visual_glyphs(app_context: AppContext) -> N
     assert len(set(images)) == len(PowerUpType)
 
 
+def test_food_beacon_animates_and_respects_reduced_motion(app_context: AppContext) -> None:
+    renderer = PlayfieldRenderer(
+        config=app_context.config,
+        theme=resolve_theme(app_context.config.graphics.theme_id),
+        assets=RenderAssets(),
+    )
+    first = pygame.Surface((800, 600), pygame.SRCALPHA)
+    second = pygame.Surface((800, 600), pygame.SRCALPHA)
+    renderer._draw_food(first, 0.0, (10, 10))
+    renderer._draw_food(second, 0.45, (10, 10))
+    assert pygame.image.tobytes(first, "RGBA") != pygame.image.tobytes(second, "RGBA")
+
+    app_context.config.graphics.reduced_motion = True
+    still_first = pygame.Surface((800, 600), pygame.SRCALPHA)
+    still_second = pygame.Surface((800, 600), pygame.SRCALPHA)
+    renderer._draw_food(still_first, 0.0, (10, 10))
+    renderer._draw_food(still_second, 0.45, (10, 10))
+    assert pygame.image.tobytes(still_first, "RGBA") == pygame.image.tobytes(still_second, "RGBA")
+
+
 def test_obstacle_facets_render_differently_by_cell(app_context: AppContext) -> None:
     renderer = PlayfieldRenderer(
         config=app_context.config,

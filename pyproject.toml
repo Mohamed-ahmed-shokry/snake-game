@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=77.0.3"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "snake-game"
 version = "1.5.0"
@@ -10,6 +14,12 @@ dependencies = [
 
 [project.scripts]
 snake-game = "snake_game.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/Mohamed-ahmed-shokry/snake-game"
+Repository = "https://github.com/Mohamed-ahmed-shokry/snake-game.git"
+Issues = "https://github.com/Mohamed-ahmed-shokry/snake-game/issues"
+Changelog = "https://github.com/Mohamed-ahmed-shokry/snake-game/blob/main/CHANGELOG.md"
 
 [tool.uv]
 package = true

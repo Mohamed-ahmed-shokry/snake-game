@@ -172,6 +172,28 @@ def test_hud_renders_multiple_active_effects_without_error(app_context: AppConte
     assert screen.get_at((0, app_context.config.window_height - 1))[:3] != (0, 0, 0)
 
 
+def test_hud_telemetry_changes_with_speed_and_danger(app_context: AppContext) -> None:
+    scene = PlayScene(app_context)
+    renderer = PlayfieldRenderer(
+        config=app_context.config,
+        theme=resolve_theme(app_context.config.graphics.theme_id),
+        assets=RenderAssets(),
+    )
+    normal = pygame.Surface((800, 600), pygame.SRCALPHA)
+    danger = pygame.Surface((800, 600), pygame.SRCALPHA)
+
+    scene.state.obstacles.clear()
+    renderer._draw_hud(normal, scene.state, app_context.small_font, 24, 1, [])
+
+    head_x, head_y = scene.state.snake[0]
+    scene.state.obstacles = {(head_x + 1, head_y)}
+    scene.state.steps_per_second = 12.5
+    renderer._draw_hud(danger, scene.state, app_context.small_font, 24, 1, [])
+
+    assert pygame.image.tobytes(normal, "RGBA") != pygame.image.tobytes(danger, "RGBA")
+    assert danger.get_bounding_rect().height >= 70
+
+
 def test_arena_border_distinguishes_bounded_and_wrap_modes(app_context: AppContext) -> None:
     renderer = PlayfieldRenderer(
         config=app_context.config,

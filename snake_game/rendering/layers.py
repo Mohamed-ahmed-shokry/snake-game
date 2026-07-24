@@ -728,27 +728,55 @@ class PlayfieldRenderer:
         if context_rect.left > chip_x:
             target.blit(context_surface, context_rect)
 
-        if active_effect_labels:
-            effect_x = 18
-            for label in active_effect_labels:
-                effect_surface = small_font.render(label, True, self.theme.palette.accent)
-                effect_rect = effect_surface.get_rect(topleft=(effect_x + 8, 43)).inflate(16, 4)
-                if effect_rect.right > self.config.window_width - 16:
-                    break
-                draw_panel(
-                    screen=target,
-                    rect=effect_rect,
-                    fill=(8, 16, 22),
-                    border=self.theme.palette.accent,
-                    alpha=150,
-                    radius=effect_rect.height // 2,
-                )
-                target.blit(effect_surface, effect_surface.get_rect(center=effect_rect.center))
-                effect_x = effect_rect.right + 6
+        effect_x = 18
+        effect_specs = [(label, self.theme.palette.accent) for label in active_effect_labels]
+        danger = calculate_danger_level(state, self.config)
+        if danger >= 0.5:
+            warning_label = "DANGER" if danger >= 0.75 else "CAUTION"
+            effect_specs.insert(0, (warning_label, (255, 92, 102)))
+
+        for label, color in effect_specs:
+            effect_surface = small_font.render(label, True, color)
+            effect_rect = effect_surface.get_rect(topleft=(effect_x + 8, 43)).inflate(16, 4)
+            if effect_rect.right > self.config.window_width - 16:
+                break
+            draw_panel(
+                screen=target,
+                rect=effect_rect,
+                fill=(8, 16, 22),
+                border=color,
+                alpha=165,
+                radius=effect_rect.height // 2,
+            )
+            target.blit(effect_surface, effect_surface.get_rect(center=effect_rect.center))
+            effect_x = effect_rect.right + 6
+
+        points_to_stage = self.config.stage_points_interval - (
+            state.score % self.config.stage_points_interval
+        )
+        telemetry_surface = small_font.render(
+            f"SPEED {state.steps_per_second:.1f}  //  NEXT STAGE {points_to_stage} PTS",
+            True,
+            tuple(max(110, channel - 28) for channel in self.theme.palette.text),
+        )
+        telemetry_rect = telemetry_surface.get_rect(
+            topright=(self.config.window_width - 18, 45)
+        )
+        if telemetry_rect.left > effect_x + 12:
+            target.blit(telemetry_surface, telemetry_rect)
 
         stage_progress = (state.score % self.config.stage_points_interval) / self.config.stage_points_interval
         progress_track = pygame.Rect(18, top_panel.bottom - 8, self.config.window_width - 36, 3)
         pygame.draw.rect(target, (8, 12, 18), progress_track, border_radius=2)
+        for marker_fraction in (0.25, 0.5, 0.75):
+            marker_x = progress_track.left + round(progress_track.width * marker_fraction)
+            pygame.draw.line(
+                target,
+                tuple(max(36, channel // 2) for channel in self.theme.palette.grid),
+                (marker_x, progress_track.top - 1),
+                (marker_x, progress_track.bottom + 1),
+                1,
+            )
         if stage_progress > 0:
             progress_fill = progress_track.copy()
             progress_fill.width = max(2, round(progress_track.width * stage_progress))

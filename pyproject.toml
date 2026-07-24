@@ -23,6 +23,7 @@ snake_game = ["assets/*.png"]
 [dependency-groups]
 dev = [
     "pytest>=8.0.0",
+    "pytest-cov>=6.0.0",
     "ruff>=0.12.0",
 ]
 
@@ -30,6 +31,15 @@ dev = [
 pythonpath = [
     ".",
 ]
+
+[tool.coverage.run]
+branch = true
+source = ["snake_game"]
+
+[tool.coverage.report]
+fail_under = 75
+show_missing = true
+skip_covered = true
 
 [tool.ruff]
 target-version = "py312"

@@ -39,7 +39,7 @@ jobs:
         run: uv run --frozen ruff check .
 
       - name: Test
-        run: uv run --frozen python -m pytest -q
+        run: uv run --frozen python -m pytest --cov=snake_game --cov-report=term-missing -q
 
       - name: Build package
         run: uv build

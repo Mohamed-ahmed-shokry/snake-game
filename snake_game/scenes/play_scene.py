@@ -52,7 +52,7 @@ class PlayScene(Scene):
         self.state = create_initial_state(ctx.config, ctx.persistent_data.settings, ctx.rng)
         self.best_score_at_start = best_score_for_settings(ctx.persistent_data, ctx.persistent_data.settings)
         self.progression = StageProgression(points_per_stage=ctx.config.stage_points_interval)
-        self.hazards = HazardSystem(enabled=False)
+        self.hazards = HazardSystem(enabled=ctx.persistent_data.settings.obstacles_enabled)
         self.powerups = PowerUpSystem()
         self.countdown_remaining = ctx.config.countdown_seconds
         self.score_recorded = False
@@ -204,7 +204,6 @@ class PlayScene(Scene):
             phase_active=self.powerups.phase_active(),
             emit=self.ctx.event_bus.emit,
         )
-        self.hazards.update()
         self.progression.update_from_score(self.state.score, emit=self.ctx.event_bus.emit)
 
         events = self.ctx.event_bus.drain()
@@ -242,6 +241,24 @@ class PlayScene(Scene):
                 self.stage_banner_text = f"Stage {self.progression.current_stage}"
                 self.stage_banner_timer = 1.2
                 self.flash_timer = max(self.flash_timer, 0.12)
+                head_x, head_y = self.state.snake[0]
+                safe_cells = {
+                    (head_x + offset_x, head_y + offset_y)
+                    for offset_x in range(-1, 2)
+                    for offset_y in range(-1, 2)
+                }
+                forbidden_cells = set(self.state.snake) | {self.state.food} | safe_cells
+                if self.powerups.spawned is not None:
+                    forbidden_cells.add(self.powerups.spawned.position)
+                stage = int(event.payload.get("stage", self.progression.current_stage))
+                self.hazards.advance_to_stage(
+                    stage=stage,
+                    obstacles=self.state.obstacles,
+                    forbidden_cells=forbidden_cells,
+                    grid_width=self.ctx.config.grid_width,
+                    grid_height=self.ctx.config.grid_height,
+                    rng=self.ctx.rng,
+                )
             elif event.type == GameEventType.PLAYER_DIED:
                 reason = str(event.payload.get("reason", ""))
                 if self.powerups.absorb_fatal_collision(reason):
@@ -357,4 +374,3 @@ class PlayScene(Scene):
                 theme.palette.selected_text,
                 (self.ctx.config.window_width // 2, panel.top + 162),
             )
-

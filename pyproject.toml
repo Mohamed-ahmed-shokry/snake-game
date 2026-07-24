@@ -11,6 +11,12 @@ dependencies = [
 [project.scripts]
 snake-game = "snake_game.cli:main"
 
+[tool.uv]
+package = true
+
+[tool.setuptools.packages.find]
+include = ["snake_game*"]
+
 [dependency-groups]
 dev = [
     "pytest>=8.0.0",

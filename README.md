@@ -64,7 +64,7 @@ uv run snake-game --width 1000 --height 700 --cell-size 20 --obstacle-count 20
 ### Test
 
 ```bash
-uv run pytest
+uv run python -m pytest
 ```
 
 ## Controls

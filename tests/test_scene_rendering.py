@@ -15,6 +15,7 @@ from snake_game.rendering.layers import (
     PlayfieldRenderer,
     calculate_danger_level,
     interpolate_snake_positions,
+    particle_bounds,
 )
 from snake_game.scenes.base import AppContext, SessionResult, build_ui_fonts
 from snake_game.scenes.game_over_scene import GameOverScene
@@ -406,6 +407,28 @@ def test_movement_trail_particles_fade_without_gravity(app_context: AppContext) 
 
     assert scene.particles[0].life < initial_life
     assert scene.particles[0].vy == initial_vy
+
+
+def test_particle_layer_is_bounded_to_the_active_effect_area(app_context: AppContext) -> None:
+    particles = [
+        (100.0, 100.0, 4, (80, 220, 120), 180),
+        (116.0, 108.0, 3, (80, 220, 120), 120),
+    ]
+    bounds = particle_bounds(particles, (800, 600))
+
+    assert bounds.width < 30
+    assert bounds.height < 20
+
+    renderer = PlayfieldRenderer(
+        config=app_context.config,
+        theme=resolve_theme(app_context.config.graphics.theme_id),
+        assets=RenderAssets(),
+    )
+    screen = pygame.Surface((800, 600), pygame.SRCALPHA)
+    renderer._draw_particles(screen, particles)
+
+    assert screen.get_at((100, 100)).a > 0
+    assert screen.get_at((400, 300)).a == 0
 
 
 def test_stage_banner_has_cinematic_layers_and_fades(app_context: AppContext) -> None:

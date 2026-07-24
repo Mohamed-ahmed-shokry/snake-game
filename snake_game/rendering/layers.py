@@ -80,6 +80,27 @@ def calculate_danger_level(state: GameState, config: GameConfig) -> float:
     return max(hazard_level, wall_level)
 
 
+def particle_bounds(
+    particles: list[tuple[float, float, int, Color, int]],
+    target_size: tuple[int, int],
+) -> pygame.Rect:
+    if not particles:
+        return pygame.Rect(0, 0, 0, 0)
+
+    width, height = target_size
+    left = max(0, math.floor(min(x - max(1, radius) - 1 for x, _, radius, _, _ in particles)))
+    top = max(0, math.floor(min(y - max(1, radius) - 1 for _, y, radius, _, _ in particles)))
+    right = min(
+        width,
+        math.ceil(max(x + max(1, radius) + 1 for x, _, radius, _, _ in particles)),
+    )
+    bottom = min(
+        height,
+        math.ceil(max(y + max(1, radius) + 1 for _, y, radius, _, _ in particles)),
+    )
+    return pygame.Rect(left, top, max(0, right - left), max(0, bottom - top))
+
+
 class PlayfieldRenderer:
     def __init__(self, config: GameConfig, theme: UiTheme, assets: RenderAssets) -> None:
         self.config = config
@@ -936,15 +957,18 @@ class PlayfieldRenderer:
         target: pygame.Surface,
         particles: list[tuple[float, float, int, Color, int]],
     ) -> None:
-        particle_layer = pygame.Surface(target.get_size(), pygame.SRCALPHA)
+        bounds = particle_bounds(particles, target.get_size())
+        if bounds.width == 0 or bounds.height == 0:
+            return
+        particle_layer = pygame.Surface(bounds.size, pygame.SRCALPHA)
         for x, y, radius, color, alpha in particles:
             pygame.draw.circle(
                 particle_layer,
                 (*color, max(0, min(255, alpha))),
-                (int(x), int(y)),
+                (int(x) - bounds.left, int(y) - bounds.top),
                 max(1, int(radius)),
             )
-        target.blit(particle_layer, (0, 0))
+        target.blit(particle_layer, bounds.topleft)
 
     def _draw_hud(
         self,

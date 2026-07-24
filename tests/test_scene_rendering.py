@@ -6,7 +6,7 @@ from pathlib import Path
 import pygame
 import pytest
 
-from snake_game.app import _load_window_icon
+from snake_game.app import _create_display, _load_window_icon, _toggle_mute
 from snake_game.config import GameConfig
 from snake_game.events import EventBus
 from snake_game.persistence import PersistentData
@@ -19,7 +19,7 @@ from snake_game.scenes.play_scene import PlayScene, direction_for_pointer
 from snake_game.scenes.progress_scene import ProgressScene
 from snake_game.scenes.settings_scene import SettingsScene
 from snake_game.systems.powerups import PowerUpType
-from snake_game.types import Direction, SceneId
+from snake_game.types import Direction, GameStatus, SceneId
 from snake_game.ui.theme import resolve_theme
 
 
@@ -81,6 +81,20 @@ def test_packaged_window_icon_loads_at_requested_size() -> None:
 
     assert icon is not None
     assert icon.get_size() == (48, 48)
+
+
+def test_display_helper_sets_expected_window_size(app_context: AppContext) -> None:
+    screen = _create_display(app_context.config)
+
+    assert screen.get_size() == (800, 600)
+    assert pygame.display.get_caption()[0] == "Snake Arcade"
+
+
+def test_global_mute_shortcut_persists_setting(app_context: AppContext) -> None:
+    _toggle_mute(app_context)
+
+    assert app_context.persistent_data.settings.muted is True
+    assert app_context.data_path.exists()
 
 
 def test_powerup_types_have_distinct_visual_glyphs(app_context: AppContext) -> None:
@@ -185,3 +199,13 @@ def test_pointer_direction_uses_dominant_axis_and_dead_zone() -> None:
     assert direction_for_pointer((100, 140), (100, 100)) == Direction.DOWN
     assert direction_for_pointer((100, 60), (100, 100)) == Direction.UP
     assert direction_for_pointer((102, 103), (100, 100)) is None
+
+
+def test_focus_loss_auto_pauses_active_game(app_context: AppContext) -> None:
+    scene = PlayScene(app_context)
+    scene.onboarding_visible = False
+
+    scene.handle_event(pygame.event.Event(pygame.WINDOWFOCUSLOST))
+
+    assert scene.state.status == GameStatus.PAUSED
+    assert scene.toast_text == "AUTO-PAUSED"

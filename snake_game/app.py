@@ -28,6 +28,25 @@ def _load_window_icon(size: int = 64) -> pygame.Surface | None:
         return None
 
 
+def _create_display(config: GameConfig, fullscreen: bool = False) -> pygame.Surface:
+    flags = pygame.FULLSCREEN if fullscreen else 0
+    screen = pygame.display.set_mode((config.window_width, config.window_height), flags)
+    pygame.display.set_caption("Snake Arcade")
+    window_icon = _load_window_icon()
+    if window_icon is not None:
+        pygame.display.set_icon(window_icon)
+    return screen
+
+
+def _toggle_mute(ctx: AppContext) -> None:
+    settings = ctx.persistent_data.settings
+    settings.muted = not settings.muted
+    ctx.audio.set_muted(settings.muted)
+    save_persistent_data(ctx.persistent_data, ctx.data_path)
+    if not settings.muted:
+        ctx.audio.play("confirm")
+
+
 def _build_scene(scene_id: SceneId, ctx: AppContext) -> Scene:
     if scene_id == SceneId.MENU:
         return MenuScene(ctx)
@@ -51,11 +70,7 @@ def run(config: GameConfig | None = None, seed: int | None = None) -> None:
     config.graphics = persistent_data.graphics
     config.validate()
 
-    screen = pygame.display.set_mode((config.window_width, config.window_height))
-    pygame.display.set_caption("Snake Arcade")
-    window_icon = _load_window_icon()
-    if window_icon is not None:
-        pygame.display.set_icon(window_icon)
+    screen = _create_display(config)
     clock = pygame.time.Clock()
 
     title_font, body_font, small_font = build_ui_fonts(config)
@@ -76,6 +91,7 @@ def run(config: GameConfig | None = None, seed: int | None = None) -> None:
 
     scene: Scene = _build_scene(SceneId.MENU, ctx)
     running = True
+    fullscreen = False
     transition_alpha = 0 if config.graphics.reduced_motion else 255
 
     while running:
@@ -85,6 +101,13 @@ def run(config: GameConfig | None = None, seed: int | None = None) -> None:
             if event.type == pygame.QUIT:
                 running = False
                 break
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_F11:
+                fullscreen = not fullscreen
+                screen = _create_display(config, fullscreen=fullscreen)
+                continue
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_m:
+                _toggle_mute(ctx)
+                continue
             scene.handle_event(event)
 
         if not running:

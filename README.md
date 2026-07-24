@@ -82,6 +82,10 @@ uv run python -m pytest
 | In game | `Arrow Keys` or `WASD` | Move |
 | In game | `P` or `Space` | Pause / Resume |
 | In game | `Esc` | Return to menu |
+| Anywhere | `M` | Mute / unmute sound |
+| Anywhere | `F11` | Toggle fullscreen |
+
+The game also supports mouse navigation in menus and click-to-steer during a run. Losing window focus automatically pauses active gameplay.
 
 ## How a Run Progresses
 

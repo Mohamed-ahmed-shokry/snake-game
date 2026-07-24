@@ -173,6 +173,12 @@ class PlayScene(Scene):
         self.toast_timer = duration
 
     def handle_event(self, event: pygame.event.Event) -> None:
+        if event.type == pygame.WINDOWFOCUSLOST:
+            if self.state.status == GameStatus.RUNNING and not self.onboarding_visible:
+                self.state.status = GameStatus.PAUSED
+                self._show_toast("AUTO-PAUSED", (120, 210, 255))
+            return
+
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             if self.onboarding_visible:
                 self._dismiss_onboarding()
@@ -473,7 +479,7 @@ class PlayScene(Scene):
             )
             draw_centered_text(
                 screen,
-                "Eat food, climb stages, and chase your best score.",
+                "M: Mute sound   F11: Fullscreen   H: Toggle this help",
                 self.ctx.small_font,
                 theme.palette.text,
                 (self.ctx.config.window_width // 2, panel.top + 220),

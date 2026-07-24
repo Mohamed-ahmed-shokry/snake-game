@@ -224,9 +224,9 @@ def _normalize_achievements(data: object) -> list[str]:
     return unique
 
 
-def _backup_corrupt_file(path: Path) -> None:
-    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    backup_path = path.with_suffix(f"{path.suffix}.corrupt-{timestamp}")
+def _backup_file(path: Path, reason: str) -> None:
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S%f")
+    backup_path = path.with_suffix(f"{path.suffix}.{reason}-{timestamp}")
     try:
         path.replace(backup_path)
     except OSError:
@@ -275,11 +275,20 @@ def load_persistent_data(path: Path) -> PersistentData:
         content = path.read_text(encoding="utf-8")
         payload = json.loads(content)
     except (OSError, json.JSONDecodeError):
-        _backup_corrupt_file(path)
+        _backup_file(path, "corrupt")
         return PersistentData()
 
     if not isinstance(payload, dict):
-        _backup_corrupt_file(path)
+        _backup_file(path, "corrupt")
+        return PersistentData()
+
+    schema_version = payload.get("schema_version")
+    if (
+        isinstance(schema_version, int)
+        and not isinstance(schema_version, bool)
+        and schema_version > SAVE_SCHEMA_VERSION
+    ):
+        _backup_file(path, "unsupported")
         return PersistentData()
 
     migrated = _migrate_payload(payload)

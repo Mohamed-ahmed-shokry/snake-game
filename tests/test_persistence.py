@@ -95,6 +95,27 @@ def test_corrupt_file_falls_back_to_defaults(tmp_path: Path) -> None:
 
     assert loaded.settings == UserSettings()
     assert loaded.leaderboard == {}
+    assert not path.exists()
+    assert len(list(tmp_path.glob("save.json.corrupt-*"))) == 1
+
+
+def test_future_schema_is_preserved_as_unsupported_backup(tmp_path: Path) -> None:
+    path = tmp_path / "save.json"
+    payload = {
+        "schema_version": SAVE_SCHEMA_VERSION + 1,
+        "settings": {"difficulty": "hard"},
+        "future_only_data": {"value": 42},
+    }
+    original_content = json.dumps(payload)
+    path.write_text(original_content, encoding="utf-8")
+
+    loaded = load_persistent_data(path)
+
+    assert loaded == PersistentData()
+    assert not path.exists()
+    backups = list(tmp_path.glob("save.json.unsupported-*"))
+    assert len(backups) == 1
+    assert backups[0].read_text(encoding="utf-8") == original_content
 
 
 def test_is_new_high_score_behavior() -> None:

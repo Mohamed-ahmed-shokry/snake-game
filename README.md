@@ -6,7 +6,7 @@
 
 A complete, modern Snake game focused on responsive controls, readable visuals, meaningful progression, and replayable arcade runs.
 
-Version **1.0.0** is a self-contained desktop game with persistent settings, career progress, achievements, and per-mode leaderboards.
+Version **1.1.0** is a self-contained desktop game with persistent settings, career progress, achievements, per-mode leaderboards, mouse controls, and a polished audiovisual presentation.
 
 ## What You Get
 
@@ -28,8 +28,10 @@ Version **1.0.0** is a self-contained desktop game with persistent settings, car
 - UI/graphics features:
   - Theme switching (`Neon`, `Sunset`, `Ocean`)
   - Color modes (`off`, `deuteranopia`, `tritanopia`, `high_contrast`)
-  - Grid toggle, particles toggle, reduced motion, screen shake toggle
-  - First-run onboarding overlay
+  - Adjustable text size, grid, particles, reduced motion, and screen shake
+  - Distinct power-up symbols and visible active-effect auras
+  - Layered scene backgrounds, redesigned HUD, branded window icon, and fullscreen mode
+  - Reusable help overlay, click-to-steer, auto-pause, and richer arcade sound cues
   - Progress screen and enhanced game-over summary
 
 ## Quick Start

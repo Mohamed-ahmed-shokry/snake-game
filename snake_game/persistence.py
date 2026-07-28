@@ -12,6 +12,7 @@ from snake_game.config import GraphicsSettings, UserSettings, normalize_colorbli
 from snake_game.types import Difficulty, MapMode, ThemeId
 
 SAVE_SCHEMA_VERSION = 4
+MAX_SAVE_FILE_BYTES = 1024 * 1024
 
 
 @dataclass(slots=True)
@@ -273,6 +274,9 @@ def load_persistent_data(path: Path) -> PersistentData:
         return PersistentData()
 
     try:
+        if path.stat().st_size > MAX_SAVE_FILE_BYTES:
+            _backup_file(path, "corrupt")
+            return PersistentData()
         content = path.read_text(encoding="utf-8")
         payload = json.loads(content)
     except (OSError, UnicodeDecodeError, json.JSONDecodeError, RecursionError):

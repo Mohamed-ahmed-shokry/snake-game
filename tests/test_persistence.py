@@ -3,6 +3,7 @@ from pathlib import Path
 
 from snake_game.config import GraphicsSettings, UserSettings
 from snake_game.persistence import (
+    MAX_SAVE_FILE_BYTES,
     SAVE_SCHEMA_VERSION,
     PersistentData,
     best_score_for_settings,
@@ -133,6 +134,19 @@ def test_save_path_directory_is_not_moved_as_corrupt(tmp_path: Path) -> None:
     assert path.is_dir()
     assert marker.read_text(encoding="utf-8") == "keep"
     assert list(tmp_path.glob("save.json.corrupt-*")) == []
+
+
+def test_oversized_save_is_preserved_as_corrupt(tmp_path: Path) -> None:
+    path = tmp_path / "save.json"
+    path.write_bytes(b" " * (MAX_SAVE_FILE_BYTES + 1))
+
+    loaded = load_persistent_data(path)
+
+    assert loaded == PersistentData()
+    assert not path.exists()
+    backups = list(tmp_path.glob("save.json.corrupt-*"))
+    assert len(backups) == 1
+    assert backups[0].stat().st_size == MAX_SAVE_FILE_BYTES + 1
 
 
 def test_future_schema_is_preserved_as_unsupported_backup(tmp_path: Path) -> None:

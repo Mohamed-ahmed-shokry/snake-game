@@ -269,6 +269,8 @@ def _migrate_payload(payload: dict[str, object]) -> dict[str, object]:
 def load_persistent_data(path: Path) -> PersistentData:
     if not path.exists():
         return PersistentData()
+    if not path.is_file():
+        return PersistentData()
 
     try:
         content = path.read_text(encoding="utf-8")

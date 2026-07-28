@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 
 from snake_game.cli import build_parser, config_from_args, main
@@ -38,6 +40,22 @@ def test_cli_rejects_invalid_board_geometry() -> None:
     args = parser.parse_args(["--width", "401", "--cell-size", "20"])
 
     with pytest.raises(ValueError):
+        config_from_args(args)
+
+
+def test_cli_rejects_directory_as_data_file(tmp_path: Path) -> None:
+    parser = build_parser()
+    args = parser.parse_args(["--data-file", str(tmp_path)])
+
+    with pytest.raises(ValueError, match="must point to a file"):
+        config_from_args(args)
+
+
+def test_cli_rejects_empty_data_file() -> None:
+    parser = build_parser()
+    args = parser.parse_args(["--data-file", " "])
+
+    with pytest.raises(ValueError, match="must not be empty"):
         config_from_args(args)
 
 

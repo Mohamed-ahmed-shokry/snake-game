@@ -1,5 +1,6 @@
 import math
 from dataclasses import dataclass, field
+from pathlib import Path
 
 from snake_game.types import Difficulty, MapMode, ThemeId
 
@@ -136,6 +137,10 @@ class GameConfig:
             raise ValueError("leaderboard_limit must be >= 1")
         if self.stage_points_interval < 1:
             raise ValueError("stage_points_interval must be >= 1")
+        if not self.data_file.strip():
+            raise ValueError("data_file must not be empty")
+        if Path(self.data_file).is_dir():
+            raise ValueError("data_file must point to a file, not a directory")
         if not math.isfinite(self.graphics.ui_scale) or self.graphics.ui_scale <= 0:
             raise ValueError("graphics.ui_scale must be finite and > 0")
         if self.graphics.colorblind_mode not in COLORBLIND_MODES:

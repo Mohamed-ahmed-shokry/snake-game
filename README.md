@@ -10,7 +10,7 @@ A complete, modern Snake game focused on responsive controls, readable visuals, 
   <img src="docs/screenshots/gameplay.png" alt="Snake Arcade gameplay with the neon arena theme" width="900">
 </p>
 
-Version **1.6.0** is a self-contained desktop game with persistent settings, career progress, achievements, per-mode leaderboards, mouse controls, and a polished audiovisual presentation.
+Version **1.6.1** is a self-contained desktop game with persistent settings, career progress, achievements, per-mode leaderboards, mouse controls, and a polished audiovisual presentation.
 
 ## What You Get
 
@@ -130,6 +130,7 @@ The game also supports mouse navigation in menus and click-to-steer during a run
 - Writes use an atomic temporary-file replacement so an interrupted save cannot leave a partially written file.
 - Older save schemas migrate automatically.
 - Corrupt saves are moved beside the original with a `.corrupt-<timestamp>` suffix before safe defaults are loaded.
+- Unreadable, excessively nested, and oversized saves are treated as corrupt; saves larger than 1 MiB are not loaded.
 - Saves from a newer, unsupported game version are preserved with an `.unsupported-<timestamp>` suffix instead of being overwritten.
 - If a write fails because the folder is unavailable or read-only, the game keeps running and displays a persistent warning.
 
@@ -137,6 +138,6 @@ The game also supports mouse navigation in menus and click-to-steer during a run
 
 - **The game rejects a custom window size:** both dimensions must be at least `800x600` and divisible by `--cell-size`.
 - **Audio is unavailable:** the game continues silently when no compatible audio device is present.
-- **Settings or progress will not save:** confirm that the parent folder passed through `--data-file` is writable.
+- **Settings or progress will not save:** confirm that `--data-file` names a file and its parent folder is writable.
 - **You want a fresh profile:** close the game, then rename or remove `data/save.json`. A new profile is created on the next launch.
 - **A headless machine cannot open a window:** use the dummy SDL video and audio drivers, as configured in `.github/workflows/ci.yml`.

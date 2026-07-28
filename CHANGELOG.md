@@ -2,6 +2,23 @@
 
 Notable user-facing and engineering changes are recorded here. The project follows [Semantic Versioning](https://semver.org/).
 
+## 1.6.1 - 2026-07-29
+
+### Added
+
+- Continuous integration now verifies Ruff formatting alongside lint and tests.
+- Regression coverage for invalid UTF-8, excessively nested, oversized, and directory save paths.
+
+### Changed
+
+- Applied consistent Ruff formatting across the Python source and tests.
+
+### Fixed
+
+- Unreadable or pathological saves now fall back to defaults instead of crashing startup.
+- Directory save targets are never renamed as corrupt files and are rejected during configuration.
+- Save files larger than 1 MiB are preserved as corrupt backups without being loaded into memory.
+
 ## 1.6.0 - 2026-07-24
 
 ### Added

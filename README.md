@@ -93,6 +93,7 @@ Run the same checks used by continuous integration:
 
 ```bash
 uv run ruff check .
+uv run ruff format --check .
 uv run python -m pytest --cov=snake_game --cov-report=term-missing
 uv build
 ```

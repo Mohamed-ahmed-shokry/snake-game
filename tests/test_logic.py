@@ -126,7 +126,11 @@ def test_wall_collision_sets_game_over_in_bounded_mode() -> None:
     config = make_config()
     settings = UserSettings(map_mode=MapMode.BOUNDED)
     state = create_initial_state(config, settings, random.Random(5))
-    state.snake = [(config.grid_width - 1, 2), (config.grid_width - 2, 2), (config.grid_width - 3, 2)]
+    state.snake = [
+        (config.grid_width - 1, 2),
+        (config.grid_width - 2, 2),
+        (config.grid_width - 3, 2),
+    ]
     state.direction = Direction.RIGHT
     state.food = (0, 0)
 
@@ -139,7 +143,11 @@ def test_wrap_mode_wraps_head_instead_of_game_over() -> None:
     config = make_config()
     settings = UserSettings(map_mode=MapMode.WRAP)
     state = create_initial_state(config, settings, random.Random(6))
-    state.snake = [(config.grid_width - 1, 2), (config.grid_width - 2, 2), (config.grid_width - 3, 2)]
+    state.snake = [
+        (config.grid_width - 1, 2),
+        (config.grid_width - 2, 2),
+        (config.grid_width - 3, 2),
+    ]
     state.direction = Direction.RIGHT
     state.food = (0, 0)
 
@@ -180,7 +188,11 @@ def test_phase_active_wraps_when_hitting_wall_in_bounded_mode() -> None:
     config = make_config()
     settings = UserSettings(map_mode=MapMode.BOUNDED)
     state = create_initial_state(config, settings, random.Random(72))
-    state.snake = [(config.grid_width - 1, 3), (config.grid_width - 2, 3), (config.grid_width - 3, 3)]
+    state.snake = [
+        (config.grid_width - 1, 3),
+        (config.grid_width - 2, 3),
+        (config.grid_width - 3, 3),
+    ]
     state.direction = Direction.RIGHT
     state.food = (0, 0)
 

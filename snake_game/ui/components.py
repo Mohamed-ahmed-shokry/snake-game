@@ -43,6 +43,7 @@ def draw_scene_background(
         _SCENE_BACKGROUND_CACHE[key] = background
     screen.blit(background, (0, 0))
 
+
 def draw_text_center(
     screen: pygame.Surface,
     text: str,
@@ -64,8 +65,12 @@ def draw_panel(
     radius: int = 14,
 ) -> None:
     overlay = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
-    pygame.draw.rect(overlay, (*fill, alpha), pygame.Rect(0, 0, rect.width, rect.height), border_radius=radius)
-    pygame.draw.rect(overlay, border, pygame.Rect(0, 0, rect.width, rect.height), width=2, border_radius=radius)
+    pygame.draw.rect(
+        overlay, (*fill, alpha), pygame.Rect(0, 0, rect.width, rect.height), border_radius=radius
+    )
+    pygame.draw.rect(
+        overlay, border, pygame.Rect(0, 0, rect.width, rect.height), width=2, border_radius=radius
+    )
     screen.blit(overlay, rect.topleft)
 
 
@@ -135,7 +140,9 @@ def draw_option_rows(
                 alpha=35,
                 radius=10,
             )
-            marker = pygame.Rect(row_rect.left + 8, row_rect.top + 7, 4, max(6, row_rect.height - 14))
+            marker = pygame.Rect(
+                row_rect.left + 8, row_rect.top + 7, 4, max(6, row_rect.height - 14)
+            )
             pygame.draw.rect(screen, selected_text_color, marker, border_radius=2)
         else:
             draw_panel(

@@ -35,7 +35,11 @@ class ProgressScene(Scene):
             self.ctx.audio.play("confirm")
             self.next_scene = SceneId.MENU
             return
-        if event.type == pygame.KEYDOWN and event.key in (pygame.K_ESCAPE, pygame.K_RETURN, pygame.K_SPACE):
+        if event.type == pygame.KEYDOWN and event.key in (
+            pygame.K_ESCAPE,
+            pygame.K_RETURN,
+            pygame.K_SPACE,
+        ):
             self.ctx.audio.play("confirm")
             self.next_scene = SceneId.MENU
 

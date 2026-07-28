@@ -19,7 +19,9 @@ def test_maybe_spawn_places_powerup_in_free_cell() -> None:
     )
     occupied = {(0, 0), (1, 0), (2, 0)}
 
-    spawned = system.maybe_spawn(random.Random(1), occupied_cells=occupied, grid_width=4, grid_height=2)
+    spawned = system.maybe_spawn(
+        random.Random(1), occupied_cells=occupied, grid_width=4, grid_height=2
+    )
 
     assert isinstance(spawned, SpawnedPowerUp)
     assert spawned is system.spawned
@@ -30,7 +32,9 @@ def test_maybe_spawn_places_powerup_in_free_cell() -> None:
 def test_zero_spawn_chance_never_spawns_on_zero_roll() -> None:
     system = PowerUpSystem(spawn_chance_per_food=0.0)
 
-    spawned = system.maybe_spawn(ZeroRollRandom(), occupied_cells=set(), grid_width=2, grid_height=2)
+    spawned = system.maybe_spawn(
+        ZeroRollRandom(), occupied_cells=set(), grid_width=2, grid_height=2
+    )
 
     assert spawned is None
     assert system.spawned is None
@@ -38,7 +42,9 @@ def test_zero_spawn_chance_never_spawns_on_zero_roll() -> None:
 
 def test_collect_at_activates_effect_and_clears_spawn() -> None:
     system = PowerUpSystem()
-    system.spawned = SpawnedPowerUp(type=PowerUpType.DOUBLE_SCORE, position=(3, 4), remaining_seconds=5.0)
+    system.spawned = SpawnedPowerUp(
+        type=PowerUpType.DOUBLE_SCORE, position=(3, 4), remaining_seconds=5.0
+    )
 
     collected = system.collect_at((3, 4))
 
@@ -50,7 +56,9 @@ def test_collect_at_activates_effect_and_clears_spawn() -> None:
 
 def test_update_expires_spawn_and_decrements_active_effects() -> None:
     system = PowerUpSystem()
-    system.spawned = SpawnedPowerUp(type=PowerUpType.SLOW_TIME, position=(1, 1), remaining_seconds=0.1)
+    system.spawned = SpawnedPowerUp(
+        type=PowerUpType.SLOW_TIME, position=(1, 1), remaining_seconds=0.1
+    )
     system.collect_at((1, 1))
     assert system.active_effects
     before = system.active_effects[0].remaining_seconds
@@ -65,12 +73,16 @@ def test_update_expires_spawn_and_decrements_active_effects() -> None:
 
 def test_collecting_same_type_refreshes_duration() -> None:
     system = PowerUpSystem()
-    system.spawned = SpawnedPowerUp(type=PowerUpType.SLOW_TIME, position=(1, 1), remaining_seconds=5.0)
+    system.spawned = SpawnedPowerUp(
+        type=PowerUpType.SLOW_TIME, position=(1, 1), remaining_seconds=5.0
+    )
     first = system.collect_at((1, 1))
     assert first is not None
     first.remaining_seconds = 1.0
 
-    system.spawned = SpawnedPowerUp(type=PowerUpType.SLOW_TIME, position=(2, 2), remaining_seconds=5.0)
+    system.spawned = SpawnedPowerUp(
+        type=PowerUpType.SLOW_TIME, position=(2, 2), remaining_seconds=5.0
+    )
     refreshed = system.collect_at((2, 2))
 
     assert refreshed is first

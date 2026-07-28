@@ -19,7 +19,9 @@ from snake_game.types import Difficulty, MapMode, ThemeId
 
 def test_record_score_sorts_and_trims() -> None:
     data = PersistentData(settings=UserSettings(), leaderboard={})
-    settings = UserSettings(difficulty=Difficulty.HARD, map_mode=MapMode.WRAP, obstacles_enabled=True)
+    settings = UserSettings(
+        difficulty=Difficulty.HARD, map_mode=MapMode.WRAP, obstacles_enabled=True
+    )
 
     for score in [10, 4, 7, 18, 2]:
         record_score(data, settings, score, limit=3)
@@ -181,7 +183,9 @@ def test_best_score_for_settings_returns_zero_when_empty() -> None:
 
 
 def test_best_score_for_settings_returns_top_score() -> None:
-    settings = UserSettings(difficulty=Difficulty.HARD, map_mode=MapMode.WRAP, obstacles_enabled=True)
+    settings = UserSettings(
+        difficulty=Difficulty.HARD, map_mode=MapMode.WRAP, obstacles_enabled=True
+    )
     key = leaderboard_key(settings)
     data = PersistentData(settings=UserSettings(), leaderboard={key: [25, 19, 4]})
     assert best_score_for_settings(data, settings) == 25
@@ -247,8 +251,18 @@ def test_invalid_graphics_values_fall_back_to_defaults(tmp_path: Path) -> None:
     path = tmp_path / "save.json"
     payload = {
         "schema_version": SAVE_SCHEMA_VERSION,
-        "settings": {"difficulty": "normal", "map_mode": "bounded", "obstacles_enabled": False, "muted": False},
-        "graphics": {"theme_id": "invalid-theme", "ui_scale": 0, "show_grid": "no", "colorblind_mode": "unknown"},
+        "settings": {
+            "difficulty": "normal",
+            "map_mode": "bounded",
+            "obstacles_enabled": False,
+            "muted": False,
+        },
+        "graphics": {
+            "theme_id": "invalid-theme",
+            "ui_scale": 0,
+            "show_grid": "no",
+            "colorblind_mode": "unknown",
+        },
         "leaderboard": {},
         "stats": {"total_runs": 0, "total_score": 0, "best_score_global": 0},
         "achievements": [],
@@ -267,7 +281,12 @@ def test_load_sanitizes_leaderboard_scores(tmp_path: Path) -> None:
     path = tmp_path / "save.json"
     payload = {
         "schema_version": SAVE_SCHEMA_VERSION,
-        "settings": {"difficulty": "normal", "map_mode": "bounded", "obstacles_enabled": False, "muted": False},
+        "settings": {
+            "difficulty": "normal",
+            "map_mode": "bounded",
+            "obstacles_enabled": False,
+            "muted": False,
+        },
         "graphics": {},
         "leaderboard": {"normal|bounded|clear": [12, True, -3, 7.8, "5"]},
         "stats": {"total_runs": 0, "total_score": 0, "best_score_global": 0},

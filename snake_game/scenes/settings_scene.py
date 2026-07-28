@@ -26,7 +26,9 @@ def _cycle_color_mode(current: str, step: int) -> str:
 
 
 def _cycle_ui_scale(current: float, step: int) -> float:
-    nearest_index = min(range(len(UI_SCALE_OPTIONS)), key=lambda index: abs(UI_SCALE_OPTIONS[index] - current))
+    nearest_index = min(
+        range(len(UI_SCALE_OPTIONS)), key=lambda index: abs(UI_SCALE_OPTIONS[index] - current)
+    )
     return UI_SCALE_OPTIONS[(nearest_index + step) % len(UI_SCALE_OPTIONS)]
 
 

@@ -33,10 +33,7 @@ def spawn_food(
 ) -> Point:
     occupied = set(snake_cells) | obstacle_cells
     candidates = [
-        (x, y)
-        for y in range(grid_height)
-        for x in range(grid_width)
-        if (x, y) not in occupied
+        (x, y) for y in range(grid_height) for x in range(grid_width) if (x, y) not in occupied
     ]
     if not candidates:
         raise RuntimeError("board is full, no free cell for food")
@@ -165,7 +162,9 @@ def _apply_next_direction(state: GameState) -> None:
     state.pending_direction = state.direction_queue[0] if state.direction_queue else None
 
 
-def _next_head_position(state: GameState, config: GameConfig, phase_active: bool = False) -> Point | None:
+def _next_head_position(
+    state: GameState, config: GameConfig, phase_active: bool = False
+) -> Point | None:
     head_x, head_y = state.snake[0]
     move_x, move_y = state.direction.vector
     new_x, new_y = (head_x + move_x, head_y + move_y)
@@ -173,7 +172,9 @@ def _next_head_position(state: GameState, config: GameConfig, phase_active: bool
     if state.map_mode == MapMode.WRAP:
         return (new_x % config.grid_width, new_y % config.grid_height)
 
-    if phase_active and (new_x < 0 or new_x >= config.grid_width or new_y < 0 or new_y >= config.grid_height):
+    if phase_active and (
+        new_x < 0 or new_x >= config.grid_width or new_y < 0 or new_y >= config.grid_height
+    ):
         return (new_x % config.grid_width, new_y % config.grid_height)
 
     if new_x < 0 or new_x >= config.grid_width or new_y < 0 or new_y >= config.grid_height:

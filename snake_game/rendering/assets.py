@@ -11,8 +11,12 @@ type Color = tuple[int, int, int]
 @dataclass(slots=True)
 class RenderAssets:
     _grid_cache: dict[tuple[int, int, int, Color], pygame.Surface] = field(default_factory=dict)
-    _gradient_cache: dict[tuple[int, int, Color, Color], pygame.Surface] = field(default_factory=dict)
-    _arena_cache: dict[tuple[int, int, int, Color, Color, Color], pygame.Surface] = field(default_factory=dict)
+    _gradient_cache: dict[tuple[int, int, Color, Color], pygame.Surface] = field(
+        default_factory=dict
+    )
+    _arena_cache: dict[tuple[int, int, int, Color, Color, Color], pygame.Surface] = field(
+        default_factory=dict
+    )
     _glow_cache: dict[tuple[int, Color, int], pygame.Surface] = field(default_factory=dict)
 
     def grid_surface(self, config: GameConfig, grid_color: Color) -> pygame.Surface:
@@ -44,7 +48,9 @@ class RenderAssets:
         self._grid_cache[key] = surface
         return surface
 
-    def background_gradient(self, width: int, height: int, top_color: Color, bottom_color: Color) -> pygame.Surface:
+    def background_gradient(
+        self, width: int, height: int, top_color: Color, bottom_color: Color
+    ) -> pygame.Surface:
         key = (width, height, top_color, bottom_color)
         cached = self._gradient_cache.get(key)
         if cached is not None:
@@ -109,7 +115,12 @@ class RenderAssets:
             pygame.draw.rect(
                 atmosphere,
                 (0, 0, 0, alpha),
-                pygame.Rect(offset, offset, config.window_width - offset * 2, config.window_height - offset * 2),
+                pygame.Rect(
+                    offset,
+                    offset,
+                    config.window_width - offset * 2,
+                    config.window_height - offset * 2,
+                ),
                 1,
             )
 

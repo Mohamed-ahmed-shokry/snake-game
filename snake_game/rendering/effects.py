@@ -5,7 +5,9 @@ import pygame
 type Color = tuple[int, int, int]
 
 
-def build_vertical_gradient_surface(width: int, height: int, top_color: Color, bottom_color: Color) -> pygame.Surface:
+def build_vertical_gradient_surface(
+    width: int, height: int, top_color: Color, bottom_color: Color
+) -> pygame.Surface:
     surface = pygame.Surface((width, height))
     if height <= 1:
         surface.fill(top_color)
@@ -41,4 +43,3 @@ def pulse_alpha(
         return max_alpha
     wave = (math.sin(timer_seconds * frequency) + 1.0) * 0.5
     return int(min_alpha + (max_alpha - min_alpha) * wave)
-

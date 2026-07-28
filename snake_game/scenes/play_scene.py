@@ -75,7 +75,9 @@ class PlayScene(Scene):
     def __init__(self, ctx: AppContext) -> None:
         super().__init__(ctx)
         self.state = create_initial_state(ctx.config, ctx.persistent_data.settings, ctx.rng)
-        self.best_score_at_start = best_score_for_settings(ctx.persistent_data, ctx.persistent_data.settings)
+        self.best_score_at_start = best_score_for_settings(
+            ctx.persistent_data, ctx.persistent_data.settings
+        )
         self.progression = StageProgression(points_per_stage=ctx.config.stage_points_interval)
         self.hazards = HazardSystem(enabled=ctx.persistent_data.settings.obstacles_enabled)
         self.powerups = PowerUpSystem()
@@ -104,7 +106,9 @@ class PlayScene(Scene):
         self.pointer_feedback_timer = 0.0
         self.end_reason = "collision"
 
-    def _spawn_burst(self, cell_x: int, cell_y: int, color: tuple[int, int, int], count: int = 8) -> None:
+    def _spawn_burst(
+        self, cell_x: int, cell_y: int, color: tuple[int, int, int], count: int = 8
+    ) -> None:
         if not self.ctx.config.graphics.particles_enabled:
             return
         if self.ctx.config.graphics.reduced_motion:
@@ -262,9 +266,7 @@ class PlayScene(Scene):
                 radius=7,
             )
             screen.blit(key_surface, key_surface.get_rect(center=key_rect.center))
-            action_rect = action_surface.get_rect(
-                midleft=(key_rect.right + 8, dock.centery)
-            )
+            action_rect = action_surface.get_rect(midleft=(key_rect.right + 8, dock.centery))
             screen.blit(action_surface, action_rect)
             cursor_x += group_width
             if index < len(rendered) - 1:
@@ -538,7 +540,9 @@ class PlayScene(Scene):
                 )
                 self._spawn_burst(head_x, head_y, (245, 165, 95), count=10)
 
-                occupied_cells = set(self.state.snake) | set(self.state.obstacles) | {self.state.food}
+                occupied_cells = (
+                    set(self.state.snake) | set(self.state.obstacles) | {self.state.food}
+                )
                 self.powerups.maybe_spawn(
                     rng=self.ctx.rng,
                     occupied_cells=occupied_cells,
@@ -611,7 +615,9 @@ class PlayScene(Scene):
                 self.shake_timer = max(self.shake_timer, 0.08)
                 head = self.state.snake[0]
                 self._spawn_burst(head[0], head[1], (120, 210, 255), count=14)
-                powerup_name = str(event.payload.get("powerup", "powerup")).replace("_", " ").upper()
+                powerup_name = (
+                    str(event.payload.get("powerup", "powerup")).replace("_", " ").upper()
+                )
                 self._show_toast(f"{powerup_name} ACTIVATED", (247, 198, 85))
 
         if self.state.status == GameStatus.GAME_OVER:
@@ -632,8 +638,12 @@ class PlayScene(Scene):
 
     def render(self, screen: pygame.Surface) -> None:
         best_score_now = max(self.best_score_at_start, self.state.score)
-        spawned_powerup_position = self.powerups.spawned.position if self.powerups.spawned is not None else None
-        spawned_powerup_type = self.powerups.spawned.type if self.powerups.spawned is not None else None
+        spawned_powerup_position = (
+            self.powerups.spawned.position if self.powerups.spawned is not None else None
+        )
+        spawned_powerup_type = (
+            self.powerups.spawned.type if self.powerups.spawned is not None else None
+        )
         theme = resolve_theme(
             self.ctx.config.graphics.theme_id,
             self.ctx.config.graphics.colorblind_mode,
@@ -649,11 +659,15 @@ class PlayScene(Scene):
             )
             for particle in self.particles
         ]
-        effective_step_rate = max(0.1, self.state.steps_per_second * self.powerups.speed_multiplier())
+        effective_step_rate = max(
+            0.1, self.state.steps_per_second * self.powerups.speed_multiplier()
+        )
         if self.ctx.config.graphics.reduced_motion:
             movement_alpha = 1.0
         else:
-            movement_alpha = min(1.0, 0.25 + self.state.accumulator_seconds * effective_step_rate * 0.75)
+            movement_alpha = min(
+                1.0, 0.25 + self.state.accumulator_seconds * effective_step_rate * 0.75
+            )
         stage_banner_alpha = int(210 * min(1.0, self.stage_banner_timer / 1.2))
         flash_alpha = int(150 * min(1.0, self.flash_timer / 0.18))
 

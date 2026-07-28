@@ -47,7 +47,11 @@ def test_advance_one_step_emits_food_event() -> None:
 def test_advance_one_step_emits_player_died_event() -> None:
     config = make_config()
     state = create_initial_state(config, UserSettings(), random.Random(2))
-    state.snake = [(config.grid_width - 1, 2), (config.grid_width - 2, 2), (config.grid_width - 3, 2)]
+    state.snake = [
+        (config.grid_width - 1, 2),
+        (config.grid_width - 2, 2),
+        (config.grid_width - 3, 2),
+    ]
     state.direction = Direction.RIGHT
     state.food = (0, 0)
 
@@ -69,7 +73,10 @@ def test_stage_progression_emits_stage_advanced() -> None:
 
     assert changed is True
     assert progression.current_stage == 3
-    assert [event.type for event in events] == [GameEventType.STAGE_ADVANCED, GameEventType.STAGE_ADVANCED]
+    assert [event.type for event in events] == [
+        GameEventType.STAGE_ADVANCED,
+        GameEventType.STAGE_ADVANCED,
+    ]
 
 
 def test_stage_progression_rejects_invalid_interval() -> None:

@@ -157,4 +157,6 @@ class PowerUpSystem:
             return
         for effect in self.active_effects:
             effect.remaining_seconds -= elapsed
-        self.active_effects = [effect for effect in self.active_effects if effect.remaining_seconds > 0.0]
+        self.active_effects = [
+            effect for effect in self.active_effects if effect.remaining_seconds > 0.0
+        ]

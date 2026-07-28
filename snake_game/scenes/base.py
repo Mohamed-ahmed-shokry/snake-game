@@ -17,7 +17,9 @@ UI_SCALE_OPTIONS: tuple[float, ...] = (0.85, 1.0, 1.1)
 logger = logging.getLogger(__name__)
 
 
-def build_ui_fonts(config: GameConfig) -> tuple[pygame.font.Font, pygame.font.Font, pygame.font.Font]:
+def build_ui_fonts(
+    config: GameConfig,
+) -> tuple[pygame.font.Font, pygame.font.Font, pygame.font.Font]:
     scale = min(max(config.graphics.ui_scale, UI_SCALE_OPTIONS[0]), UI_SCALE_OPTIONS[-1])
     return (
         pygame.font.Font(None, round(76 * scale)),

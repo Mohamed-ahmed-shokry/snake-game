@@ -25,7 +25,9 @@ _ACHIEVEMENTS_BY_ID = {achievement.id: achievement for achievement in ACHIEVEMEN
 
 def achievement_label(achievement_id: str) -> str:
     achievement = _ACHIEVEMENTS_BY_ID.get(achievement_id)
-    return achievement.label if achievement is not None else achievement_id.replace("_", " ").title()
+    return (
+        achievement.label if achievement is not None else achievement_id.replace("_", " ").title()
+    )
 
 
 def unlock_run_achievements(

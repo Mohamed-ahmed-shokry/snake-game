@@ -34,4 +34,3 @@ class EventBus:
         events = list(self._queue)
         self._queue.clear()
         return events
-

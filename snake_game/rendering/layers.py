@@ -35,7 +35,9 @@ def _draw_centered_text(
     screen.blit(surface, rect)
 
 
-def interpolate_snake_positions(state: GameState, movement_alpha: float) -> list[tuple[float, float]]:
+def interpolate_snake_positions(
+    state: GameState, movement_alpha: float
+) -> list[tuple[float, float]]:
     alpha = max(0.0, min(movement_alpha, 1.0))
     if not state.previous_snake:
         return [(float(x), float(y)) for x, y in state.snake]
@@ -141,7 +143,9 @@ class PlayfieldRenderer:
         grid = self.assets.grid_surface(self.config, self.theme.palette.grid)
         target.blit(grid, (0, 0))
 
-    def _draw_arena_border(self, target: pygame.Surface, state: GameState, animation_seconds: float) -> None:
+    def _draw_arena_border(
+        self, target: pygame.Surface, state: GameState, animation_seconds: float
+    ) -> None:
         width = self.config.window_width
         height = self.config.window_height
         if state.map_mode.value == "bounded":
@@ -163,7 +167,11 @@ class PlayfieldRenderer:
 
         dash_length = max(10, self.config.cell_size)
         gap = max(6, self.config.cell_size // 2)
-        pulse = 0 if self.config.graphics.reduced_motion else int((math.sin(animation_seconds * 4.0) + 1.0) * 35)
+        pulse = (
+            0
+            if self.config.graphics.reduced_motion
+            else int((math.sin(animation_seconds * 4.0) + 1.0) * 35)
+        )
         portal_color = (*self.theme.palette.accent, 135 + pulse)
         for x in range(4, width - 4, dash_length + gap):
             pygame.draw.line(target, portal_color, (x, 4), (min(width - 4, x + dash_length), 4), 3)
@@ -211,7 +219,9 @@ class PlayfieldRenderer:
                 radius = 1 + (index % 7 == 0)
                 pygame.draw.circle(atmosphere, (*accent, alpha), (x, y), radius)
 
-            scan_progress = 0.52 if self.config.graphics.reduced_motion else (motion_time * 0.075) % 1.0
+            scan_progress = (
+                0.52 if self.config.graphics.reduced_motion else (motion_time * 0.075) % 1.0
+            )
             scan_y = round(self.config.window_height * scan_progress)
             scan_glow = max(14, self.config.cell_size)
             for offset in range(-scan_glow, scan_glow + 1, 2):
@@ -437,7 +447,10 @@ class PlayfieldRenderer:
         crack_color = tuple(max(5, channel // 3) for channel in self.theme.palette.obstacle)
         crack_start = (shape.centerx - crack_sign * shape.width // 5, shape.top + shape.height // 4)
         crack_mid = (shape.centerx + crack_sign * shape.width // 10, shape.centery)
-        crack_end = (shape.centerx - crack_sign * shape.width // 8, shape.bottom - shape.height // 5)
+        crack_end = (
+            shape.centerx - crack_sign * shape.width // 8,
+            shape.bottom - shape.height // 5,
+        )
         pygame.draw.lines(
             target,
             crack_color,
@@ -462,10 +475,13 @@ class PlayfieldRenderer:
             (glow_radius + 1, glow_radius + 1),
             glow_radius,
         )
-        target.blit(glow, (cell_rect.centerx - glow_radius - 1, cell_rect.centery - glow_radius - 1))
+        target.blit(
+            glow, (cell_rect.centerx - glow_radius - 1, cell_rect.centery - glow_radius - 1)
+        )
 
         beacon_radius = round(
-            self.config.cell_size * (0.72 + (0.0 if self.config.graphics.reduced_motion else pulse * 0.34))
+            self.config.cell_size
+            * (0.72 + (0.0 if self.config.graphics.reduced_motion else pulse * 0.34))
         )
         outer_radius = beacon_radius + max(5, self.config.cell_size // 3)
         bracket_gap = outer_radius + 3
@@ -563,7 +579,11 @@ class PlayfieldRenderer:
         powerup_type: PowerUpType,
     ) -> None:
         cell_rect = self._cell_rect(*position)
-        pulse = 0.0 if self.config.graphics.reduced_motion else (math.sin(animation_seconds * 6.0) + 1.0) * 0.5
+        pulse = (
+            0.0
+            if self.config.graphics.reduced_motion
+            else (math.sin(animation_seconds * 6.0) + 1.0) * 0.5
+        )
         radius = max(4, self.config.cell_size // 2 - 2)
         type_colors = {
             PowerUpType.SHIELD: self.theme.palette.accent,
@@ -580,7 +600,9 @@ class PlayfieldRenderer:
             (glow_radius + 1, glow_radius + 1),
             glow_radius,
         )
-        target.blit(glow, (cell_rect.centerx - glow_radius - 1, cell_rect.centery - glow_radius - 1))
+        target.blit(
+            glow, (cell_rect.centerx - glow_radius - 1, cell_rect.centery - glow_radius - 1)
+        )
         pygame.draw.circle(target, (18, 22, 30), cell_rect.center, radius)
         pygame.draw.circle(target, ring_color, cell_rect.center, radius, max(2, radius // 3))
 
@@ -592,7 +614,9 @@ class PlayfieldRenderer:
                     round(cell_rect.centerx + math.cos(angle) * orbit_radius),
                     round(cell_rect.centery + math.sin(angle) * orbit_radius),
                 )
-                pygame.draw.circle(target, ring_color, orbit_position, max(1, self.config.cell_size // 14))
+                pygame.draw.circle(
+                    target, ring_color, orbit_position, max(1, self.config.cell_size // 14)
+                )
 
         center_x, center_y = cell_rect.center
         glyph_color = self.theme.palette.text
@@ -608,13 +632,31 @@ class PlayfieldRenderer:
             ]
             pygame.draw.polygon(target, glyph_color, points, max(1, radius // 4))
         elif powerup_type == PowerUpType.SLOW_TIME:
-            pygame.draw.circle(target, glyph_color, (center_x, center_y), glyph_radius, max(1, radius // 4))
-            pygame.draw.line(target, glyph_color, (center_x, center_y), (center_x, center_y - glyph_radius + 1), 1)
-            pygame.draw.line(target, glyph_color, (center_x, center_y), (center_x + glyph_radius - 1, center_y), 1)
+            pygame.draw.circle(
+                target, glyph_color, (center_x, center_y), glyph_radius, max(1, radius // 4)
+            )
+            pygame.draw.line(
+                target,
+                glyph_color,
+                (center_x, center_y),
+                (center_x, center_y - glyph_radius + 1),
+                1,
+            )
+            pygame.draw.line(
+                target,
+                glyph_color,
+                (center_x, center_y),
+                (center_x + glyph_radius - 1, center_y),
+                1,
+            )
         elif powerup_type == PowerUpType.DOUBLE_SCORE:
             offset = max(2, glyph_radius // 2)
-            pygame.draw.circle(target, glyph_color, (center_x - offset, center_y), max(2, glyph_radius // 2), 1)
-            pygame.draw.circle(target, glyph_color, (center_x + offset, center_y), max(2, glyph_radius // 2), 1)
+            pygame.draw.circle(
+                target, glyph_color, (center_x - offset, center_y), max(2, glyph_radius // 2), 1
+            )
+            pygame.draw.circle(
+                target, glyph_color, (center_x + offset, center_y), max(2, glyph_radius // 2), 1
+            )
         else:
             pygame.draw.arc(
                 target,
@@ -651,7 +693,11 @@ class PlayfieldRenderer:
         head_rect = pygame.Rect(0, 0, self.config.cell_size, self.config.cell_size)
         head_rect.center = centers[0]
         head_center = head_rect.center
-        motion_pulse = 0.0 if self.config.graphics.reduced_motion else (math.sin(animation_seconds * 7.0) + 1.0) * 0.5
+        motion_pulse = (
+            0.0
+            if self.config.graphics.reduced_motion
+            else (math.sin(animation_seconds * 7.0) + 1.0) * 0.5
+        )
 
         if PowerUpType.SHIELD in active_powerup_types:
             shield_layer = pygame.Surface(target.get_size(), pygame.SRCALPHA)
@@ -676,7 +722,11 @@ class PlayfieldRenderer:
             )
         if PowerUpType.DOUBLE_SCORE in active_powerup_types:
             sparkle_offset = self.config.cell_size // 2 + 3
-            for offset_x, offset_y in ((-sparkle_offset, 0), (sparkle_offset, 0), (0, -sparkle_offset)):
+            for offset_x, offset_y in (
+                (-sparkle_offset, 0),
+                (sparkle_offset, 0),
+                (0, -sparkle_offset),
+            ):
                 pygame.draw.circle(
                     target,
                     self.theme.palette.powerup,
@@ -705,11 +755,16 @@ class PlayfieldRenderer:
         for index in range(len(centers) - 1):
             start = centers[index]
             end = centers[index + 1]
-            if abs(start[0] - end[0]) <= self.config.cell_size and abs(start[1] - end[1]) <= self.config.cell_size:
+            if (
+                abs(start[0] - end[0]) <= self.config.cell_size
+                and abs(start[1] - end[1]) <= self.config.cell_size
+            ):
                 taper = index / max(1, len(centers) - 1)
                 connector_width = max(
                     3,
-                    self.config.cell_size - base_inset * 3 - round(taper * self.config.cell_size * 0.16),
+                    self.config.cell_size
+                    - base_inset * 3
+                    - round(taper * self.config.cell_size * 0.16),
                 )
                 pygame.draw.line(
                     target,
@@ -848,8 +903,7 @@ class PlayfieldRenderer:
                 cell_x %= self.config.grid_width
                 cell_y %= self.config.grid_height
             elif not (
-                0 <= cell_x < self.config.grid_width
-                and 0 <= cell_y < self.config.grid_height
+                0 <= cell_x < self.config.grid_width and 0 <= cell_y < self.config.grid_height
             ):
                 break
 
@@ -1003,9 +1057,7 @@ class PlayfieldRenderer:
             if label == "SCORE" and score_pulse > 0:
                 pulse_strength = max(0.0, min(1.0, score_pulse))
                 halo_growth = (
-                    5
-                    if self.config.graphics.reduced_motion
-                    else round(4 + pulse_strength * 8)
+                    5 if self.config.graphics.reduced_motion else round(4 + pulse_strength * 8)
                 )
                 draw_panel(
                     screen=target,
@@ -1068,13 +1120,13 @@ class PlayfieldRenderer:
             True,
             tuple(max(110, channel - 28) for channel in self.theme.palette.text),
         )
-        telemetry_rect = telemetry_surface.get_rect(
-            topright=(self.config.window_width - 18, 45)
-        )
+        telemetry_rect = telemetry_surface.get_rect(topright=(self.config.window_width - 18, 45))
         if telemetry_rect.left > effect_x + 12:
             target.blit(telemetry_surface, telemetry_rect)
 
-        stage_progress = (state.score % self.config.stage_points_interval) / self.config.stage_points_interval
+        stage_progress = (
+            state.score % self.config.stage_points_interval
+        ) / self.config.stage_points_interval
         progress_track = pygame.Rect(18, top_panel.bottom - 8, self.config.window_width - 36, 3)
         pygame.draw.rect(target, (8, 12, 18), progress_track, border_radius=2)
         for marker_fraction in (0.25, 0.5, 0.75):
@@ -1280,10 +1332,7 @@ class PlayfieldRenderer:
                 screen=target,
                 rect=prompt_rect,
                 fill=(5, 10, 16),
-                border=tuple(
-                    max(28, channel // 2)
-                    for channel in self.theme.palette.selected_text
-                ),
+                border=tuple(max(28, channel // 2) for channel in self.theme.palette.selected_text),
                 alpha=218,
                 radius=prompt_rect.height // 2,
             )
@@ -1297,7 +1346,11 @@ class PlayfieldRenderer:
             cue_layer.fill((5, 10, 16, round(54 * strength)))
             radius = round(
                 max(56, self.config.cell_size * 3)
-                + (0 if self.config.graphics.reduced_motion else elapsed * self.config.cell_size * 5)
+                + (
+                    0
+                    if self.config.graphics.reduced_motion
+                    else elapsed * self.config.cell_size * 5
+                )
             )
             pygame.draw.circle(
                 cue_layer,
@@ -1361,7 +1414,9 @@ class PlayfieldRenderer:
             )
 
         if flash_alpha > 0:
-            flash = pygame.Surface((self.config.window_width, self.config.window_height), pygame.SRCALPHA)
+            flash = pygame.Surface(
+                (self.config.window_width, self.config.window_height), pygame.SRCALPHA
+            )
             flash.fill((255, 255, 255, max(0, min(flash_alpha, 180))))
             target.blit(flash, (0, 0))
 
@@ -1389,7 +1444,9 @@ class PlayfieldRenderer:
         camera_offset: tuple[int, int] = (0, 0),
         particles: list[tuple[float, float, int, Color, int]] | None = None,
     ) -> None:
-        world = pygame.Surface((self.config.window_width, self.config.window_height), pygame.SRCALPHA)
+        world = pygame.Surface(
+            (self.config.window_width, self.config.window_height), pygame.SRCALPHA
+        )
         self._draw_background(world)
         self._draw_grid(world)
         self._draw_arena_border(world, state, animation_seconds)

@@ -12,11 +12,21 @@ def build_parser() -> argparse.ArgumentParser:
     defaults = GameConfig()
     parser = argparse.ArgumentParser(description="Run the Snake game.")
     parser.add_argument("--version", action="version", version=f"Snake Arcade {__version__}")
-    parser.add_argument("--data-file", default=defaults.data_file, help="Path to the persistent save JSON file.")
-    parser.add_argument("--seed", type=int, default=None, help="Seed the game RNG for reproducible runs.")
-    parser.add_argument("--width", type=int, default=defaults.window_width, help="Window width in pixels.")
-    parser.add_argument("--height", type=int, default=defaults.window_height, help="Window height in pixels.")
-    parser.add_argument("--cell-size", type=int, default=defaults.cell_size, help="Grid cell size in pixels.")
+    parser.add_argument(
+        "--data-file", default=defaults.data_file, help="Path to the persistent save JSON file."
+    )
+    parser.add_argument(
+        "--seed", type=int, default=None, help="Seed the game RNG for reproducible runs."
+    )
+    parser.add_argument(
+        "--width", type=int, default=defaults.window_width, help="Window width in pixels."
+    )
+    parser.add_argument(
+        "--height", type=int, default=defaults.window_height, help="Window height in pixels."
+    )
+    parser.add_argument(
+        "--cell-size", type=int, default=defaults.cell_size, help="Grid cell size in pixels."
+    )
     parser.add_argument(
         "--obstacle-count",
         type=int,

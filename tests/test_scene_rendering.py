@@ -309,7 +309,9 @@ def test_arena_border_distinguishes_bounded_and_wrap_modes(app_context: AppConte
         animation_seconds=0.5,
     )
 
-    assert pygame.image.tobytes(bounded.subsurface(pygame.Rect(0, 0, 20, 600)), "RGB") != pygame.image.tobytes(
+    assert pygame.image.tobytes(
+        bounded.subsurface(pygame.Rect(0, 0, 20, 600)), "RGB"
+    ) != pygame.image.tobytes(
         wrapped.subsurface(pygame.Rect(0, 0, 20, 600)),
         "RGB",
     )

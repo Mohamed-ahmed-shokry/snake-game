@@ -27,7 +27,9 @@ def top_scores_text(leaderboard: list[int]) -> str:
 
 def achievement_unlock_lines(achievement_ids: list[str]) -> list[str]:
     labels = [achievement_label(achievement_id) for achievement_id in achievement_ids]
-    return [f"Unlocked: {', '.join(labels[index:index + 2])}" for index in range(0, len(labels), 2)]
+    return [
+        f"Unlocked: {', '.join(labels[index : index + 2])}" for index in range(0, len(labels), 2)
+    ]
 
 
 def end_reason_text(reason: str) -> str:

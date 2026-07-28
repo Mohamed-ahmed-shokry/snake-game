@@ -99,6 +99,28 @@ def test_corrupt_file_falls_back_to_defaults(tmp_path: Path) -> None:
     assert len(list(tmp_path.glob("save.json.corrupt-*"))) == 1
 
 
+def test_invalid_utf8_save_falls_back_to_defaults(tmp_path: Path) -> None:
+    path = tmp_path / "save.json"
+    path.write_bytes(b"\xff\xfe\xfa")
+
+    loaded = load_persistent_data(path)
+
+    assert loaded == PersistentData()
+    assert not path.exists()
+    assert len(list(tmp_path.glob("save.json.corrupt-*"))) == 1
+
+
+def test_excessively_nested_save_falls_back_to_defaults(tmp_path: Path) -> None:
+    path = tmp_path / "save.json"
+    path.write_text("[" * 2_000 + "0" + "]" * 2_000, encoding="utf-8")
+
+    loaded = load_persistent_data(path)
+
+    assert loaded == PersistentData()
+    assert not path.exists()
+    assert len(list(tmp_path.glob("save.json.corrupt-*"))) == 1
+
+
 def test_future_schema_is_preserved_as_unsupported_backup(tmp_path: Path) -> None:
     path = tmp_path / "save.json"
     payload = {

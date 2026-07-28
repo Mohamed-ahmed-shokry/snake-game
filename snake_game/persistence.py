@@ -273,7 +273,7 @@ def load_persistent_data(path: Path) -> PersistentData:
     try:
         content = path.read_text(encoding="utf-8")
         payload = json.loads(content)
-    except (OSError, json.JSONDecodeError):
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError, RecursionError):
         _backup_file(path, "corrupt")
         return PersistentData()
 

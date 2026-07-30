@@ -1,3 +1,4 @@
+import runpy
 from pathlib import Path
 
 import pytest
@@ -79,3 +80,12 @@ def test_cli_reports_release_version(capsys: pytest.CaptureFixture[str]) -> None
 
     assert exit_info.value.code == 0
     assert capsys.readouterr().out.strip() == "Snake Arcade 1.6.1"
+
+
+def test_module_launcher_delegates_to_cli(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[None] = []
+    monkeypatch.setattr("snake_game.cli.main", lambda: calls.append(None))
+
+    runpy.run_module("snake_game.__main__", run_name="__main__")
+
+    assert calls == [None]

@@ -79,7 +79,7 @@ def test_cli_reports_release_version(capsys: pytest.CaptureFixture[str]) -> None
         parser.parse_args(["--version"])
 
     assert exit_info.value.code == 0
-    assert capsys.readouterr().out.strip() == "Snake Arcade 1.6.1"
+    assert capsys.readouterr().out.strip() == "Snake Arcade 1.6.2"
 
 
 def test_module_launcher_delegates_to_cli(monkeypatch: pytest.MonkeyPatch) -> None:

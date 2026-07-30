@@ -2,6 +2,16 @@
 
 Notable user-facing and engineering changes are recorded here. The project follows [Semantic Versioning](https://semver.org/).
 
+## 1.6.2 - 2026-07-31
+
+### Fixed
+
+- Power-ups collected during a multi-step frame now affect the very next simulation step, so effects such as Double Score are never delayed by a momentary frame hitch.
+
+### Changed
+
+- Added regression coverage for the `python -m snake_game` package launcher.
+
 ## 1.6.1 - 2026-07-29
 
 ### Added

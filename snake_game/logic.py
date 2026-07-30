@@ -1,4 +1,5 @@
 import random
+from collections.abc import Callable
 
 from snake_game.config import GameConfig, UserSettings, rules_for_difficulty
 from snake_game.events import EventEmitter, GameEvent, GameEventType
@@ -256,6 +257,8 @@ def advance_simulation(
     speed_multiplier: float = 1.0,
     phase_active: bool = False,
     emit: EventEmitter | None = None,
+    after_step: Callable[[], None] | None = None,
+    modifiers: Callable[[], tuple[int, float, bool]] | None = None,
 ) -> int:
     if state.status != GameStatus.RUNNING:
         return 0
@@ -264,7 +267,14 @@ def advance_simulation(
     steps_taken = 0
 
     while steps_taken < config.max_steps_per_frame:
-        effective_steps_per_second = max(0.1, state.steps_per_second * max(0.1, speed_multiplier))
+        current_score_multiplier = score_multiplier
+        current_speed_multiplier = speed_multiplier
+        current_phase_active = phase_active
+        if modifiers is not None:
+            current_score_multiplier, current_speed_multiplier, current_phase_active = modifiers()
+        effective_steps_per_second = max(
+            0.1, state.steps_per_second * max(0.1, current_speed_multiplier)
+        )
         step_interval = 1.0 / effective_steps_per_second
         if state.accumulator_seconds < step_interval:
             break
@@ -274,8 +284,8 @@ def advance_simulation(
             state,
             config,
             rng,
-            score_multiplier=score_multiplier,
-            phase_active=phase_active,
+            score_multiplier=current_score_multiplier,
+            phase_active=current_phase_active,
             emit=emit,
         )
         steps_taken += 1
@@ -291,9 +301,13 @@ def advance_simulation(
             previous_head_x=previous_head_x,
             previous_head_y=previous_head_y,
         )
+        if after_step is not None:
+            after_step()
         if state.status != GameStatus.RUNNING:
             break
 
+    if modifiers is not None:
+        _, speed_multiplier, _ = modifiers()
     effective_steps_per_second = max(0.1, state.steps_per_second * max(0.1, speed_multiplier))
     max_carryover = config.max_steps_per_frame * (1.0 / effective_steps_per_second)
     if state.accumulator_seconds > max_carryover:

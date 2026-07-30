@@ -23,7 +23,7 @@ from snake_game.scenes.menu_scene import MenuScene
 from snake_game.scenes.play_scene import PlayScene, direction_for_pointer
 from snake_game.scenes.progress_scene import ProgressScene
 from snake_game.scenes.settings_scene import SettingsScene
-from snake_game.systems.powerups import PowerUpType
+from snake_game.systems.powerups import PowerUpType, SpawnedPowerUp
 from snake_game.types import Direction, GameStatus, MapMode, SceneId
 from snake_game.ui.components import draw_save_warning
 from snake_game.ui.theme import resolve_theme
@@ -404,6 +404,25 @@ def test_floating_score_rises_fades_and_expires(app_context: AppContext) -> None
 
     scene._update_floating_scores(1.0)
     assert scene.floating_scores == []
+
+
+def test_powerup_applies_before_the_next_step_in_one_update(app_context: AppContext) -> None:
+    scene = PlayScene(app_context)
+    scene.countdown_remaining = 0.0
+    scene.onboarding_visible = False
+    head_x, head_y = scene.state.snake[0]
+    scene.powerups.spawned = SpawnedPowerUp(
+        type=PowerUpType.DOUBLE_SCORE,
+        position=(head_x + 1, head_y),
+        remaining_seconds=5.0,
+    )
+    scene.state.food = (head_x + 2, head_y)
+
+    scene.update(0.30)
+
+    assert scene.state.score == scene.state.score_per_food * 2
+    assert scene.powerups.spawned is None
+    assert scene.powerups.is_active(PowerUpType.DOUBLE_SCORE)
 
 
 def test_reduced_motion_keeps_floating_score_stationary(app_context: AppContext) -> None:

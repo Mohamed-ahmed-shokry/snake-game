@@ -521,107 +521,114 @@ class PlayScene(Scene):
             speed_multiplier=self.powerups.speed_multiplier(),
             phase_active=self.powerups.phase_active(),
             emit=self.ctx.event_bus.emit,
+            after_step=self._process_step_events,
+            modifiers=self._powerup_modifiers,
         )
-        self.progression.update_from_score(self.state.score, emit=self.ctx.event_bus.emit)
-
-        events = self.ctx.event_bus.drain()
-        for event in events:
-            if event.type == GameEventType.FOOD_EATEN:
-                self.ctx.audio.play("eat")
-                self.food_eaten_count += 1
-                self._register_score_feedback()
-                head_x = int(event.payload.get("head_x", self.state.snake[0][0]))
-                head_y = int(event.payload.get("head_y", self.state.snake[0][1]))
-                multiplier = max(1, int(event.payload.get("score_multiplier", 1)))
-                self._spawn_floating_score(
-                    head_x,
-                    head_y,
-                    self.state.score_per_food * multiplier,
-                )
-                self._spawn_burst(head_x, head_y, (245, 165, 95), count=10)
-
-                occupied_cells = (
-                    set(self.state.snake) | set(self.state.obstacles) | {self.state.food}
-                )
-                self.powerups.maybe_spawn(
-                    rng=self.ctx.rng,
-                    occupied_cells=occupied_cells,
-                    grid_width=self.ctx.config.grid_width,
-                    grid_height=self.ctx.config.grid_height,
-                )
-            elif event.type == GameEventType.STEP_ADVANCED:
-                head_x = int(event.payload.get("head_x", self.state.snake[0][0]))
-                head_y = int(event.payload.get("head_y", self.state.snake[0][1]))
-                previous_head_x = int(event.payload.get("previous_head_x", head_x))
-                previous_head_y = int(event.payload.get("previous_head_y", head_y))
-                self._spawn_movement_trail(previous_head_x, previous_head_y)
-                collected = self.powerups.collect_at((head_x, head_y))
-                if collected is not None:
-                    self.ctx.event_bus.emit(
-                        GameEvent(
-                            type=GameEventType.POWERUP_COLLECTED,
-                            payload={
-                                "powerup": collected.type.value,
-                                "duration_seconds": round(collected.remaining_seconds, 1),
-                            },
-                        )
-                    )
-            elif event.type == GameEventType.STAGE_ADVANCED:
-                self.ctx.audio.play("stage")
-                stage = int(event.payload.get("stage", self.progression.current_stage))
-                self.stage_banner_text = f"Stage {stage}"
-                self.stage_banner_timer = 1.2
-                self.flash_timer = max(self.flash_timer, 0.12)
-                head_x, head_y = self.state.snake[0]
-                safe_cells = {
-                    (head_x + offset_x, head_y + offset_y)
-                    for offset_x in range(-1, 2)
-                    for offset_y in range(-1, 2)
-                }
-                forbidden_cells = set(self.state.snake) | {self.state.food} | safe_cells
-                if self.powerups.spawned is not None:
-                    forbidden_cells.add(self.powerups.spawned.position)
-                added_hazards = self.hazards.advance_to_stage(
-                    stage=stage,
-                    obstacles=self.state.obstacles,
-                    forbidden_cells=forbidden_cells,
-                    grid_width=self.ctx.config.grid_width,
-                    grid_height=self.ctx.config.grid_height,
-                    rng=self.ctx.rng,
-                )
-                if added_hazards:
-                    self._show_toast(
-                        f"STAGE {stage}  |  +{len(added_hazards)} HAZARDS",
-                        resolve_theme(
-                            self.ctx.config.graphics.theme_id,
-                            self.ctx.config.graphics.colorblind_mode,
-                        ).palette.obstacle,
-                    )
-            elif event.type == GameEventType.PLAYER_DIED:
-                reason = str(event.payload.get("reason", ""))
-                if self.powerups.absorb_fatal_collision(reason):
-                    self.state.status = GameStatus.RUNNING
-                    self.ctx.audio.play("shield")
-                    self.flash_timer = max(self.flash_timer, 0.18)
-                    self.shake_timer = max(self.shake_timer, 0.12)
-                    self._show_toast("SHIELD SAVED THE RUN", (120, 210, 255), duration=2.2)
-                else:
-                    self.end_reason = reason or "collision"
-
-        for event in self.ctx.event_bus.drain():
-            if event.type == GameEventType.POWERUP_COLLECTED:
-                self.ctx.audio.play("powerup")
-                self.flash_timer = max(self.flash_timer, 0.16)
-                self.shake_timer = max(self.shake_timer, 0.08)
-                head = self.state.snake[0]
-                self._spawn_burst(head[0], head[1], (120, 210, 255), count=14)
-                powerup_name = (
-                    str(event.payload.get("powerup", "powerup")).replace("_", " ").upper()
-                )
-                self._show_toast(f"{powerup_name} ACTIVATED", (247, 198, 85))
 
         if self.state.status == GameStatus.GAME_OVER:
             self._record_and_transition()
+
+    def _powerup_modifiers(self) -> tuple[int, float, bool]:
+        return (
+            self.powerups.score_multiplier(),
+            self.powerups.speed_multiplier(),
+            self.powerups.phase_active(),
+        )
+
+    def _process_step_events(self) -> None:
+        self.progression.update_from_score(self.state.score, emit=self.ctx.event_bus.emit)
+        while events := self.ctx.event_bus.drain():
+            for event in events:
+                self._handle_game_event(event)
+
+    def _handle_game_event(self, event: GameEvent) -> None:
+        if event.type == GameEventType.FOOD_EATEN:
+            self.ctx.audio.play("eat")
+            self.food_eaten_count += 1
+            self._register_score_feedback()
+            head_x = int(event.payload.get("head_x", self.state.snake[0][0]))
+            head_y = int(event.payload.get("head_y", self.state.snake[0][1]))
+            multiplier = max(1, int(event.payload.get("score_multiplier", 1)))
+            self._spawn_floating_score(
+                head_x,
+                head_y,
+                self.state.score_per_food * multiplier,
+            )
+            self._spawn_burst(head_x, head_y, (245, 165, 95), count=10)
+
+            occupied_cells = set(self.state.snake) | set(self.state.obstacles) | {self.state.food}
+            self.powerups.maybe_spawn(
+                rng=self.ctx.rng,
+                occupied_cells=occupied_cells,
+                grid_width=self.ctx.config.grid_width,
+                grid_height=self.ctx.config.grid_height,
+            )
+        elif event.type == GameEventType.STEP_ADVANCED:
+            head_x = int(event.payload.get("head_x", self.state.snake[0][0]))
+            head_y = int(event.payload.get("head_y", self.state.snake[0][1]))
+            previous_head_x = int(event.payload.get("previous_head_x", head_x))
+            previous_head_y = int(event.payload.get("previous_head_y", head_y))
+            self._spawn_movement_trail(previous_head_x, previous_head_y)
+            collected = self.powerups.collect_at((head_x, head_y))
+            if collected is not None:
+                self.ctx.event_bus.emit(
+                    GameEvent(
+                        type=GameEventType.POWERUP_COLLECTED,
+                        payload={
+                            "powerup": collected.type.value,
+                            "duration_seconds": round(collected.remaining_seconds, 1),
+                        },
+                    )
+                )
+        elif event.type == GameEventType.STAGE_ADVANCED:
+            self.ctx.audio.play("stage")
+            stage = int(event.payload.get("stage", self.progression.current_stage))
+            self.stage_banner_text = f"Stage {stage}"
+            self.stage_banner_timer = 1.2
+            self.flash_timer = max(self.flash_timer, 0.12)
+            head_x, head_y = self.state.snake[0]
+            safe_cells = {
+                (head_x + offset_x, head_y + offset_y)
+                for offset_x in range(-1, 2)
+                for offset_y in range(-1, 2)
+            }
+            forbidden_cells = set(self.state.snake) | {self.state.food} | safe_cells
+            if self.powerups.spawned is not None:
+                forbidden_cells.add(self.powerups.spawned.position)
+            added_hazards = self.hazards.advance_to_stage(
+                stage=stage,
+                obstacles=self.state.obstacles,
+                forbidden_cells=forbidden_cells,
+                grid_width=self.ctx.config.grid_width,
+                grid_height=self.ctx.config.grid_height,
+                rng=self.ctx.rng,
+            )
+            if added_hazards:
+                self._show_toast(
+                    f"STAGE {stage}  |  +{len(added_hazards)} HAZARDS",
+                    resolve_theme(
+                        self.ctx.config.graphics.theme_id,
+                        self.ctx.config.graphics.colorblind_mode,
+                    ).palette.obstacle,
+                )
+        elif event.type == GameEventType.PLAYER_DIED:
+            reason = str(event.payload.get("reason", ""))
+            if self.powerups.absorb_fatal_collision(reason):
+                self.state.status = GameStatus.RUNNING
+                self.ctx.audio.play("shield")
+                self.flash_timer = max(self.flash_timer, 0.18)
+                self.shake_timer = max(self.shake_timer, 0.12)
+                self._show_toast("SHIELD SAVED THE RUN", (120, 210, 255), duration=2.2)
+            else:
+                self.end_reason = reason or "collision"
+        elif event.type == GameEventType.POWERUP_COLLECTED:
+            self.ctx.audio.play("powerup")
+            self.flash_timer = max(self.flash_timer, 0.16)
+            self.shake_timer = max(self.shake_timer, 0.08)
+            head = self.state.snake[0]
+            self._spawn_burst(head[0], head[1], (120, 210, 255), count=14)
+            powerup_name = str(event.payload.get("powerup", "powerup")).replace("_", " ").upper()
+            self._show_toast(f"{powerup_name} ACTIVATED", (247, 198, 85))
 
     def _camera_offset(self) -> tuple[int, int]:
         if self.ctx.config.graphics.reduced_motion:

@@ -425,6 +425,29 @@ def test_powerup_applies_before_the_next_step_in_one_update(app_context: AppCont
     assert scene.powerups.is_active(PowerUpType.DOUBLE_SCORE)
 
 
+def test_shield_collision_stops_remaining_steps_in_the_current_frame(
+    app_context: AppContext,
+) -> None:
+    scene = PlayScene(app_context)
+    scene.countdown_remaining = 0.0
+    scene.onboarding_visible = False
+    scene.state.snake = [(app_context.config.grid_width - 1, 3), (38, 3), (37, 3)]
+    scene.state.direction = Direction.RIGHT
+    scene.state.food = (0, 0)
+    scene.powerups.spawned = SpawnedPowerUp(
+        type=PowerUpType.SHIELD,
+        position=scene.state.snake[0],
+        remaining_seconds=5.0,
+    )
+    scene.powerups.collect_at(scene.state.snake[0])
+
+    scene.update(1.0)
+
+    assert scene.state.status == GameStatus.RUNNING
+    assert scene.score_recorded is False
+    assert scene.powerups.is_active(PowerUpType.SHIELD) is False
+
+
 def test_reduced_motion_keeps_floating_score_stationary(app_context: AppContext) -> None:
     app_context.config.graphics.reduced_motion = True
     scene = PlayScene(app_context)

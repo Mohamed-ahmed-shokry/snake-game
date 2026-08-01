@@ -257,7 +257,7 @@ def advance_simulation(
     speed_multiplier: float = 1.0,
     phase_active: bool = False,
     emit: EventEmitter | None = None,
-    after_step: Callable[[], None] | None = None,
+    after_step: Callable[[], bool | None] | None = None,
     modifiers: Callable[[], tuple[int, float, bool]] | None = None,
 ) -> int:
     if state.status != GameStatus.RUNNING:
@@ -301,8 +301,8 @@ def advance_simulation(
             previous_head_x=previous_head_x,
             previous_head_y=previous_head_y,
         )
-        if after_step is not None:
-            after_step()
+        if after_step is not None and after_step() is False:
+            break
         if state.status != GameStatus.RUNNING:
             break
 

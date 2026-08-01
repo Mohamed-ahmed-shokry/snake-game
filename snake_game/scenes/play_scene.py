@@ -535,13 +535,16 @@ class PlayScene(Scene):
             self.powerups.phase_active(),
         )
 
-    def _process_step_events(self) -> None:
+    def _process_step_events(self) -> bool:
+        continue_simulation = True
         self.progression.update_from_score(self.state.score, emit=self.ctx.event_bus.emit)
         while events := self.ctx.event_bus.drain():
             for event in events:
-                self._handle_game_event(event)
+                if self._handle_game_event(event) is False:
+                    continue_simulation = False
+        return continue_simulation
 
-    def _handle_game_event(self, event: GameEvent) -> None:
+    def _handle_game_event(self, event: GameEvent) -> bool:
         if event.type == GameEventType.FOOD_EATEN:
             self.ctx.audio.play("eat")
             self.food_eaten_count += 1
@@ -619,6 +622,7 @@ class PlayScene(Scene):
                 self.flash_timer = max(self.flash_timer, 0.18)
                 self.shake_timer = max(self.shake_timer, 0.12)
                 self._show_toast("SHIELD SAVED THE RUN", (120, 210, 255), duration=2.2)
+                return False
             else:
                 self.end_reason = reason or "collision"
         elif event.type == GameEventType.POWERUP_COLLECTED:
@@ -629,6 +633,7 @@ class PlayScene(Scene):
             self._spawn_burst(head[0], head[1], (120, 210, 255), count=14)
             powerup_name = str(event.payload.get("powerup", "powerup")).replace("_", " ").upper()
             self._show_toast(f"{powerup_name} ACTIVATED", (247, 198, 85))
+        return True
 
     def _camera_offset(self) -> tuple[int, int]:
         if self.ctx.config.graphics.reduced_motion:

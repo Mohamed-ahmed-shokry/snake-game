@@ -10,6 +10,10 @@ MIN_WINDOW_WIDTH = 800
 MIN_WINDOW_HEIGHT = 600
 
 
+def _is_finite_number(value: object) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
+
+
 def normalize_colorblind_mode(value: object, default: str = DEFAULT_COLORBLIND_MODE) -> str:
     if not isinstance(value, str):
         return default
@@ -109,6 +113,19 @@ class GameConfig:
         return self.window_height // self.cell_size
 
     def validate(self) -> None:
+        for field_name in (
+            "window_width",
+            "window_height",
+            "cell_size",
+            "render_fps",
+            "max_steps_per_frame",
+            "obstacle_count",
+            "leaderboard_limit",
+            "stage_points_interval",
+        ):
+            value = getattr(self, field_name)
+            if isinstance(value, bool) or not isinstance(value, int):
+                raise ValueError(f"{field_name} must be an integer")
         if self.window_width <= 0:
             raise ValueError("window_width must be > 0")
         if self.window_height <= 0:
@@ -129,7 +146,7 @@ class GameConfig:
             raise ValueError("render_fps must be >= 1")
         if self.max_steps_per_frame < 1:
             raise ValueError("max_steps_per_frame must be >= 1")
-        if not math.isfinite(self.countdown_seconds) or self.countdown_seconds < 0:
+        if not _is_finite_number(self.countdown_seconds) or self.countdown_seconds < 0:
             raise ValueError("countdown_seconds must be finite and >= 0")
         if self.obstacle_count < 0:
             raise ValueError("obstacle_count must be >= 0")
@@ -137,11 +154,18 @@ class GameConfig:
             raise ValueError("leaderboard_limit must be >= 1")
         if self.stage_points_interval < 1:
             raise ValueError("stage_points_interval must be >= 1")
-        if not self.data_file.strip():
+        if not isinstance(self.data_file, str) or not self.data_file.strip():
             raise ValueError("data_file must not be empty")
         if Path(self.data_file).is_dir():
             raise ValueError("data_file must point to a file, not a directory")
-        if not math.isfinite(self.graphics.ui_scale) or self.graphics.ui_scale <= 0:
+        if not isinstance(self.graphics, GraphicsSettings):
+            raise ValueError("graphics must be a GraphicsSettings instance")
+        if not isinstance(self.graphics.theme_id, ThemeId):
+            raise ValueError("graphics.theme_id must be a ThemeId")
+        if not _is_finite_number(self.graphics.ui_scale) or self.graphics.ui_scale <= 0:
             raise ValueError("graphics.ui_scale must be finite and > 0")
-        if self.graphics.colorblind_mode not in COLORBLIND_MODES:
+        if (
+            not isinstance(self.graphics.colorblind_mode, str)
+            or self.graphics.colorblind_mode not in COLORBLIND_MODES
+        ):
             raise ValueError("graphics.colorblind_mode must be a supported mode")

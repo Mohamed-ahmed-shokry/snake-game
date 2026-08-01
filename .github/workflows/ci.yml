@@ -35,6 +35,9 @@ jobs:
       - name: Install dependencies
         run: uv sync --locked --group dev
 
+      - name: Verify lockfile
+        run: uv lock --check
+
       - name: Lint
         run: uv run --frozen ruff check .
 
@@ -46,6 +49,9 @@ jobs:
 
       - name: Build package
         run: uv build
+
+      - name: Validate distribution metadata
+        run: uv run --frozen twine check dist/*
 
       - name: Smoke test wheel
         run: uv run --isolated --no-project --with ./dist/*.whl snake-game --version

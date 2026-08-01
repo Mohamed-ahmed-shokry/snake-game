@@ -92,13 +92,16 @@ uv run python -m pytest
 Run the same checks used by continuous integration:
 
 ```bash
+uv lock --check
 uv run ruff check .
 uv run ruff format --check .
 uv run python -m pytest --cov=snake_game --cov-report=term-missing
 uv build
+uv run --frozen twine check dist/*
+uv run --isolated --no-project --with ./dist/*.whl snake-game --version
 ```
 
-The test suite enforces at least 75% branch coverage. `uv build` creates an installable wheel and source archive in `dist/`.
+The test suite enforces at least 75% branch coverage. The release checks verify the lockfile, build both distribution formats, validate their metadata, and run the installed wheel. `uv build` creates an installable wheel and source archive in `dist/`.
 
 ## Controls
 

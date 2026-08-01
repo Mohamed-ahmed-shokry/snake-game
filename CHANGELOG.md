@@ -2,6 +2,17 @@
 
 Notable user-facing and engineering changes are recorded here. The project follows [Semantic Versioning](https://semver.org/).
 
+## 1.6.3 - 2026-08-01
+
+### Changed
+
+- Continuous integration now verifies the lockfile, distribution metadata, and the installed wheel in addition to tests, linting, formatting, and builds.
+
+### Fixed
+
+- A Shield save now stops the remaining catch-up steps in that frame, preventing a second immediate collision during a momentary frame hitch.
+- Programmatic configuration rejects non-integer, non-finite, and malformed values before Pygame or gameplay can encounter them.
+
 ## 1.6.2 - 2026-07-31
 
 ### Fixed

@@ -2,16 +2,45 @@ import math
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from snake_game.types import Difficulty, MapMode, ThemeId
+import pygame
+
+from snake_game.types import Difficulty, Direction, MapMode, ThemeId
 
 COLORBLIND_MODES: tuple[str, ...] = ("off", "deuteranopia", "tritanopia", "high_contrast")
 DEFAULT_COLORBLIND_MODE = "off"
 MIN_WINDOW_WIDTH = 800
 MIN_WINDOW_HEIGHT = 600
 
+DEFAULT_KEY_BINDINGS: dict[str, int] = {
+    "move_up": pygame.K_UP,
+    "move_down": pygame.K_DOWN,
+    "move_left": pygame.K_LEFT,
+    "move_right": pygame.K_RIGHT,
+    "move_up_alt": pygame.K_w,
+    "move_down_alt": pygame.K_s,
+    "move_left_alt": pygame.K_a,
+    "move_right_alt": pygame.K_d,
+    "pause": pygame.K_p,
+    "pause_alt": pygame.K_SPACE,
+    "mute": pygame.K_m,
+    "fullscreen": pygame.K_F11,
+    "help": pygame.K_h,
+    "menu_back": pygame.K_ESCAPE,
+    "confirm": pygame.K_RETURN,
+    "confirm_alt": pygame.K_SPACE,
+}
+
 
 def _is_finite_number(value: object) -> bool:
     return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
+
+
+def _coerce_key(value: object, default: int) -> int:
+    if isinstance(value, bool):
+        return default
+    if isinstance(value, int):
+        return value
+    return default
 
 
 def normalize_colorblind_mode(value: object, default: str = DEFAULT_COLORBLIND_MODE) -> str:
@@ -35,11 +64,89 @@ class GameRules:
 
 
 @dataclass(slots=True)
+class KeyBindings:
+    move_up: int = pygame.K_UP
+    move_down: int = pygame.K_DOWN
+    move_left: int = pygame.K_LEFT
+    move_right: int = pygame.K_RIGHT
+    move_up_alt: int = pygame.K_w
+    move_down_alt: int = pygame.K_s
+    move_left_alt: int = pygame.K_a
+    move_right_alt: int = pygame.K_d
+    pause: int = pygame.K_p
+    pause_alt: int = pygame.K_SPACE
+    mute: int = pygame.K_m
+    fullscreen: int = pygame.K_F11
+    help: int = pygame.K_h
+    menu_back: int = pygame.K_ESCAPE
+    confirm: int = pygame.K_RETURN
+    confirm_alt: int = pygame.K_SPACE
+
+    def to_dict(self) -> dict[str, int]:
+        return {
+            "move_up": self.move_up,
+            "move_down": self.move_down,
+            "move_left": self.move_left,
+            "move_right": self.move_right,
+            "move_up_alt": self.move_up_alt,
+            "move_down_alt": self.move_down_alt,
+            "move_left_alt": self.move_left_alt,
+            "move_right_alt": self.move_right_alt,
+            "pause": self.pause,
+            "pause_alt": self.pause_alt,
+            "mute": self.mute,
+            "fullscreen": self.fullscreen,
+            "help": self.help,
+            "menu_back": self.menu_back,
+            "confirm": self.confirm,
+            "confirm_alt": self.confirm_alt,
+        }
+
+    @classmethod
+    def from_dict(cls, data: object) -> "KeyBindings":
+        if not isinstance(data, dict):
+            return cls()
+        return cls(
+            move_up=_coerce_key(data.get("move_up"), pygame.K_UP),
+            move_down=_coerce_key(data.get("move_down"), pygame.K_DOWN),
+            move_left=_coerce_key(data.get("move_left"), pygame.K_LEFT),
+            move_right=_coerce_key(data.get("move_right"), pygame.K_RIGHT),
+            move_up_alt=_coerce_key(data.get("move_up_alt"), pygame.K_w),
+            move_down_alt=_coerce_key(data.get("move_down_alt"), pygame.K_s),
+            move_left_alt=_coerce_key(data.get("move_left_alt"), pygame.K_a),
+            move_right_alt=_coerce_key(data.get("move_right_alt"), pygame.K_d),
+            pause=_coerce_key(data.get("pause"), pygame.K_p),
+            pause_alt=_coerce_key(data.get("pause_alt"), pygame.K_SPACE),
+            mute=_coerce_key(data.get("mute"), pygame.K_m),
+            fullscreen=_coerce_key(data.get("fullscreen"), pygame.K_F11),
+            help=_coerce_key(data.get("help"), pygame.K_h),
+            menu_back=_coerce_key(data.get("menu_back"), pygame.K_ESCAPE),
+            confirm=_coerce_key(data.get("confirm"), pygame.K_RETURN),
+            confirm_alt=_coerce_key(data.get("confirm_alt"), pygame.K_SPACE),
+        )
+
+    def get_direction_keys(self) -> dict[int, Direction]:
+        from snake_game.types import Direction
+
+        return {
+            self.move_up: Direction.UP,
+            self.move_down: Direction.DOWN,
+            self.move_left: Direction.LEFT,
+            self.move_right: Direction.RIGHT,
+            self.move_up_alt: Direction.UP,
+            self.move_down_alt: Direction.DOWN,
+            self.move_left_alt: Direction.LEFT,
+            self.move_right_alt: Direction.RIGHT,
+        }
+
+
+@dataclass(slots=True)
 class UserSettings:
     difficulty: Difficulty = Difficulty.NORMAL
     map_mode: MapMode = MapMode.BOUNDED
     obstacles_enabled: bool = False
     muted: bool = False
+    key_bindings: KeyBindings = field(default_factory=KeyBindings)
 
 
 @dataclass(slots=True)

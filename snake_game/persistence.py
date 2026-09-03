@@ -8,7 +8,7 @@ from datetime import datetime
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
-from snake_game.config import GraphicsSettings, UserSettings, normalize_colorblind_mode
+from snake_game.config import GraphicsSettings, KeyBindings, UserSettings, normalize_colorblind_mode
 from snake_game.types import Difficulty, MapMode, ThemeId
 
 SAVE_SCHEMA_VERSION = 4
@@ -65,6 +65,7 @@ def _settings_to_dict(settings: UserSettings) -> dict[str, object]:
         "map_mode": settings.map_mode.value,
         "obstacles_enabled": settings.obstacles_enabled,
         "muted": settings.muted,
+        "key_bindings": settings.key_bindings.to_dict(),
     }
 
 
@@ -110,6 +111,7 @@ def _settings_from_dict(data: object) -> UserSettings:
         map_mode=map_mode,
         obstacles_enabled=_coerce_bool(data.get("obstacles_enabled"), False),
         muted=_coerce_bool(data.get("muted"), False),
+        key_bindings=KeyBindings.from_dict(data.get("key_bindings")),
     )
 
 

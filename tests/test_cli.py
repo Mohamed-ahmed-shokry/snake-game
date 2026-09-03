@@ -89,3 +89,103 @@ def test_module_launcher_delegates_to_cli(monkeypatch: pytest.MonkeyPatch) -> No
     runpy.run_module("snake_game.__main__", run_name="__main__")
 
     assert calls == [None]
+
+
+def test_cli_export_save_creates_timestamped_copy(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from snake_game.persistence import PersistentData, save_persistent_data
+
+    save_path = tmp_path / "save.json"
+    save_persistent_data(PersistentData(), save_path)
+
+    main(["--data-file", str(save_path), "--export-save"])
+
+    out = capsys.readouterr().out
+    assert "Exported save to" in out
+    exports = list(tmp_path.glob("save.json.export-*"))
+    assert len(exports) == 1
+    assert exports[0].read_bytes() == save_path.read_bytes()
+
+
+def test_cli_export_save_to_explicit_destination(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from snake_game.persistence import PersistentData, save_persistent_data
+
+    save_path = tmp_path / "save.json"
+    save_persistent_data(PersistentData(), save_path)
+    dest = tmp_path / "backup.json"
+
+    main(["--data-file", str(save_path), "--export-save", str(dest)])
+
+    assert dest.read_bytes() == save_path.read_bytes()
+    assert "Exported save to" in capsys.readouterr().out
+
+
+def test_cli_export_save_without_save_exits_with_error(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    with pytest.raises(SystemExit) as exit_info:
+        main(["--data-file", str(tmp_path / "missing.json"), "--export-save"])
+
+    assert exit_info.value.code == 2
+    assert "No save file found" in capsys.readouterr().err
+
+
+def test_cli_import_save_replaces_current_save(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    import json
+
+    from snake_game.persistence import PersistentData, save_persistent_data
+
+    save_path = tmp_path / "save.json"
+    save_persistent_data(PersistentData(), save_path)
+    source = tmp_path / "other.json"
+    source.write_text(json.dumps({"schema_version": 4, "onboarding_seen": True}), encoding="utf-8")
+
+    main(["--data-file", str(save_path), "--import-save", str(source)])
+
+    assert "Imported save from" in capsys.readouterr().out
+    assert json.loads(save_path.read_text(encoding="utf-8"))["onboarding_seen"] is True
+    assert len(list(tmp_path.glob("save.json.pre-import-*"))) == 1
+
+
+def test_cli_import_save_rejects_invalid_file(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from snake_game.persistence import PersistentData, save_persistent_data
+
+    save_path = tmp_path / "save.json"
+    save_persistent_data(PersistentData(), save_path)
+    bad = tmp_path / "bad.json"
+    bad.write_text("{not-json", encoding="utf-8")
+
+    with pytest.raises(SystemExit) as exit_info:
+        main(["--data-file", str(save_path), "--import-save", str(bad)])
+
+    assert exit_info.value.code == 2
+    assert "not a valid save" in capsys.readouterr().err
+
+
+def test_cli_reset_save_requires_confirmation(tmp_path: Path) -> None:
+    with pytest.raises(SystemExit) as exit_info:
+        main(["--data-file", str(tmp_path / "save.json"), "--reset-save"])
+
+    assert exit_info.value.code == 2
+
+
+def test_cli_reset_save_backs_up_and_resets(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from snake_game.persistence import PersistentData, load_persistent_data, save_persistent_data
+
+    save_path = tmp_path / "save.json"
+    save_persistent_data(PersistentData(onboarding_seen=True), save_path)
+
+    main(["--data-file", str(save_path), "--reset-save", "--yes"])
+
+    assert "Reset save; previous save backed up to" in capsys.readouterr().out
+    assert load_persistent_data(save_path).onboarding_seen is False
+    assert len(list(tmp_path.glob("save.json.pre-reset-*"))) == 1

@@ -80,6 +80,10 @@ class Scene:
     def handle_event(self, event: pygame.event.Event) -> None:
         raise NotImplementedError
 
+    def handle_gamepad_event(self, event: pygame.event.Event) -> None:
+        """Handle gamepad-specific events. Override in subclasses."""
+        pass
+
     def update(self, delta_seconds: float) -> None:
         raise NotImplementedError
 

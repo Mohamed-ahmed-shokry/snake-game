@@ -73,13 +73,15 @@ def test_cli_presents_invalid_configuration_without_a_traceback(
 
 
 def test_cli_reports_release_version(capsys: pytest.CaptureFixture[str]) -> None:
+    from snake_game import __version__
+
     parser = build_parser()
 
     with pytest.raises(SystemExit) as exit_info:
         parser.parse_args(["--version"])
 
     assert exit_info.value.code == 0
-    assert capsys.readouterr().out.strip() == "Snake Arcade 1.6.3"
+    assert capsys.readouterr().out.strip() == f"Snake Arcade {__version__}"
 
 
 def test_module_launcher_delegates_to_cli(monkeypatch: pytest.MonkeyPatch) -> None:

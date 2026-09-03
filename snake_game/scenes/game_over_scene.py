@@ -92,21 +92,22 @@ class GameOverScene(Scene):
         if event.type != pygame.KEYDOWN:
             return
 
-        if event.key in (pygame.K_UP, pygame.K_w):
+        key_bindings = self.ctx.persistent_data.settings.key_bindings
+        if event.key in (key_bindings.move_up, key_bindings.move_up_alt):
             self.selected_index = (self.selected_index - 1) % len(self.options)
             self.ctx.audio.play("move")
             return
 
-        if event.key in (pygame.K_DOWN, pygame.K_s):
+        if event.key in (key_bindings.move_down, key_bindings.move_down_alt):
             self.selected_index = (self.selected_index + 1) % len(self.options)
             self.ctx.audio.play("move")
             return
 
-        if event.key in (pygame.K_RETURN, pygame.K_SPACE):
+        if event.key in (key_bindings.confirm, key_bindings.confirm_alt):
             self._activate_selected()
             return
 
-        if event.key == pygame.K_ESCAPE:
+        if event.key == key_bindings.menu_back:
             self.next_scene = SceneId.MENU
 
     def _activate_selected(self) -> None:
@@ -223,7 +224,8 @@ class GameOverScene(Scene):
         )
         draw_hint_footer(
             screen=screen,
-            text="Enter / Click: Select   Esc: Main Menu",
+            text=f"{pygame.key.name(self.ctx.persistent_data.settings.key_bindings.confirm).upper()} / Click: Select   "
+            f"{pygame.key.name(self.ctx.persistent_data.settings.key_bindings.menu_back).upper()}: Main Menu",
             width=self.ctx.config.window_width,
             y=508 + offset_y,
             font=self.ctx.small_font,

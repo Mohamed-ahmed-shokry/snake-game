@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from snake_game.config import GraphicsSettings, UserSettings
+from snake_game.config import GamepadSettings, GraphicsSettings, UserSettings
 from snake_game.persistence import (
     MAX_SAVE_FILE_BYTES,
     SAVE_SCHEMA_VERSION,
@@ -48,6 +48,12 @@ def test_save_and_load_round_trip(tmp_path: Path) -> None:
             map_mode=MapMode.WRAP,
             obstacles_enabled=True,
             muted=True,
+            gamepad_settings=GamepadSettings(
+                enabled=False,
+                dead_zone=0.4,
+                button_pause=8,
+                button_confirm=2,
+            ),
         ),
         graphics=GraphicsSettings(
             theme_id=ThemeId.SUNSET,
@@ -67,6 +73,12 @@ def test_save_and_load_round_trip(tmp_path: Path) -> None:
     assert loaded.settings.map_mode == MapMode.WRAP
     assert loaded.settings.obstacles_enabled is True
     assert loaded.settings.muted is True
+    assert loaded.settings.gamepad_settings.enabled is False
+    assert loaded.settings.gamepad_settings.dead_zone == 0.4
+    assert loaded.settings.gamepad_settings.button_pause == 8
+    assert loaded.settings.gamepad_settings.button_confirm == 2
+    assert loaded.settings.gamepad_settings.button_move_up == 11  # default
+
     assert loaded.graphics.theme_id == ThemeId.SUNSET
     assert loaded.graphics.ui_scale == 1.25
     assert loaded.graphics.show_grid is False

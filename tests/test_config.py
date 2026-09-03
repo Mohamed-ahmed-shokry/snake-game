@@ -2,7 +2,7 @@ import math
 
 import pytest
 
-from snake_game.config import GameConfig, GraphicsSettings
+from snake_game.config import GameConfig, GamepadSettings, GraphicsSettings
 
 
 @pytest.mark.parametrize(
@@ -54,3 +54,71 @@ def test_validate_rejects_invalid_data_file_type() -> None:
 
     with pytest.raises(ValueError, match="data_file must not be empty"):
         config.validate()
+
+
+def test_gamepad_settings_defaults() -> None:
+    settings = GamepadSettings()
+    assert settings.enabled is True
+    assert settings.dead_zone == 0.3
+    assert settings.button_move_up == 11
+    assert settings.button_move_down == 12
+    assert settings.button_move_left == 13
+    assert settings.button_move_right == 14
+    assert settings.button_pause == 7
+    assert settings.button_mute == 6
+    assert settings.button_confirm == 0
+    assert settings.button_menu_back == 1
+    assert settings.button_help == 3
+
+
+def test_gamepad_settings_to_dict() -> None:
+    settings = GamepadSettings(enabled=False, dead_zone=0.5, button_pause=8)
+    data = settings.to_dict()
+    assert data["enabled"] is False
+    assert data["dead_zone"] == 0.5
+    assert data["button_pause"] == 8
+    assert data["button_confirm"] == 0  # default
+
+
+def test_gamepad_settings_from_dict() -> None:
+    data = {
+        "enabled": False,
+        "dead_zone": 0.4,
+        "button_move_up": 15,
+        "button_pause": 9,
+    }
+    settings = GamepadSettings.from_dict(data)
+    assert settings.enabled is False
+    assert settings.dead_zone == 0.4
+    assert settings.button_move_up == 15
+    assert settings.button_pause == 9
+    assert settings.button_confirm == 0  # default
+
+
+def test_gamepad_settings_from_dict_invalid() -> None:
+    settings = GamepadSettings.from_dict("not a dict")
+    assert settings.enabled is True  # default
+    settings = GamepadSettings.from_dict(None)
+    assert settings.enabled is True  # default
+
+
+def test_gamepad_settings_coerce_values() -> None:
+    data = {
+        "enabled": "true",
+        "dead_zone": "0.25",
+        "button_move_up": "12",
+    }
+    settings = GamepadSettings.from_dict(data)
+    assert settings.enabled is True
+    assert settings.dead_zone == 0.25
+    assert settings.button_move_up == 12
+
+    data = {
+        "enabled": "false",
+        "dead_zone": math.nan,
+        "button_move_up": math.inf,
+    }
+    settings = GamepadSettings.from_dict(data)
+    assert settings.enabled is False
+    assert settings.dead_zone == 0.3  # default
+    assert settings.button_move_up == 11  # default

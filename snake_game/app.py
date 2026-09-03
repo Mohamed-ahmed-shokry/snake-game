@@ -103,13 +103,15 @@ def run(config: GameConfig | None = None, seed: int | None = None) -> None:
                 if event.type == pygame.QUIT:
                     running = False
                     break
-                if event.type == pygame.KEYDOWN and event.key == pygame.K_F11:
-                    fullscreen = not fullscreen
-                    screen = _create_display(config, fullscreen=fullscreen)
-                    continue
-                if event.type == pygame.KEYDOWN and event.key == pygame.K_m:
-                    _toggle_mute(ctx)
-                    continue
+                if event.type == pygame.KEYDOWN:
+                    key_bindings = ctx.persistent_data.settings.key_bindings
+                    if event.key == key_bindings.fullscreen:
+                        fullscreen = not fullscreen
+                        screen = _create_display(config, fullscreen=fullscreen)
+                        continue
+                    if event.key == key_bindings.mute:
+                        _toggle_mute(ctx)
+                        continue
                 scene.handle_event(event)
 
             if not running:

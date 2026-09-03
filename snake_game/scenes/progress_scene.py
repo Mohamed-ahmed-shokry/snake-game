@@ -35,13 +35,15 @@ class ProgressScene(Scene):
             self.ctx.audio.play("confirm")
             self.next_scene = SceneId.MENU
             return
-        if event.type == pygame.KEYDOWN and event.key in (
-            pygame.K_ESCAPE,
-            pygame.K_RETURN,
-            pygame.K_SPACE,
-        ):
-            self.ctx.audio.play("confirm")
-            self.next_scene = SceneId.MENU
+        if event.type == pygame.KEYDOWN:
+            key_bindings = self.ctx.persistent_data.settings.key_bindings
+            if event.key in (
+                key_bindings.menu_back,
+                key_bindings.confirm,
+                key_bindings.confirm_alt,
+            ):
+                self.ctx.audio.play("confirm")
+                self.next_scene = SceneId.MENU
 
     def update(self, delta_seconds: float) -> None:
         _ = delta_seconds
@@ -123,7 +125,9 @@ class ProgressScene(Scene):
 
         draw_hint_footer(
             screen=screen,
-            text="Enter, Esc, or Click: Main Menu",
+            text=f"{pygame.key.name(self.ctx.persistent_data.settings.key_bindings.confirm).upper()}, "
+            f"{pygame.key.name(self.ctx.persistent_data.settings.key_bindings.menu_back).upper()}, "
+            f"or Click: Main Menu",
             width=self.ctx.config.window_width,
             y=548 + offset_y,
             font=self.ctx.small_font,

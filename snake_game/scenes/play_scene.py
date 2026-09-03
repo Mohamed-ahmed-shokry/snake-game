@@ -438,26 +438,34 @@ class PlayScene(Scene):
         if event.type != pygame.KEYDOWN:
             return
 
+        key_bindings = self.ctx.persistent_data.settings.key_bindings
+        direction_keys = key_bindings.get_direction_keys()
+
         if self.onboarding_visible:
-            if event.key in (pygame.K_RETURN, pygame.K_SPACE, pygame.K_h, pygame.K_ESCAPE):
+            if event.key in (
+                key_bindings.confirm,
+                key_bindings.confirm_alt,
+                key_bindings.help,
+                key_bindings.menu_back,
+            ):
                 self._dismiss_onboarding()
                 self.ctx.audio.play("confirm")
             return
 
-        if event.key == pygame.K_h:
+        if event.key == key_bindings.help:
             self.onboarding_visible = True
             self.ctx.audio.play("confirm")
             return
 
-        if event.key == pygame.K_ESCAPE:
+        if event.key == key_bindings.menu_back:
             self.next_scene = SceneId.MENU
             return
 
-        if event.key in KEY_TO_DIRECTION:
-            queue_direction_change(self.state, KEY_TO_DIRECTION[event.key])
+        if event.key in direction_keys:
+            queue_direction_change(self.state, direction_keys[event.key])
             return
 
-        if event.key in (pygame.K_p, pygame.K_SPACE):
+        if event.key in (key_bindings.pause, key_bindings.pause_alt):
             if self.state.status == GameStatus.RUNNING:
                 self.state.status = GameStatus.PAUSED
             elif self.state.status == GameStatus.PAUSED:

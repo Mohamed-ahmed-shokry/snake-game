@@ -30,6 +30,30 @@ DEFAULT_KEY_BINDINGS: dict[str, int] = {
     "confirm_alt": pygame.K_SPACE,
 }
 
+# Default gamepad button mappings (Xbox-style controller)
+DEFAULT_GAMEPAD_BINDINGS: dict[str, int] = {
+    "move_up": 11,  # D-pad Up
+    "move_down": 12,  # D-pad Down
+    "move_left": 13,  # D-pad Left
+    "move_right": 14,  # D-pad Right
+    "pause": 7,  # Start button
+    "mute": 6,  # Back/Select button
+    "confirm": 0,  # A button
+    "menu_back": 1,  # B button
+    "help": 3,  # Y button
+}
+
+# Gamepad axis indices
+GAMEPAD_AXIS_LEFT_X = 0
+GAMEPAD_AXIS_LEFT_Y = 1
+GAMEPAD_AXIS_RIGHT_X = 2
+GAMEPAD_AXIS_RIGHT_Y = 3
+GAMEPAD_AXIS_TRIGGER_LEFT = 4
+GAMEPAD_AXIS_TRIGGER_RIGHT = 5
+
+# Dead zone for analog sticks
+GAMEPAD_DEAD_ZONE = 0.3
+
 
 def _is_finite_number(value: object) -> bool:
     return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
@@ -40,6 +64,29 @@ def _coerce_key(value: object, default: int) -> int:
         return default
     if isinstance(value, int):
         return value
+    if isinstance(value, str):
+        try:
+            return int(value)
+        except ValueError:
+            return default
+    return default
+
+
+def _coerce_float(value: object, default: float) -> float:
+    if isinstance(value, bool):
+        return default
+    if isinstance(value, (int, float)):
+        try:
+            parsed = float(value)
+        except OverflowError:
+            return default
+        return parsed if math.isfinite(parsed) else default
+    if isinstance(value, str):
+        try:
+            parsed = float(value)
+        except ValueError:
+            return default
+        return parsed if math.isfinite(parsed) else default
     return default
 
 
@@ -141,12 +188,75 @@ class KeyBindings:
 
 
 @dataclass(slots=True)
+class GamepadSettings:
+    enabled: bool = True
+    dead_zone: float = GAMEPAD_DEAD_ZONE
+    button_move_up: int = 11
+    button_move_down: int = 12
+    button_move_left: int = 13
+    button_move_right: int = 14
+    button_pause: int = 7
+    button_mute: int = 6
+    button_confirm: int = 0
+    button_menu_back: int = 1
+    button_help: int = 3
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "enabled": self.enabled,
+            "dead_zone": self.dead_zone,
+            "button_move_up": self.button_move_up,
+            "button_move_down": self.button_move_down,
+            "button_move_left": self.button_move_left,
+            "button_move_right": self.button_move_right,
+            "button_pause": self.button_pause,
+            "button_mute": self.button_mute,
+            "button_confirm": self.button_confirm,
+            "button_menu_back": self.button_menu_back,
+            "button_help": self.button_help,
+        }
+
+    @classmethod
+    def from_dict(cls, data: object) -> "GamepadSettings":
+        if not isinstance(data, dict):
+            return cls()
+        return cls(
+            enabled=_coerce_bool(data.get("enabled"), True),
+            dead_zone=_coerce_float(data.get("dead_zone"), GAMEPAD_DEAD_ZONE),
+            button_move_up=_coerce_key(data.get("button_move_up"), 11),
+            button_move_down=_coerce_key(data.get("button_move_down"), 12),
+            button_move_left=_coerce_key(data.get("button_move_left"), 13),
+            button_move_right=_coerce_key(data.get("button_move_right"), 14),
+            button_pause=_coerce_key(data.get("button_pause"), 7),
+            button_mute=_coerce_key(data.get("button_mute"), 6),
+            button_confirm=_coerce_key(data.get("button_confirm"), 0),
+            button_menu_back=_coerce_key(data.get("button_menu_back"), 1),
+            button_help=_coerce_key(data.get("button_help"), 3),
+        )
+
+
+def _coerce_bool(value: object, default: bool) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return value != 0
+    if isinstance(value, str):
+        lowered = value.strip().lower()
+        if lowered in {"1", "true", "yes", "on"}:
+            return True
+        if lowered in {"0", "false", "no", "off"}:
+            return False
+    return default
+
+
+@dataclass(slots=True)
 class UserSettings:
     difficulty: Difficulty = Difficulty.NORMAL
     map_mode: MapMode = MapMode.BOUNDED
     obstacles_enabled: bool = False
     muted: bool = False
     key_bindings: KeyBindings = field(default_factory=KeyBindings)
+    gamepad_settings: GamepadSettings = field(default_factory=GamepadSettings)
 
 
 @dataclass(slots=True)

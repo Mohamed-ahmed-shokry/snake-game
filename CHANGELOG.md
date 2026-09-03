@@ -2,6 +2,20 @@
 
 Notable user-facing and engineering changes are recorded here. The project follows [Semantic Versioning](https://semver.org/).
 
+## 1.7.0 - 2026-09-03
+
+### Added
+
+- Customizable key bindings for all game actions (movement, pause, mute, fullscreen, help, menu navigation, confirm)
+- Key bindings persist in save file and apply across all scenes
+- Dynamic key hints in menus and game-over screens reflect current bindings
+
+### Changed
+
+- Updated all scenes (Menu, Settings, Progress, Game Over, Play) to use configurable key bindings
+- Global shortcuts (Mute, Fullscreen) now respect custom bindings
+- Settings scene navigation uses custom key bindings
+
 ## 1.6.3 - 2026-08-01
 
 ### Changed

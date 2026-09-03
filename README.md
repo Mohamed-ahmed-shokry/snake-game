@@ -10,7 +10,7 @@ A complete, modern Snake game focused on responsive controls, readable visuals, 
   <img src="docs/screenshots/gameplay.png" alt="Snake Arcade gameplay with the neon arena theme" width="900">
 </p>
 
-Version **1.6.3** is a self-contained desktop game with persistent settings, career progress, achievements, per-mode leaderboards, mouse controls, and a polished audiovisual presentation.
+Version **1.7.0** is a self-contained desktop game with persistent settings, career progress, achievements, per-mode leaderboards, mouse controls, customizable key bindings, and a polished audiovisual presentation.
 
 ## What You Get
 
@@ -105,6 +105,8 @@ The test suite enforces at least 75% branch coverage. The release checks verify 
 
 ## Controls
 
+All key bindings are customizable in **Settings → Key Bindings**. Defaults:
+
 | Context | Keys | Action |
 |---|---|---|
 | Menus | `Up/Down` or `W/S` | Navigate |
@@ -116,6 +118,7 @@ The test suite enforces at least 75% branch coverage. The release checks verify 
 | In game | `Esc` | Return to menu |
 | Anywhere | `M` | Mute / unmute sound |
 | Anywhere | `F11` | Toggle fullscreen |
+| Anywhere | `H` | Toggle help overlay |
 
 The game also supports mouse navigation in menus and click-to-steer during a run. Losing window focus automatically pauses active gameplay.
 

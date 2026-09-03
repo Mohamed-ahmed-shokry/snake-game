@@ -1,37 +1,40 @@
 # Snake Arcade - Development Plan
 
-## Current State (v1.6.3)
+## Current State (v1.8.0)
 - Complete Snake gameplay with difficulties, map modes, obstacles, power-ups, stages
 - Persistent settings, career progress, achievements, per-mode leaderboards
 - Three themes (Neon, Sunset, Ocean) with colorblind modes
 - Comprehensive graphics settings, mouse controls, fullscreen
-- 143 tests, 79% branch coverage, clean linting
+- Customizable key bindings persisted in the save file
+- Gamepad support (D-pad/stick movement, button navigation, settings UI)
+- Save management via CLI (export/import/reset with backups) and save path display
+- 166 tests, 77% branch coverage, clean linting
 
-## Phase 1: Polish & Quality of Life (v1.7.0)
+## Phase 1: Polish & Quality of Life (v1.7.0–v1.8.0) ✅ DONE
 
-### 1.1 Custom Key Bindings
-- [ ] Add key binding configuration to settings
-- [ ] Support remapping WASD/Arrows, Pause, Mute, Fullscreen, Help
-- [ ] Persist bindings in save file
-- [ ] Apply bindings across all scenes
+### 1.1 Custom Key Bindings ✅ (v1.7.0)
+- [x] Add key binding configuration to settings
+- [x] Support remapping WASD/Arrows, Pause, Mute, Fullscreen, Help
+- [x] Persist bindings in save file
+- [x] Apply bindings across all scenes
 
-### 1.2 Gamepad/Controller Support
-- [ ] Detect connected gamepads
-- [ ] Map D-pad/left stick to movement
-- [ ] Map face buttons to pause, confirm, back
-- [ ] Add controller hint overlay in menus
+### 1.2 Gamepad/Controller Support ✅ (v1.8.0)
+- [x] Detect connected gamepads
+- [x] Map D-pad/left stick to movement
+- [x] Map face buttons to pause, confirm, back
+- [x] Add controller hint overlay in menus
 
 ### 1.3 Enhanced Audio
 - [ ] Add background music tracks per theme
 - [ ] Separate volume sliders for SFX and music
 - [ ] Add audio device selection
 
-### 1.4 Save Management
-- [ ] Add "Export Save" / "Import Save" options
-- [ ] Add "Reset Progress" with confirmation
-- [ ] Show save file path in settings
+### 1.4 Save Management ✅ (v1.8.0)
+- [x] Add "Export Save" / "Import Save" options (`--export-save`, `--import-save`)
+- [x] Add "Reset Progress" with confirmation (`--reset-save --yes`)
+- [x] Show save file path on the Progress screen
 
-## Phase 2: New Game Modes (v1.8.0)
+## Phase 2: New Game Modes (v1.9.0)
 
 ### 2.1 Time Attack Mode
 - [ ] Fixed time limit (60/120/300 seconds)
@@ -49,7 +52,7 @@
 - [ ] Daily/weekly challenges with seed
 - [ ] Global leaderboards for challenges
 
-## Phase 3: Visual & UX Enhancements (v1.9.0)
+## Phase 3: Visual & UX Enhancements (v1.10.0)
 
 ### 3.1 Replay System
 - [ ] Record runs (inputs + RNG seed)
@@ -106,11 +109,12 @@
 
 ## Immediate Next Steps (Priority Order)
 
-1. **Custom Key Bindings** - High impact, requested feature
-2. **Gamepad Support** - Accessibility, broad appeal
-3. **Save Export/Import** - User data ownership
-4. **Time Attack Mode** - New gameplay variety
-5. **Extended Achievements** - Retention, goals
+1. ~~**Custom Key Bindings**~~ ✅ Done (v1.7.0)
+2. ~~**Gamepad Support**~~ ✅ Done (v1.8.0)
+3. ~~**Save Export/Import**~~ ✅ Done (v1.8.0)
+4. **Enhanced Audio** - Background music, volume sliders (Phase 1.3)
+5. **Time Attack Mode** - New gameplay variety (Phase 2.1)
+6. **Extended Achievements** - Retention, goals (Phase 4.1)
 
 ## Notes
 

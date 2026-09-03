@@ -243,6 +243,57 @@ def _backup_file(path: Path, reason: str) -> None:
         path.replace(backup_path)
 
 
+def _timestamped_sibling(path: Path, reason: str) -> Path:
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S%f")
+    return path.with_suffix(f"{path.suffix}.{reason}-{timestamp}")
+
+
+def export_save_file(data_path: Path, destination: Path | None = None) -> Path:
+    """Copy the current save to a timestamped export file. Returns the export path."""
+    if not data_path.exists() or not data_path.is_file():
+        raise FileNotFoundError(f"No save file found at {data_path}")
+    target = destination if destination is not None else _timestamped_sibling(data_path, "export")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(data_path.read_bytes())
+    return target
+
+
+def import_save_file(data_path: Path, source: Path) -> None:
+    """Replace the current save with a validated import file, backing up the old one."""
+    if not source.exists() or not source.is_file():
+        raise FileNotFoundError(f"Import file not found: {source}")
+    if source.stat().st_size > MAX_SAVE_FILE_BYTES:
+        raise ValueError(f"Import file is larger than {MAX_SAVE_FILE_BYTES} bytes: {source}")
+    try:
+        payload = json.loads(source.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError, RecursionError) as error:
+        raise ValueError(f"Import file is not a valid save: {source}") from error
+    if not isinstance(payload, dict):
+        raise ValueError(f"Import file is not a valid save: {source}")
+    schema_version = payload.get("schema_version")
+    if (
+        isinstance(schema_version, int)
+        and not isinstance(schema_version, bool)
+        and schema_version > SAVE_SCHEMA_VERSION
+    ):
+        raise ValueError(f"Import file uses an unsupported newer save version: {source}")
+    if data_path.exists() and data_path.is_file():
+        backup_path = _timestamped_sibling(data_path, "pre-import")
+        data_path.replace(backup_path)
+    data_path.parent.mkdir(parents=True, exist_ok=True)
+    data_path.write_bytes(source.read_bytes())
+
+
+def reset_save_file(data_path: Path) -> Path | None:
+    """Back up the current save (if any) and write fresh defaults. Returns backup or None."""
+    backup_path: Path | None = None
+    if data_path.exists() and data_path.is_file():
+        backup_path = _timestamped_sibling(data_path, "pre-reset")
+        data_path.replace(backup_path)
+    save_persistent_data(PersistentData(), data_path)
+    return backup_path
+
+
 def _best_global_from_leaderboard(leaderboard: dict[str, list[int]]) -> int:
     best = 0
     for scores in leaderboard.values():

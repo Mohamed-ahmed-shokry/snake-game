@@ -10,7 +10,7 @@ A complete, modern Snake game focused on responsive controls, readable visuals, 
   <img src="docs/screenshots/gameplay.png" alt="Snake Arcade gameplay with the neon arena theme" width="900">
 </p>
 
-Version **1.7.0** is a self-contained desktop game with persistent settings, career progress, achievements, per-mode leaderboards, mouse controls, customizable key bindings, and a polished audiovisual presentation.
+Version **1.8.0** is a self-contained desktop game with persistent settings, career progress, achievements, per-mode leaderboards, mouse controls, gamepad support, and a polished audiovisual presentation.
 
 ## What You Get
 
@@ -25,10 +25,15 @@ Version **1.7.0** is a self-contained desktop game with persistent settings, car
   - `Slow Time`: temporary speed slowdown
   - `Double Score`: temporary score multiplier
 - Persistent data in `data/save.json`:
-  - Settings
+  - Settings (including key bindings and gamepad preferences)
   - Graphics preferences
   - Leaderboards for every difficulty/map/obstacle combination
   - Career stats and five achievements
+- Save management without losing data:
+  - `--export-save [DEST]` copies the save to a timestamped backup (or `DEST`)
+  - `--import-save SRC` validates, backs up the current save, then replaces it
+  - `--reset-save --yes` backs up the save and starts a fresh profile
+  - The Progress screen shows the active save file path
 - UI/graphics features:
   - Theme switching (`Neon`, `Sunset`, `Ocean`)
   - Color modes (`off`, `deuteranopia`, `tritanopia`, `high_contrast`)
@@ -105,7 +110,7 @@ The test suite enforces at least 75% branch coverage. The release checks verify 
 
 ## Controls
 
-All key bindings are customizable in **Settings → Key Bindings**. Defaults:
+Keyboard defaults (stored with your save file, applied across every scene):
 
 | Context | Keys | Action |
 |---|---|---|
@@ -120,7 +125,21 @@ All key bindings are customizable in **Settings → Key Bindings**. Defaults:
 | Anywhere | `F11` | Toggle fullscreen |
 | Anywhere | `H` | Toggle help overlay |
 
-The game also supports mouse navigation in menus and click-to-steer during a run. Losing window focus automatically pauses active gameplay.
+Gamepad defaults (toggle and stick dead-zone in **Settings**):
+
+| Context | Buttons | Action |
+|---|---|---|
+| Menus | `D-pad Up/Down` | Navigate |
+| Menus | `D-pad Left/Right` | Change value |
+| Menus | `A` | Select / Change |
+| Menus | `B` | Back |
+| In game | `D-pad` or `Left Stick` | Move |
+| In game | `Start` | Pause / Resume |
+| In game | `B` | Return to menu |
+| In game | `Y` | Help overlay |
+| Anywhere | `Back/Select` | Mute / unmute sound |
+
+The game also supports mouse navigation in menus and click-to-steer during a run. Losing window focus automatically pauses active gameplay. Hot-plugged controllers are picked up automatically.
 
 ## How a Run Progresses
 
@@ -138,6 +157,8 @@ The game also supports mouse navigation in menus and click-to-steer during a run
 - Corrupt saves are moved beside the original with a `.corrupt-<timestamp>` suffix before safe defaults are loaded.
 - Unreadable, excessively nested, and oversized saves are treated as corrupt; saves larger than 1 MiB are not loaded.
 - Saves from a newer, unsupported game version are preserved with an `.unsupported-<timestamp>` suffix instead of being overwritten.
+- `--export-save` never modifies the active save; `--import-save` and `--reset-save` back up the current save as `.pre-import-<timestamp>` / `.pre-reset-<timestamp>` first.
+- `--import-save` rejects missing, oversized, corrupt, and newer-schema files without touching the active save.
 - If a write fails because the folder is unavailable or read-only, the game keeps running and displays a persistent warning.
 
 ## Troubleshooting
@@ -145,5 +166,5 @@ The game also supports mouse navigation in menus and click-to-steer during a run
 - **The game rejects a custom window size:** both dimensions must be at least `800x600` and divisible by `--cell-size`.
 - **Audio is unavailable:** the game continues silently when no compatible audio device is present.
 - **Settings or progress will not save:** confirm that `--data-file` names a file and its parent folder is writable.
-- **You want a fresh profile:** close the game, then rename or remove `data/save.json`. A new profile is created on the next launch.
+- **You want a fresh profile:** run `uv run snake-game --reset-save --yes`, or close the game and rename or remove `data/save.json`. A new profile is created on the next launch.
 - **A headless machine cannot open a window:** use the dummy SDL video and audio drivers, as configured in `.github/workflows/ci.yml`.

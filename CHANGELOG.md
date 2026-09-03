@@ -2,6 +2,24 @@
 
 Notable user-facing and engineering changes are recorded here. The project follows [Semantic Versioning](https://semver.org/).
 
+## 1.8.0 - 2026-09-04
+
+### Added
+
+- Gamepad/controller support: D-pad and left-stick movement with a configurable dead zone, face-button menu navigation, Start to pause, Y for help, and Select to mute.
+- Gamepad settings in the Settings screen (on/off toggle, stick dead-zone steps) with controller hints in menus and the onboarding panel.
+- Save management commands: `--export-save [DEST]`, `--import-save SRC` (validated, backs up the current save), and `--reset-save --yes` (backs up, then starts fresh).
+- Progress screen now shows the active save file path.
+
+### Changed
+
+- Settings layout compacted to fit the new gamepad rows.
+- The `--version` test now derives its expectation from the package version instead of a hardcoded string.
+
+### Fixed
+
+- String key codes in saved key bindings now coerce to integers instead of silently falling back to defaults.
+
 ## 1.7.0 - 2026-09-03
 
 ### Added

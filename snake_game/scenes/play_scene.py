@@ -472,6 +472,37 @@ class PlayScene(Scene):
                 self.state.status = GameStatus.RUNNING
             self.ctx.audio.play("confirm")
 
+    def handle_gamepad_event(self, event: pygame.event.Event) -> None:
+        if self.state.status != GameStatus.RUNNING and self.state.status != GameStatus.PAUSED:
+            return
+
+        gamepad_settings = self.ctx.persistent_data.settings.gamepad_settings
+        if not gamepad_settings.enabled:
+            return
+
+        if event.type == pygame.JOYBUTTONDOWN:
+            if event.button == gamepad_settings.button_pause:
+                if self.state.status == GameStatus.RUNNING:
+                    self.state.status = GameStatus.PAUSED
+                elif self.state.status == GameStatus.PAUSED:
+                    self.state.status = GameStatus.RUNNING
+                self.ctx.audio.play("confirm")
+            elif event.button == gamepad_settings.button_menu_back:
+                self.next_scene = SceneId.MENU
+            elif event.button == gamepad_settings.button_help:
+                self.onboarding_visible = True
+                self.ctx.audio.play("confirm")
+            elif event.button == gamepad_settings.button_confirm:
+                if self.onboarding_visible:
+                    self._dismiss_onboarding()
+                    self.ctx.audio.play("confirm")
+        elif event.type == pygame.JOYHATMOTION:
+            # D-pad handled via polling in app.py, but we can also handle here
+            pass
+        elif event.type == pygame.JOYAXISMOTION:
+            # Axis handled via polling in app.py
+            pass
+
     def update(self, delta_seconds: float) -> None:
         self.visual_time += max(0.0, delta_seconds)
         self._update_particles(delta_seconds)

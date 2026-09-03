@@ -44,10 +44,28 @@ def _cycle_map_mode(current: MapMode, step: int) -> MapMode:
     return values[(index + step) % len(values)]
 
 
+GAMEPAD_DEAD_ZONE_OPTIONS: tuple[float, ...] = (0.2, 0.3, 0.4, 0.5)
+
+
+def _cycle_dead_zone(current: float, step: int) -> float:
+    nearest_index = min(
+        range(len(GAMEPAD_DEAD_ZONE_OPTIONS)),
+        key=lambda index: abs(GAMEPAD_DEAD_ZONE_OPTIONS[index] - current),
+    )
+    return GAMEPAD_DEAD_ZONE_OPTIONS[(nearest_index + step) % len(GAMEPAD_DEAD_ZONE_OPTIONS)]
+
+
+def gamepad_connected() -> bool:
+    try:
+        return pygame.joystick.get_count() > 0
+    except pygame.error:
+        return False
+
+
 class SettingsScene(Scene):
     scene_id = SceneId.SETTINGS
-    option_start_y = 174
-    option_gap = 27
+    option_start_y = 150
+    option_gap = 24
     option_width = 560
     option_height = 25
 
@@ -61,6 +79,7 @@ class SettingsScene(Scene):
     def _rows(self) -> list[str]:
         settings = self.ctx.persistent_data.settings
         graphics = self.ctx.persistent_data.graphics
+        gamepad = settings.gamepad_settings
         return [
             f"Theme: {graphics.theme_id.value.capitalize()}",
             f"Color Mode: {graphics.colorblind_mode.replace('_', ' ').title()}",
@@ -73,6 +92,8 @@ class SettingsScene(Scene):
             f"Map Mode: {settings.map_mode.label}",
             f"Obstacles: {'On' if settings.obstacles_enabled else 'Off'}",
             f"Sound: {'Muted' if settings.muted else 'On'}",
+            f"Gamepad: {'On' if gamepad.enabled else 'Off'}",
+            f"Stick Dead Zone: {round(gamepad.dead_zone * 100)}%",
             "Back",
         ]
 
@@ -89,6 +110,8 @@ class SettingsScene(Scene):
             "Bounded walls or wrap-around movement.",
             "Adds hazards at the start and as each stage advances.",
             "Toggle all gameplay/menu sound effects.",
+            "Enable D-pad, stick, and button controls when a gamepad is connected.",
+            "How far the analog stick must tilt before the snake turns.",
             "Return to main menu.",
         ]
         if 0 <= index < len(descriptions):
@@ -129,6 +152,12 @@ class SettingsScene(Scene):
         elif self.selected_index == 10:
             settings.muted = not settings.muted
             self.ctx.audio.set_muted(settings.muted)
+        elif self.selected_index == 11:
+            gamepad = settings.gamepad_settings
+            gamepad.enabled = not gamepad.enabled
+        elif self.selected_index == 12:
+            gamepad = settings.gamepad_settings
+            gamepad.dead_zone = _cycle_dead_zone(gamepad.dead_zone, step)
         else:
             self.next_scene = SceneId.MENU
             self.ctx.audio.play("confirm")
@@ -278,9 +307,12 @@ class SettingsScene(Scene):
         right_name = pygame.key.name(key_bindings.move_right).upper()
         confirm_name = pygame.key.name(key_bindings.confirm).upper()
         back_name = pygame.key.name(key_bindings.menu_back).upper()
+        footer_text = f"{left_name}/{right_name} or Click: Change   Right Click: Previous   {confirm_name}: Forward   {back_name}: Back"
+        if gamepad_connected():
+            footer_text += "   Pad: D-pad/Stick + A/B"
         draw_hint_footer(
             screen=screen,
-            text=f"{left_name}/{right_name} or Click: Change   Right Click: Previous   {confirm_name}: Forward   {back_name}: Back",
+            text=footer_text,
             width=self.ctx.config.window_width,
             y=548 + offset_y,
             font=self.ctx.small_font,

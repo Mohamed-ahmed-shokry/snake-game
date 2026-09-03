@@ -680,11 +680,12 @@ def test_menu_and_settings_hit_targets_recenter_on_tall_viewport(
 def test_settings_supports_forward_and_reverse_mouse_changes(app_context: AppContext) -> None:
     scene = SettingsScene(app_context)
     original_theme = app_context.persistent_data.graphics.theme_id
+    row_zero_y = scene.option_start_y + scene._layout_offset() + 2
 
-    scene.handle_event(pygame.event.Event(pygame.MOUSEBUTTONDOWN, pos=(400, 178), button=1))
+    scene.handle_event(pygame.event.Event(pygame.MOUSEBUTTONDOWN, pos=(400, row_zero_y), button=1))
     assert app_context.persistent_data.graphics.theme_id != original_theme
 
-    scene.handle_event(pygame.event.Event(pygame.MOUSEBUTTONDOWN, pos=(400, 178), button=3))
+    scene.handle_event(pygame.event.Event(pygame.MOUSEBUTTONDOWN, pos=(400, row_zero_y), button=3))
     assert app_context.persistent_data.graphics.theme_id == original_theme
 
 

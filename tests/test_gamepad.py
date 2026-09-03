@@ -251,6 +251,33 @@ def test_play_scene_gamepad_disabled(app_context: AppContext) -> None:
     assert scene.next_scene is None  # Should not go to menu
 
 
+def test_settings_gamepad_toggle_and_dead_zone(app_context_with_gamepad: AppContext) -> None:
+    scene = SettingsScene(app_context_with_gamepad)
+    rows = scene._rows()
+    assert rows[11] == "Gamepad: On"
+    assert rows[12] == "Stick Dead Zone: 30%"
+
+    scene.selected_index = 11
+    scene._change_value(1)
+    assert app_context_with_gamepad.persistent_data.settings.gamepad_settings.enabled is False
+    assert scene._rows()[11] == "Gamepad: Off"
+
+    scene.selected_index = 12
+    scene._change_value(1)
+    assert app_context_with_gamepad.persistent_data.settings.gamepad_settings.dead_zone == 0.4
+    scene._change_value(-1)
+    assert app_context_with_gamepad.persistent_data.settings.gamepad_settings.dead_zone == 0.3
+
+
+def test_settings_dead_zone_cycles_and_wraps(app_context_with_gamepad: AppContext) -> None:
+    from snake_game.scenes.settings_scene import _cycle_dead_zone
+
+    assert _cycle_dead_zone(0.3, 1) == 0.4
+    assert _cycle_dead_zone(0.3, -1) == 0.2
+    assert _cycle_dead_zone(0.5, 1) == 0.2
+    assert _cycle_dead_zone(0.2, -1) == 0.5
+
+
 def test_play_scene_gamepad_onboarding_dismiss(app_context_with_gamepad: AppContext) -> None:
     scene = PlayScene(app_context_with_gamepad)
     scene.onboarding_visible = True

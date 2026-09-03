@@ -184,9 +184,15 @@ class MenuScene(Scene):
         confirm_name = pygame.key.name(key_bindings.confirm).upper()
         up_name = pygame.key.name(key_bindings.move_up).upper()
         down_name = pygame.key.name(key_bindings.move_down).upper()
+        hint_text = f"{confirm_name} / Click: Select   {up_name}/{down_name} / Mouse: Navigate"
+        try:
+            if pygame.joystick.get_count() > 0:
+                hint_text += "   Pad: D-pad + A Select"
+        except pygame.error:
+            pass
         draw_hint_footer(
             screen=screen,
-            text=f"{confirm_name} / Click: Select   {up_name}/{down_name} / Mouse: Navigate",
+            text=hint_text,
             width=self.ctx.config.window_width,
             y=475 + offset_y,
             font=self.ctx.small_font,

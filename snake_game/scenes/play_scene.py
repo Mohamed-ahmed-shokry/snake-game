@@ -809,19 +809,34 @@ class PlayScene(Scene):
                 theme.palette.text,
                 (self.ctx.config.window_width // 2, panel.top + 108),
             )
+            try:
+                pad_hint = (
+                    "Gamepad: D-pad / Stick to move, Start to pause"
+                    if pygame.joystick.get_count() > 0
+                    else "Gamepad supported: connect a controller anytime"
+                )
+            except pygame.error:
+                pad_hint = "Gamepad supported: connect a controller anytime"
+            draw_centered_text(
+                screen,
+                pad_hint,
+                self.ctx.small_font,
+                theme.palette.text,
+                (self.ctx.config.window_width // 2, panel.top + 130),
+            )
             draw_centered_text(
                 screen,
                 "Shield: saves one hit   Slow: reduces speed",
                 self.ctx.small_font,
                 theme.palette.powerup,
-                (self.ctx.config.window_width // 2, panel.top + 150),
+                (self.ctx.config.window_width // 2, panel.top + 158),
             )
             draw_centered_text(
                 screen,
                 "Double: 2x score   Phase: crosses walls and hazards",
                 self.ctx.small_font,
                 theme.palette.powerup,
-                (self.ctx.config.window_width // 2, panel.top + 180),
+                (self.ctx.config.window_width // 2, panel.top + 186),
             )
             draw_centered_text(
                 screen,

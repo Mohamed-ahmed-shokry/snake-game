@@ -63,21 +63,22 @@ class MenuScene(Scene):
         if event.type != pygame.KEYDOWN:
             return
 
-        if event.key in (pygame.K_UP, pygame.K_w):
+        key_bindings = self.ctx.persistent_data.settings.key_bindings
+        if event.key in (key_bindings.move_up, key_bindings.move_up_alt):
             self.selected_index = (self.selected_index - 1) % len(self.options)
             self.ctx.audio.play("move")
             return
 
-        if event.key in (pygame.K_DOWN, pygame.K_s):
+        if event.key in (key_bindings.move_down, key_bindings.move_down_alt):
             self.selected_index = (self.selected_index + 1) % len(self.options)
             self.ctx.audio.play("move")
             return
 
-        if event.key in (pygame.K_RETURN, pygame.K_SPACE):
+        if event.key in (key_bindings.confirm, key_bindings.confirm_alt):
             self._activate_selected()
             return
 
-        if event.key == pygame.K_ESCAPE:
+        if event.key == key_bindings.menu_back:
             self.quit_requested = True
 
     def _activate_selected(self) -> None:
@@ -97,6 +98,7 @@ class MenuScene(Scene):
 
     def render(self, screen: pygame.Surface) -> None:
         settings = self.ctx.persistent_data.settings
+        key_bindings = settings.key_bindings
         theme = resolve_theme(
             self.ctx.config.graphics.theme_id,
             self.ctx.config.graphics.colorblind_mode,
@@ -160,9 +162,12 @@ class MenuScene(Scene):
             font=self.ctx.small_font,
             color=palette.text,
         )
+        confirm_name = pygame.key.name(key_bindings.confirm).upper()
+        up_name = pygame.key.name(key_bindings.move_up).upper()
+        down_name = pygame.key.name(key_bindings.move_down).upper()
         draw_hint_footer(
             screen=screen,
-            text="Enter / Click: Select   Up/Down / Mouse: Navigate",
+            text=f"{confirm_name} / Click: Select   {up_name}/{down_name} / Mouse: Navigate",
             width=self.ctx.config.window_width,
             y=475 + offset_y,
             font=self.ctx.small_font,

@@ -135,6 +135,17 @@ class ProgressScene(Scene):
                 (self.ctx.config.window_width // 2, 346 + index * 34 + offset_y),
             )
 
+        save_display = str(self.ctx.data_path)
+        if len(save_display) > 56:
+            save_display = "..." + save_display[-53:]
+        draw_hint_footer(
+            screen=screen,
+            text=f"Save File: {save_display}",
+            width=self.ctx.config.window_width,
+            y=516 + offset_y,
+            font=self.ctx.small_font,
+            color=palette.text,
+        )
         draw_hint_footer(
             screen=screen,
             text=f"{pygame.key.name(self.ctx.persistent_data.settings.key_bindings.confirm).upper()}, "

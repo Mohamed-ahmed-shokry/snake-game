@@ -45,6 +45,18 @@ class ProgressScene(Scene):
                 self.ctx.audio.play("confirm")
                 self.next_scene = SceneId.MENU
 
+    def handle_gamepad_event(self, event: pygame.event.Event) -> None:
+        gamepad_settings = self.ctx.persistent_data.settings.gamepad_settings
+        if not gamepad_settings.enabled:
+            return
+
+        if event.type == pygame.JOYBUTTONDOWN and (
+            event.button == gamepad_settings.button_confirm
+            or event.button == gamepad_settings.button_menu_back
+        ):
+            self.ctx.audio.play("confirm")
+            self.next_scene = SceneId.MENU
+
     def update(self, delta_seconds: float) -> None:
         _ = delta_seconds
 

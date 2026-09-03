@@ -172,30 +172,31 @@ class SettingsScene(Scene):
         if event.type != pygame.KEYDOWN:
             return
 
+        key_bindings = self.ctx.persistent_data.settings.key_bindings
         row_count = len(self._rows())
-        if event.key in (pygame.K_UP, pygame.K_w):
+        if event.key in (key_bindings.move_up, key_bindings.move_up_alt):
             self.selected_index = (self.selected_index - 1) % row_count
             self.ctx.audio.play("move")
             return
 
-        if event.key in (pygame.K_DOWN, pygame.K_s):
+        if event.key in (key_bindings.move_down, key_bindings.move_down_alt):
             self.selected_index = (self.selected_index + 1) % row_count
             self.ctx.audio.play("move")
             return
 
-        if event.key in (pygame.K_LEFT, pygame.K_a):
+        if event.key in (key_bindings.move_left, key_bindings.move_left_alt):
             self._change_value(-1)
             return
 
-        if event.key in (pygame.K_RIGHT, pygame.K_d):
+        if event.key in (key_bindings.move_right, key_bindings.move_right_alt):
             self._change_value(1)
             return
 
-        if event.key in (pygame.K_RETURN, pygame.K_SPACE):
+        if event.key in (key_bindings.confirm, key_bindings.confirm_alt):
             self._change_value(1)
             return
 
-        if event.key == pygame.K_ESCAPE:
+        if event.key == key_bindings.menu_back:
             self.next_scene = SceneId.MENU
 
     def update(self, delta_seconds: float) -> None:
@@ -249,9 +250,14 @@ class SettingsScene(Scene):
             font=self.ctx.small_font,
             color=palette.text,
         )
+        key_bindings = self.ctx.persistent_data.settings.key_bindings
+        left_name = pygame.key.name(key_bindings.move_left).upper()
+        right_name = pygame.key.name(key_bindings.move_right).upper()
+        confirm_name = pygame.key.name(key_bindings.confirm).upper()
+        back_name = pygame.key.name(key_bindings.menu_back).upper()
         draw_hint_footer(
             screen=screen,
-            text="Left/Right or Click: Change   Right Click: Previous   Esc: Back",
+            text=f"{left_name}/{right_name} or Click: Change   Right Click: Previous   {confirm_name}: Forward   {back_name}: Back",
             width=self.ctx.config.window_width,
             y=548 + offset_y,
             font=self.ctx.small_font,

@@ -81,6 +81,25 @@ class MenuScene(Scene):
         if event.key == key_bindings.menu_back:
             self.quit_requested = True
 
+    def handle_gamepad_event(self, event: pygame.event.Event) -> None:
+        gamepad_settings = self.ctx.persistent_data.settings.gamepad_settings
+        if not gamepad_settings.enabled:
+            return
+
+        if event.type == pygame.JOYBUTTONDOWN:
+            if event.button == gamepad_settings.button_confirm:
+                self._activate_selected()
+            elif event.button == gamepad_settings.button_menu_back:
+                self.quit_requested = True
+        elif event.type == pygame.JOYHATMOTION:
+            hat_x, hat_y = event.value
+            if hat_y == -1:  # Up
+                self.selected_index = (self.selected_index - 1) % len(self.options)
+                self.ctx.audio.play("move")
+            elif hat_y == 1:  # Down
+                self.selected_index = (self.selected_index + 1) % len(self.options)
+                self.ctx.audio.play("move")
+
     def _activate_selected(self) -> None:
         self.ctx.audio.play("confirm")
         selected_option = self.options[self.selected_index]

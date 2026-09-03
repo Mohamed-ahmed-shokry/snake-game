@@ -199,6 +199,29 @@ class SettingsScene(Scene):
         if event.key == key_bindings.menu_back:
             self.next_scene = SceneId.MENU
 
+    def handle_gamepad_event(self, event: pygame.event.Event) -> None:
+        gamepad_settings = self.ctx.persistent_data.settings.gamepad_settings
+        if not gamepad_settings.enabled:
+            return
+
+        if event.type == pygame.JOYBUTTONDOWN:
+            if event.button == gamepad_settings.button_confirm:
+                self._change_value(1)
+            elif event.button == gamepad_settings.button_menu_back:
+                self.next_scene = SceneId.MENU
+        elif event.type == pygame.JOYHATMOTION:
+            hat_x, hat_y = event.value
+            if hat_y == -1:  # Up
+                self.selected_index = (self.selected_index - 1) % len(self._rows())
+                self.ctx.audio.play("move")
+            elif hat_y == 1:  # Down
+                self.selected_index = (self.selected_index + 1) % len(self._rows())
+                self.ctx.audio.play("move")
+            elif hat_x == -1:  # Left
+                self._change_value(-1)
+            elif hat_x == 1:  # Right
+                self._change_value(1)
+
     def update(self, delta_seconds: float) -> None:
         _ = delta_seconds
 

@@ -611,7 +611,7 @@ wheels = [
 
 [[package]]
 name = "snake-game"
-version = "1.6.3"
+version = "1.7.0"
 source = { editable = "." }
 dependencies = [
     { name = "pygame" },
